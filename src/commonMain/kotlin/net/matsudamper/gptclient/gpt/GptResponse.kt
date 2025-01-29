@@ -39,11 +39,11 @@ data class GptResponse(
     ) {
         @Serializable
         data class TokenDetails(
-            @SerialName("cached_tokens") val cachedTokens: Int,
-            @SerialName("audio_tokens") val audioTokens: Int,
-            @SerialName("reasoning_tokens") val reasoningTokens: Int,
-            @SerialName("accepted_prediction_tokens") val acceptedPredictionTokens: Int,
-            @SerialName("rejected_prediction_tokens") val rejectedPredictionTokens: Int,
+            @SerialName("cached_tokens") val cachedTokens: Int? = null,
+            @SerialName("audio_tokens") val audioTokens: Int? = null,
+            @SerialName("reasoning_tokens") val reasoningTokens: Int? = null,
+            @SerialName("accepted_prediction_tokens") val acceptedPredictionTokens: Int? = null,
+            @SerialName("rejected_prediction_tokens") val rejectedPredictionTokens: Int? = null,
         )
     }
 }

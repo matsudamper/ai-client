@@ -50,6 +50,7 @@ internal fun App(
                     ): ChatListUiState {
                         val viewModel = viewModel(entry) {
                             ChatViewModel(
+                                settingDataStore = settingDataStore,
                                 initialMessage = navigation.message,
                                 navControllerProvider = { navController }
                             )
