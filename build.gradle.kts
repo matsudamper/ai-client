@@ -1,10 +1,11 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.androidLibrary) apply false
-    alias(libs.plugins.kotlinSerialization) apply false
+    alias(libs.plugins.kotlinSerialization)
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
 }
@@ -43,6 +44,7 @@ kotlin {
 
     sourceSets {
         val commonMain by getting {
+            resources.srcDirs("src/commonMain/proto")
             dependencies {
                 implementation(projects.ui)
                 implementation(compose.runtime)
@@ -53,6 +55,9 @@ kotlin {
                 implementation(libs.androidxNavigationCompose)
                 implementation(libs.ktorClientCore)
                 implementation(libs.ktorClientCio)
+                implementation(libs.kotlinxSerializationJson)
+                implementation(libs.androidxDatastoreCore)
+                implementation(libs.androidxDatastorePreferences)
             }
         }
         val jvmMain by getting {

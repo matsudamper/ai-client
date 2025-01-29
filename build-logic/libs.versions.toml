@@ -30,7 +30,13 @@ ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "2.3.4
 ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "2.3.4" }
 ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "2.3.4" }
 
-
+# Kotlin
 kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.require = "1.6.0" }
+
+# DataStore
+androidxDatastoreCore = { module = "androidx.datastore:datastore-core", version.require = "1.1.2" }
+androidxDatastorePreferences = { module = "androidx.datastore:datastore-preferences ", version.require = "1.1.2" }
+
+
 # UI
 composeIcons = { module = "br.com.devsrsouza.compose.icons:feather", version.require = "1.1.1" }

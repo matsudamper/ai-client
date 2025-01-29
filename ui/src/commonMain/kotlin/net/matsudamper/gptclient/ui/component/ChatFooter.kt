@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient.component
+package net.matsudamper.gptclient.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Icon
@@ -36,7 +34,8 @@ internal fun ChatFooter(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.height(IntrinsicSize.Min),
+        modifier = modifier.height(IntrinsicSize.Min)
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = { onClickImage() }) {

@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient
+package net.matsudamper.gptclient.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -34,7 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Menu
-import net.matsudamper.gptclient.component.ChatFooter
+import net.matsudamper.gptclient.ui.component.ChatFooter
 import kotlin.math.ceil
 
 public data class NewChatUiState(
@@ -147,12 +147,11 @@ public fun NewChat(
             }
             val state = rememberTextFieldState()
             ChatFooter(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
                 state = state,
                 onClickImage = { },
                 onClickVoice = { },
-                onClickSend = {},
+                onClickSend = { uiState.listener.send(state.text.toString()) },
             )
         }
     }

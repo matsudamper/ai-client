@@ -1,24 +1,33 @@
-package net.matsudamper.gptclient
+package net.matsudamper.gptclient.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import net.matsudamper.gptclient.component.ChatFooter
+import net.matsudamper.gptclient.ui.component.ChatFooter
 
 data class ChatListUiState(
     val items: List<Item> = listOf(),
@@ -36,14 +45,29 @@ data class ChatListUiState(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 public fun ChatList(
     uiState: ChatListUiState,
+    onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .navigationBarsPadding()
+            .imePadding(),
     ) {
+        TopAppBar(
+            modifier = Modifier,
+            navigationIcon = {
+                IconButton(onClick = { onClickMenu() }) {
+                    Icon(imageVector = Icons.Default.Menu, contentDescription = null)
+                }
+            },
+            title = {
+
+            }
+        )
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
                 .weight(1f),
@@ -89,8 +113,11 @@ private fun AgentItem(
             contentAlignment = Alignment.CenterStart,
         ) {
             Text(
-                modifier = Modifier.clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(6.dp),
                 text = item.message,
             )
         }
@@ -108,8 +135,11 @@ private fun UserItem(
             contentAlignment = Alignment.CenterEnd,
         ) {
             Text(
-                modifier = Modifier.clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(6.dp),
                 text = item.message,
             )
         }
