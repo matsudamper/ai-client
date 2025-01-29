@@ -10,7 +10,8 @@
             android:name=".Application">
 
         <activity android:exported="true"
-                  android:name="net.matsudamper.gptclient.MainActivity">
+                  android:name="net.matsudamper.gptclient.MainActivity"
+                  android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

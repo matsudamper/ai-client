@@ -3,6 +3,8 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidLibrary) apply false
+    alias(libs.plugins.kotlinSerialization) apply false
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
 }
@@ -40,6 +42,19 @@ kotlin {
     androidTarget()
 
     sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(projects.ui)
+                implementation(compose.runtime)
+                implementation(compose.ui)
+                implementation(libs.androidxComposeFoundation)
+                implementation(libs.composeIcons)
+                implementation(compose.material3)
+                implementation(libs.androidxNavigationCompose)
+                implementation(libs.ktorClientCore)
+                implementation(libs.ktorClientCio)
+            }
+        }
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
@@ -49,13 +64,17 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
+                implementation(compose.runtime)
                 implementation(compose.ui)
                 implementation(compose.material3)
+                implementation(libs.androidxComposeMaterial3)
                 implementation(libs.androidActivityActivityCompose)
                 implementation(libs.androidxCoreKtx)
                 implementation(libs.androidxLifecycleViewModelKtx)
                 implementation(libs.androidxLifecycleViewModelCompose)
                 implementation(libs.androidxLifecycleRuntimeCompose)
+                implementation(libs.googleMaterial)
+                implementation(libs.androidxComposeFoundation)
             }
         }
     }
