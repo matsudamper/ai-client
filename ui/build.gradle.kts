@@ -28,9 +28,9 @@ kotlin {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.ui)
-                implementation(libs.composeIcons)
                 implementation(compose.material3)
                 implementation(compose.foundation)
+                implementation(libs.composeIcons)
                 implementation(libs.androidxNavigationCompose)
                 implementation(libs.kotlinxSerializationJson)
             }
