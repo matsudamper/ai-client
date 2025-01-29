@@ -1,0 +1,20 @@
+[versions]
+kotlin = "2.1.0"
+agp = "8.7.3"
+compose = "1.7.1"
+activity = "1.10.0"
+lifecycle = "2.8.7"
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+
+[libraries]
+# Android
+androidActivityActivityCompose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.15.0" }
+androidxLifecycleViewModelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+androidxLifecycleViewModelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidxLifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
