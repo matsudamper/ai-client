@@ -8,6 +8,9 @@ build/
 .run
 local.properties
 
+# DataStore preferences
+*.preferences_pb
+
 ### Kotlin ###
 .kotlin
 
