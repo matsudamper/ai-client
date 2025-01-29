@@ -21,7 +21,6 @@ androidxLifecycleViewModelKtx = { module = "androidx.lifecycle:lifecycle-viewmod
 androidxLifecycleViewModelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidxLifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 googleMaterial = { module = "com.google.android.material:material", version.require = "1.12.0" }
-androidxComposeFoundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
 androidxNavigationCompose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.require = "2.8.0-alpha10" }
 
 # ktor

@@ -50,7 +50,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.ui)
                 implementation(compose.material3)
-                implementation(libs.androidxComposeFoundation)
+                implementation(compose.foundation)
                 implementation(libs.composeIcons)
                 implementation(libs.androidxNavigationCompose)
                 implementation(libs.ktorClientCore)
@@ -78,7 +78,7 @@ kotlin {
                 implementation(libs.androidxLifecycleViewModelCompose)
                 implementation(libs.androidxLifecycleRuntimeCompose)
                 implementation(libs.googleMaterial)
-                implementation(libs.androidxComposeFoundation)
+                implementation(compose.foundation)
             }
         }
     }
