@@ -65,6 +65,7 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 implementation(compose.ui)
                 implementation(compose.material3)
+                implementation(libs.kotlinxCoroutineSwing)
             }
         }
         val androidMain by getting {
