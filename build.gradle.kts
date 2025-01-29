@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.androidLibrary) apply false
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.androidxRoom) apply false
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
 }
@@ -47,6 +49,7 @@ kotlin {
             resources.srcDirs("src/commonMain/proto")
             dependencies {
                 implementation(projects.ui)
+                implementation(projects.room)
                 implementation(compose.runtime)
                 implementation(compose.ui)
                 implementation(compose.material3)

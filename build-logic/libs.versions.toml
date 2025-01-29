@@ -4,6 +4,8 @@ agp = "8.7.3"
 compose = "1.7.1"
 activity = "1.10.0"
 lifecycle = "2.8.7"
+room = "2.7.0-alpha13"
+ksp = "2.1.0-1.0.29"
 coroutine = "1.10.1"
 
 [plugins]
@@ -13,6 +15,8 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+androidxRoom = { id = "androidx.room", version.ref = "room" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 [libraries]
 # Android
@@ -37,6 +41,9 @@ kotlinxCoroutineSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swi
 androidxDatastoreCore = { module = "androidx.datastore:datastore-core", version.require = "1.1.2" }
 androidxDatastorePreferences = { module = "androidx.datastore:datastore-preferences ", version.require = "1.1.2" }
 
+# Room
+androidxRoomRuntime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidxRoomCompiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
 # UI
 composeIcons = { module = "br.com.devsrsouza.compose.icons:feather", version.require = "1.1.1" }
