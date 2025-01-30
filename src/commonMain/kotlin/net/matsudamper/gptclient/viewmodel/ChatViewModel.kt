@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient
+package net.matsudamper.gptclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,16 +15,18 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.matsudamper.gptclient.Navigation
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.gpt.GptResponse
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
+import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.ui.ChatListUiState
 
 class ChatViewModel(
-    initialMessage: String? = null,
+    openContext: Navigation.Chat.OpenContext,
     private val appDatabase: AppDatabase,
     private val settingDataStore: SettingDataStore,
     private val navControllerProvider: () -> NavController,
@@ -32,11 +34,7 @@ class ChatViewModel(
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
         ChatListUiState(
-            items = buildList {
-                if (initialMessage != null) {
-                    add(ChatListUiState.Item.User(initialMessage))
-                }
-            },
+            items = listOf(),
             listener = object : ChatListUiState.Listener {
                 override fun onClickImage() {
                 }
@@ -48,18 +46,26 @@ class ChatViewModel(
         )
     ).also { uiState ->
         viewModelScope.launch {
-            val room = ChatRoom(
-                modelName = "gpt-4o-mini",
-            )
-            withContext(Dispatchers.IO) {
-                appDatabase.chatRoomDao().insert(room)
-            }
+            when (openContext) {
+                is Navigation.Chat.OpenContext.NewMessage -> {
+                    val room = withContext(Dispatchers.IO) {
+                        val room = ChatRoom(
+                            modelName = "gpt-4o-mini",
+                        )
+                        room.copy(
+                            id = ChatRoomId(appDatabase.chatRoomDao().insert(room))
+                        )
+                    }
 
-            viewModelStateFlow.update {
-                it.copy(room = room)
-            }
-            if (initialMessage != null) {
-                addRequest(initialMessage)
+                    viewModelStateFlow.update {
+                        it.copy(room = room)
+                    }
+                    addRequest(openContext.initialMessage)
+                }
+
+                is Navigation.Chat.OpenContext.OpenChat -> {
+                    restoreChatRoom(openContext.chatRoomId)
+                }
             }
         }
         viewModelScope.launch {
@@ -111,6 +117,18 @@ class ChatViewModel(
         }
     }
 
+    private fun restoreChatRoom(chatRoomId: ChatRoomId) {
+        viewModelScope.launch {
+            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value)
+                .first()
+            viewModelStateFlow.update {
+                it.copy(
+                    room = room,
+                )
+            }
+        }
+    }
+
     private fun addRequest(message: String) {
         viewModelScope.launch {
             val chatRoomId = viewModelStateFlow.value.room?.id ?: return@launch
@@ -118,12 +136,12 @@ class ChatViewModel(
             val lastItem = chatDao.getChatRoomLastIndexItem(
                 chatRoomId = chatRoomId.value,
             )
-            val nextIndex = lastItem?.index?.plus(1) ?: 0
+            val newChatIndex = lastItem?.index?.plus(1) ?: 0
 
             chatDao.insertAll(
                 Chat(
                     chatRoomId = chatRoomId,
-                    index = nextIndex,
+                    index = newChatIndex,
                     textMessage = message,
                     imageMessage = null,
                     role = Chat.Role.User,
@@ -159,13 +177,13 @@ class ChatViewModel(
             val response = getGptClient().request(
                 messages = messages,
             )
-            val roomChats = response.choices.map {
+            val roomChats = response.choices.mapIndexed { index, choice ->
                 Chat(
                     chatRoomId = chatRoomId,
-                    index = it.index,
-                    textMessage = it.message.content,
+                    index = newChatIndex + 1 + index,
+                    textMessage = choice.message.content,
                     imageMessage = null, // TODO
-                    role = when (it.message.role) {
+                    role = when (choice.message.role) {
                         GptResponse.Choice.Role.System -> {
                             Chat.Role.System
                         }
@@ -185,7 +203,6 @@ class ChatViewModel(
 
             appDatabase.useWriterConnection {
                 appDatabase.chatDao().apply {
-                    deleteByChatRoomId(chatRoomId = chatRoomId.value)
                     insertAll(*roomChats.toTypedArray())
                 }
             }

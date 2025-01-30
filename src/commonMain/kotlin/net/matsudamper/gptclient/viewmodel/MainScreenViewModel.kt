@@ -1,11 +1,11 @@
-package net.matsudamper.gptclient
+package net.matsudamper.gptclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import net.matsudamper.gptclient.ui.MainScreenUiState
-import net.matsudamper.gptclient.ui.Navigation
+import net.matsudamper.gptclient.MainScreenUiState
+import net.matsudamper.gptclient.Navigation
 
 class MainScreenViewModel(
     private val navControllerProvider: () -> NavController,

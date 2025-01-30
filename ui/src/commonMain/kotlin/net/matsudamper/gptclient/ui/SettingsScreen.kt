@@ -45,7 +45,7 @@ sealed interface SettingsScreenUiState {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun SettingsScreen(
+public fun SettingsScreen(
     uiState: SettingsScreenUiState,
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,

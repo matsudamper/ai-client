@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient.ui
+package net.matsudamper.gptclient
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -39,6 +39,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
+import net.matsudamper.gptclient.room.entity.ChatRoomId
+import net.matsudamper.gptclient.ui.ChatList
+import net.matsudamper.gptclient.ui.ChatListUiState
+import net.matsudamper.gptclient.ui.NewChat
+import net.matsudamper.gptclient.ui.NewChatUiState
+import net.matsudamper.gptclient.ui.SettingsScreen
+import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.ui.platform.BackHandler
 
 @Immutable
@@ -47,7 +54,12 @@ sealed interface Navigation {
     data object StartChat : Navigation
 
     @Serializable
-    data class Chat(val message: String) : Navigation
+    data class Chat(val openContext: OpenContext) : Navigation {
+        sealed interface OpenContext {
+            data class NewMessage(val initialMessage: String) : OpenContext
+            data class OpenChat(val chatRoomId: ChatRoomId) : OpenContext
+        }
+    }
 
     @Serializable
     data object Settings : Navigation

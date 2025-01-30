@@ -3,11 +3,11 @@ package net.matsudamper.gptclient.room.entity
 import androidx.room.TypeConverter
 
 @JvmInline
-value class ProjectId(val id: Int) {
+value class ProjectId(val id: Long) {
     object Converter {
         @TypeConverter
-        fun fromInt(value: Int): ProjectId = ProjectId(value)
+        fun from(value: Long): ProjectId = ProjectId(value)
         @TypeConverter
-        fun toInt(value: ProjectId): Int = value.id
+        fun to(value: ProjectId): Long = value.id
     }
 }

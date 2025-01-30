@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient
+package net.matsudamper.gptclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

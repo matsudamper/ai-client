@@ -11,6 +11,9 @@ interface ChatRoomDao {
     @Query("SELECT * FROM chat_room")
     fun getAll(): Flow<List<ChatRoom>>
 
+    @Query("SELECT * FROM chat_room where id = :chatRoomId")
+    fun get(chatRoomId: Long): Flow<ChatRoom>
+
     @Insert
-    suspend fun insert(chatRoom: ChatRoom)
+    suspend fun insert(chatRoom: ChatRoom) : Long
 }

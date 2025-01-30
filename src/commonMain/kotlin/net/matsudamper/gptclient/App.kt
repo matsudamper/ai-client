@@ -10,14 +10,13 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.rememberNavController
-import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.ui.ChatListUiState
-import net.matsudamper.gptclient.ui.MainScreen
-import net.matsudamper.gptclient.ui.MainScreenUiState
-import net.matsudamper.gptclient.ui.Navigation
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
-import net.matsudamper.gptclient.ui.UiStateProvider
+import net.matsudamper.gptclient.viewmodel.ChatViewModel
+import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
+import net.matsudamper.gptclient.viewmodel.NewChatViewModel
+import net.matsudamper.gptclient.viewmodel.SettingViewModel
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
@@ -51,7 +50,7 @@ internal fun App() {
                             val koin = getKoin()
                             ChatViewModel(
                                 settingDataStore = koin.get(),
-                                initialMessage = navigation.message,
+                                openContext = navigation.openContext,
                                 navControllerProvider = { navController },
                                 appDatabase = koin.get(),
                             )

@@ -79,6 +79,7 @@ class ChatGptClient(
             }
         }
         val responseJson = response.bodyAsText()
+        println("Response->${responseJson}")
         return try {
             Json.decodeFromString(GptResponse.serializer(), responseJson)
         } catch (e: SerializationException) {
