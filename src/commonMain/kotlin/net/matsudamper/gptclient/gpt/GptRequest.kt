@@ -9,10 +9,30 @@ data class GptRequest(
     @SerialName("model") val model: String,
     @SerialName("messages") val messages: List<Message>,
     @SerialName("response_format") val responseFormat: ResponseFormat,
+    /**
+     * ランダム性
+     * 0(決定的) ~ 1(創造的)
+     */
     @SerialName("temperature") val temperature: Double,
-    @SerialName("max_completion_tokens") val maxCompletionTokens: Int,
+    /**
+     * どこまでを回答とするかの足切り
+     * 0 ~ 1(100%以上を選択)
+     */
     @SerialName("top_p") val topP: Double,
+    /**
+     * 生成する応答の最大トークン数
+     * ~150
+     */
+    @SerialName("max_completion_tokens") val maxCompletionTokens: Int,
+    /**
+     * 同じトークンの繰り返し使用を抑制するためのペナルティ
+     * -2.0(繰り返す) ~ 2.0(繰り返さない)
+     */
     @SerialName("frequency_penalty") val frequencyPenalty: Double,
+    /**
+     * 新しいトピックや単語の導入を促進するためのペナルティ
+     * -2.0(導入を曽於区心) ~ 2.0(導入を抑制)
+     */
     @SerialName("presence_penalty") val presencePenalty: Double
 ) {
     @Serializable

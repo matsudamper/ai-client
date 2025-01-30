@@ -58,9 +58,9 @@ class ChatGptClient(
             model = "gpt-4o-mini",
             messages = requestMessages,
             responseFormat = GptRequest.ResponseFormat(type = "text"),
-            temperature = 0.7,
-            maxCompletionTokens = 100,
             topP = 1.0,
+            temperature = 0.3,
+            maxCompletionTokens = 100,
             frequencyPenalty = 0.0,
             presencePenalty = 0.0
         )

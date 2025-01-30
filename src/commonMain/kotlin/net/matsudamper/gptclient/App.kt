@@ -18,11 +18,10 @@ import net.matsudamper.gptclient.ui.Navigation
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.ui.UiStateProvider
+import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
-internal fun App(
-    settingDataStore: SettingDataStore,
-) {
+internal fun App() {
     MaterialTheme {
         val navController = rememberNavController()
         val viewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
@@ -49,10 +48,12 @@ internal fun App(
                         navigation: Navigation.Chat,
                     ): ChatListUiState {
                         val viewModel = viewModel(entry) {
+                            val koin = getKoin()
                             ChatViewModel(
-                                settingDataStore = settingDataStore,
+                                settingDataStore = koin.get(),
                                 initialMessage = navigation.message,
-                                navControllerProvider = { navController }
+                                navControllerProvider = { navController },
+                                appDatabase = koin.get(),
                             )
                         }
                         return viewModel.uiStateFlow.collectAsState().value
@@ -61,8 +62,9 @@ internal fun App(
                     @Composable
                     override fun provideSettingUiState(entry: NavBackStackEntry): SettingsScreenUiState {
                         val viewModel = viewModel(entry) {
+                            val koin = getKoin()
                             SettingViewModel(
-                                settingDataStore = settingDataStore,
+                                settingDataStore = koin.get(),
                             )
                         }
                         return viewModel.uiStateFlow.collectAsState().value

@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.gpt
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.matsudamper.gptclient.serialization.StringEnum
 
 @Serializable
 data class GptResponse(
@@ -23,10 +24,22 @@ data class GptResponse(
     ) {
         @Serializable
         data class Message(
-            @SerialName("role") val role: String,
+            @SerialName("role") val role: Role?,
             @SerialName("content") val content: String,
             @SerialName("refusal") val refusal: String? = null
         )
+
+        @Serializable(Role.Companion.Serializer::class)
+        enum class Role(override val label: String) : StringEnum {
+            System("system"),
+            User("user"),
+            Assistant("assistant")
+            ;
+
+            companion object {
+                internal object Serializer : StringEnum.Companion.Serializer<Role>(Role::class)
+            }
+        }
     }
 
     @Serializable
