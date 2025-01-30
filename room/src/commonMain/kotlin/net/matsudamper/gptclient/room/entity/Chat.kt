@@ -21,7 +21,7 @@ data class Chat(
     @ColumnInfo(name = "chat_room_id") val chatRoomId: ChatRoomId,
     @ColumnInfo(name = "index") val index: Int,
     @ColumnInfo(name = "text_message") val textMessage: String?,
-    @ColumnInfo(name = "image_message", typeAffinity = ColumnInfo.BLOB) val imageMessage: ByteArray?,
+    @ColumnInfo(name = "image_uri") val imageUri: String?,
     @ColumnInfo(name = "role") val role: Role,
     @ColumnInfo(name = "create_date_at") val createDateAt: Instant = Instant.now(),
 ) {

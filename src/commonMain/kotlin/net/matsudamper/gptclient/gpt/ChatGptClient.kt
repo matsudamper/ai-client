@@ -1,6 +1,9 @@
 package net.matsudamper.gptclient.gpt
 
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -29,7 +32,7 @@ class ChatGptClient(
                     is GptMessage.Content.Base64Image -> {
                         GptRequest.Content(
                             type = "image_url",
-                            imageUrl = GptRequest.ImageUrl("data:image/bmp;base64,${content.base64}"),
+                            imageUrl = GptRequest.ImageUrl("data:image/png;base64,${content.base64}"),
                         )
                     }
 
@@ -68,9 +71,13 @@ class ChatGptClient(
             GptRequest.serializer(),
             sampleGptRequest
         )
-
+        println("Request->$jsonString")
         val response: HttpResponse = withContext(Dispatchers.IO) {
-            HttpClient {}.use {
+            HttpClient(CIO) {
+                install(HttpTimeout) {
+                    requestTimeoutMillis = 60 * 2 * 1000L
+                }
+            }.use {
                 it.post("https://api.openai.com/v1/chat/completions") {
                     header(HttpHeaders.ContentType, ContentType.Application.Json)
                     header(HttpHeaders.Authorization, "Bearer $secretKey")

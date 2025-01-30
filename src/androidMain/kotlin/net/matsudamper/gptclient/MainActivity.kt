@@ -10,7 +10,10 @@ import org.koin.android.ext.android.getKoin
 import org.koin.dsl.module
 
 class MainActivity : ComponentActivity() {
-    private val platformRequest = AndroidPlatformRequest(this)
+    private val platformRequest = AndroidPlatformRequest(
+        activity = this,
+        context = this,
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

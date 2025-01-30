@@ -25,6 +25,8 @@ import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.ui.ChatListUiState
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
@@ -55,7 +57,13 @@ class ChatViewModel(
                 }
 
                 override fun onClickSend(text: String) {
-                    addRequest(text)
+                    addRequest(
+                        message = text,
+                        uris = viewModelStateFlow.value.selectedMedia,
+                    )
+                    viewModelStateFlow.update {
+                        it.copy(selectedMedia = listOf())
+                    }
                 }
             }
         )
@@ -145,7 +153,7 @@ class ChatViewModel(
         }
     }
 
-    private fun addRequest(message: String) {
+    private fun addRequest(message: String, uris: List<String> = listOf()) {
         viewModelScope.launch {
             val chatRoomId = viewModelStateFlow.value.room?.id ?: return@launch
             val chatDao = appDatabase.chatDao()
@@ -155,11 +163,23 @@ class ChatViewModel(
             val newChatIndex = lastItem?.index?.plus(1) ?: 0
 
             chatDao.insertAll(
+                uris
+                    .map {
+                        Chat(
+                            chatRoomId = chatRoomId,
+                            index = newChatIndex,
+                            textMessage = null,
+                            imageUri = it,
+                            role = Chat.Role.User,
+                        )
+                    }
+            )
+            chatDao.insertAll(
                 Chat(
                     chatRoomId = chatRoomId,
                     index = newChatIndex,
                     textMessage = message,
-                    imageMessage = null,
+                    imageUri = null,
                     role = Chat.Role.User,
                 )
             )
@@ -179,11 +199,18 @@ class ChatViewModel(
                     if (textMessage != null) {
                         add(ChatGptClient.GptMessage.Content.Text(textMessage))
                     }
-                    if (it.imageMessage != null) {
-                        TODO()
+                    val imageMessage = it.imageUri
+                    if (imageMessage != null) {
+                        val byteArray = platformRequest.readPngByteArray(uri = imageMessage)
+                        byteArray!!
+                        add(
+                            ChatGptClient.GptMessage.Content.Base64Image(
+                                @OptIn(ExperimentalEncodingApi::class)
+                                Base64.encode(byteArray)
+                            )
+                        )
                     }
                 }
-
 
                 ChatGptClient.GptMessage(
                     role = role,
@@ -198,7 +225,7 @@ class ChatViewModel(
                     chatRoomId = chatRoomId,
                     index = newChatIndex + 1 + index,
                     textMessage = choice.message.content,
-                    imageMessage = null, // TODO
+                    imageUri = null, // TODO
                     role = when (choice.message.role) {
                         GptResponse.Choice.Role.System -> {
                             Chat.Role.System

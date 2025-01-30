@@ -22,6 +22,9 @@ interface ChatDao {
     @Insert
     suspend fun insertAll(vararg chats: Chat)
 
+    @Insert
+    suspend fun insertAll(chats: List<Chat>)
+
     @Query("SELECT * FROM chat WHERE chat_room_id = :chatRoomId ORDER BY `index` DESC LIMIT 1")
     suspend fun getChatRoomLastIndexItem(chatRoomId: Long): Chat?
 
