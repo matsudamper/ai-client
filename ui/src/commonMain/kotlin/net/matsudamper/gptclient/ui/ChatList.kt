@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.clearText
@@ -27,11 +29,14 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import net.matsudamper.gptclient.ui.component.ChatFooter
 
 data class ChatListUiState(
-    val items: List<Item> = listOf(),
+    val items: List<Item>,
+    val selectedMedia: List<String>,
     val listener: Listener,
 ) {
     sealed interface Item {
@@ -92,19 +97,36 @@ public fun ChatList(
                 }
             }
         }
-        val state = rememberTextFieldState()
-        ChatFooter(
+        Column(
             modifier = Modifier.fillMaxWidth()
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .navigationBarsPadding(),
-            state = state,
-            onClickImage = { uiState.listener.onClickImage() },
-            onClickVoice = { uiState.listener.onClickVoice() },
-            onClickSend = {
-                uiState.listener.onClickSend(state.text.toString())
-                state.clearText()
+        ) {
+            LazyRow {
+                items(uiState.selectedMedia) { media ->
+                    AsyncImage(
+                        modifier = Modifier.size(120.dp)
+                            .padding(12.dp),
+                        model = media,
+                        contentScale = ContentScale.Crop,
+                        contentDescription = null,
+                    )
+                }
             }
-        )
+
+            val state = rememberTextFieldState()
+            ChatFooter(
+                modifier = Modifier.fillMaxWidth(),
+                state = state,
+                onClickImage = { uiState.listener.onClickImage() },
+                onClickVoice = { uiState.listener.onClickVoice() },
+                onClickSend = {
+                    uiState.listener.onClickSend(state.text.toString())
+                    state.clearText()
+                },
+                selectedMedia = uiState.selectedMedia,
+            )
+        }
     }
 }
 

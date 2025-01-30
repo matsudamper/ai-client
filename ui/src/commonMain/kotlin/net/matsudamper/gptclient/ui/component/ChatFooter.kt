@@ -28,6 +28,7 @@ import compose.icons.feathericons.Upload
 @Composable
 internal fun ChatFooter(
     state: TextFieldState,
+    selectedMedia: List<String>,
     onClickImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.gpt.GptResponse
@@ -27,6 +28,7 @@ import net.matsudamper.gptclient.ui.ChatListUiState
 
 class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
+    private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
     private val settingDataStore: SettingDataStore,
     private val navControllerProvider: () -> NavController,
@@ -35,8 +37,17 @@ class ChatViewModel(
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
         ChatListUiState(
             items = listOf(),
+            selectedMedia = listOf(),
             listener = object : ChatListUiState.Listener {
                 override fun onClickImage() {
+                    viewModelScope.launch {
+                        val media = platformRequest.getMedia()
+                        viewModelStateFlow.update {
+                            it.copy(
+                                selectedMedia = media,
+                            )
+                        }
+                    }
                 }
 
                 override fun onClickVoice() {
@@ -54,7 +65,7 @@ class ChatViewModel(
                 is Navigator.Chat.ChatOpenContext.NewMessage -> {
                     val room = withContext(Dispatchers.IO) {
                         val room = ChatRoom(
-                            modelName = "gpt-4o-mini",
+                            modelName = "gpt-4o-mini", // TODO SELECT
                         )
                         room.copy(
                             id = ChatRoomId(appDatabase.chatRoomDao().insert(room))
@@ -91,6 +102,7 @@ class ChatViewModel(
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
                     it.copy(
+                        selectedMedia = viewModelState.selectedMedia,
                         items = viewModelState.chats.mapNotNull { chat ->
                             val message = chat.textMessage ?: return@mapNotNull null
                             // TODO: it.imageMessage
@@ -220,5 +232,6 @@ class ChatViewModel(
     private data class ViewModelState(
         val room: ChatRoom? = null,
         val chats: List<Chat> = listOf(),
+        val selectedMedia: List<String> = listOf(),
     )
 }

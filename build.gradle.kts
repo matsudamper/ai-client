@@ -73,6 +73,7 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.material3)
                 implementation(libs.androidActivityActivityCompose)
+                implementation(libs.androidActivityKtx)
                 implementation(libs.androidxCoreKtx)
                 implementation(libs.androidxLifecycleViewModelKtx)
                 implementation(libs.androidxLifecycleViewModelCompose)

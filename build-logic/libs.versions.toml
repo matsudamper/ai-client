@@ -9,6 +9,7 @@ ksp = "2.1.0-1.0.29"
 coroutine = "1.10.1"
 koin = "3.2.0"
 kotlinSerialization = "1.6.0"
+coil = "3.0.4"
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -23,6 +24,7 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 [libraries]
 # Android
 androidActivityActivityCompose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+androidActivityKtx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
 androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.15.0" }
 androidxLifecycleViewModelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidxLifecycleViewModelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
@@ -34,6 +36,10 @@ androidxNavigationCompose = { module = "org.jetbrains.androidx.navigation:naviga
 ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "2.3.4" }
 ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "2.3.4" }
 ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "2.3.4" }
+
+# Coil
+coil3Compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil3NetworkOkHttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 
 # Kotlin
 kotlinxSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinSerialization" }

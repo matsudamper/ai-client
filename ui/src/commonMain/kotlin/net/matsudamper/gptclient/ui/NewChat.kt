@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -39,7 +38,8 @@ import net.matsudamper.gptclient.ui.component.ChatFooter
 import kotlin.math.ceil
 
 public data class NewChatUiState(
-    val projects: List<Project> = listOf(),
+    val projects: List<Project>,
+    val selectedMedia: List<String>,
     val listener: Listener,
 ) {
     data class Project(
@@ -147,13 +147,14 @@ public fun NewChat(
             }
             val state = rememberTextFieldState()
             ChatFooter(
-                modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .navigationBarsPadding(),
                 state = state,
                 onClickImage = { },
                 onClickVoice = { },
                 onClickSend = { uiState.listener.send(state.text.toString()) },
+                modifier = Modifier.fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .navigationBarsPadding(),
+                selectedMedia = uiState.selectedMedia,
             )
         }
     }

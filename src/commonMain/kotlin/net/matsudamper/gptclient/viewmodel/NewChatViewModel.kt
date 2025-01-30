@@ -16,6 +16,7 @@ class NewChatViewModel(
     public val uiState: StateFlow<NewChatUiState> = MutableStateFlow(
         NewChatUiState(
             projects = listOf(),
+            selectedMedia = listOf(),
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     navControllerProvider().navigate(

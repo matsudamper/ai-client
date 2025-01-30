@@ -50,6 +50,7 @@ internal fun App() {
                         val viewModel = viewModel(entry) {
                             val koin = getKoin()
                             ChatViewModel(
+                                platformRequest = koin.get(),
                                 settingDataStore = koin.get(),
                                 openContext = navigation.openContext,
                                 navControllerProvider = { navController },
