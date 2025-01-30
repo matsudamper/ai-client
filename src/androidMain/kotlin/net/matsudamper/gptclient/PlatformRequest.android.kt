@@ -37,9 +37,13 @@ class AndroidPlatformRequest(
                 val source = ImageDecoder.createSource(context.contentResolver, uri)
                 val bitmap = ImageDecoder.decodeBitmap(source)
 
-                val file = File(cacheDir, "${System.currentTimeMillis()}.png")
-                file.outputStream().use { outputStream ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                val hash = bitmap.hashCode().toString()
+                val file = File(cacheDir, "$hash.png")
+
+                if (!file.exists()) {
+                    file.outputStream().use { outputStream ->
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                    }
                 }
 
                 file.toURI().toString()
