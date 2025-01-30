@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -42,6 +43,7 @@ data class ChatListUiState(
     interface Listener {
         fun onClickImage()
         fun onClickVoice()
+        fun onClickSend(text: String)
     }
 }
 
@@ -98,7 +100,10 @@ public fun ChatList(
             state = state,
             onClickImage = { uiState.listener.onClickImage() },
             onClickVoice = { uiState.listener.onClickVoice() },
-            onClickSend = {}
+            onClickSend = {
+                uiState.listener.onClickSend(state.text.toString())
+                state.clearText()
+            }
         )
     }
 }

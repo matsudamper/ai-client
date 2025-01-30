@@ -42,6 +42,10 @@ class ChatViewModel(
                 override fun onClickVoice() {
 
                 }
+
+                override fun onClickSend(text: String) {
+                    addRequest(text)
+                }
             }
         )
     ).also { uiState ->
