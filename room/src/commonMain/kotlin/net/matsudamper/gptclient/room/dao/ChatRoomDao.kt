@@ -15,7 +15,7 @@ interface ChatRoomDao {
     @Query(
         """
         SELECT * FROM chat_room
-        JOIN chat ON chat_room.id = chat.chat_room_id
+        LEFT JOIN chat ON chat_room.id = chat.chat_room_id
             AND chat.`index` = (
                 SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id
             )

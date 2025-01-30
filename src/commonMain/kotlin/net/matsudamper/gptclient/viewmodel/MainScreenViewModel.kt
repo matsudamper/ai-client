@@ -2,18 +2,18 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.MainScreenUiState
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
-import net.matsudamper.gptclient.room.dao.ChatRoomWithStartChat
 import net.matsudamper.gptclient.room.entity.ChatRoomId
+import net.matsudamper.gptclient.room.entity.ChatRoomWithStartChat
 
 class MainScreenViewModel(
     private val appDatabase: AppDatabase,
@@ -52,7 +52,7 @@ class MainScreenViewModel(
                                 items = viewModelState.rooms.map { room ->
                                     MainScreenUiState.HistoryItem(
                                         listener = HistoryItemListenerImpl(room.chatRoom.id),
-                                        text = room.chat.textMessage.orEmpty(),
+                                        text = room.textMessage.orEmpty(),
                                     )
                                 }
                             )
