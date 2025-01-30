@@ -55,6 +55,7 @@ kotlin {
                 implementation(libs.kotlinxSerializationJson)
                 implementation(libs.androidxDatastoreCore)
                 implementation(libs.androidxDatastorePreferences)
+                implementation(libs.koinCore)
             }
         }
         val jvmMain by getting {
@@ -63,6 +64,7 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.material3)
                 implementation(libs.kotlinxCoroutineSwing)
+                implementation(libs.koinCore)
             }
         }
         val androidMain by getting {
@@ -77,6 +79,8 @@ kotlin {
                 implementation(libs.androidxLifecycleRuntimeCompose)
                 implementation(libs.googleMaterial)
                 implementation(compose.foundation)
+                implementation(libs.koinAndroid)
+                implementation(libs.koinCore)
             }
         }
     }
