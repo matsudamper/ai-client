@@ -11,6 +11,9 @@ local.properties
 # DataStore preferences
 *.preferences_pb
 
+# Room
+/app-database*
+
 ### Kotlin ###
 .kotlin
 
