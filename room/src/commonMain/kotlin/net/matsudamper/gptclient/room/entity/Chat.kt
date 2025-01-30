@@ -25,7 +25,6 @@ data class Chat(
     @ColumnInfo(name = "role") val role: Role,
     @ColumnInfo(name = "create_date_at") val createDateAt: Instant = Instant.now(),
 ) {
-    fun requireId(): ChatId = requireNotNull(id)
     enum class Role(private val response: String) {
         System("system"),
         User("user"),
