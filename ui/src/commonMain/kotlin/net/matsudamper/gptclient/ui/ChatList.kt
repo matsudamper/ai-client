@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -82,19 +83,21 @@ public fun ChatList(
                 .weight(1f),
         ) {
             items(uiState.items) { item ->
-                when (item) {
-                    is ChatListUiState.Item.Agent -> {
-                        AgentItem(
-                            modifier = Modifier.fillMaxWidth(),
-                            item = item,
-                        )
-                    }
+                Box(modifier = Modifier.padding(vertical = 4.dp)) {
+                    when (item) {
+                        is ChatListUiState.Item.Agent -> {
+                            AgentItem(
+                                modifier = Modifier.fillMaxWidth(),
+                                item = item,
+                            )
+                        }
 
-                    is ChatListUiState.Item.User -> {
-                        UserItem(
-                            modifier = Modifier.fillMaxWidth(),
-                            item = item,
-                        )
+                        is ChatListUiState.Item.User -> {
+                            UserItem(
+                                modifier = Modifier.fillMaxWidth(),
+                                item = item,
+                            )
+                        }
                     }
                 }
             }
@@ -160,7 +163,7 @@ private fun AgentItem(
             Text(
                 modifier = Modifier
                     .padding(horizontal = 24.dp)
-                    .clip(CircleShape)
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(6.dp),
                 text = item.message,
@@ -182,7 +185,7 @@ private fun UserItem(
             Text(
                 modifier = Modifier
                     .padding(horizontal = 24.dp)
-                    .clip(CircleShape)
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(6.dp),
                 text = item.message,
