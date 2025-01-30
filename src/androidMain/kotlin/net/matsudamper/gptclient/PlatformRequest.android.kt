@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 class AndroidPlatformRequest(
     activity: ComponentActivity,
@@ -29,7 +30,21 @@ class AndroidPlatformRequest(
     }
 
     override suspend fun getMedia(): List<String> {
-        return mediaLauncher.launch()
+        val cacheDir = context.cacheDir
+        return mediaLauncher.launch().map { uriString ->
+            withContext(Dispatchers.IO) {
+                val uri = uriString.toUri()
+                val source = ImageDecoder.createSource(context.contentResolver, uri)
+                val bitmap = ImageDecoder.decodeBitmap(source)
+
+                val file = File(cacheDir, "${System.currentTimeMillis()}.png")
+                file.outputStream().use { outputStream ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                }
+
+                file.toURI().toString()
+            }
+        }
     }
 
     override suspend fun readPngByteArray(uri: String): ByteArray? {
