@@ -32,7 +32,7 @@ class MainScreenViewModel(
         )
     ).also { uiState ->
         viewModelScope.launch {
-            appDatabase.chatRoomDao().getAllChatRoomWithStartChat().collectLatest { rooms ->
+            appDatabase.chatRoomDao().getAllChatRoomWithStartChat(isAsc = false).collectLatest { rooms ->
                 viewModelStateFlow.update { viewModelState ->
                     viewModelState.copy(
                         rooms = rooms

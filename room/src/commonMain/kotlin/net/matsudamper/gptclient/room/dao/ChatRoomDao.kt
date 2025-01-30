@@ -19,9 +19,12 @@ interface ChatRoomDao {
             AND chat.`index` = (
                 SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id
             )
+        ORDER BY  
+            CASE WHEN :isAsc == TRUE THEN chat.`create_date_at` END ASC,
+            CASE WHEN :isAsc == FALSE THEN  chat.`create_date_at` END DESC
         """
     )
-    fun getAllChatRoomWithStartChat(): Flow<List<ChatRoomWithStartChat>>
+    fun getAllChatRoomWithStartChat(isAsc: Boolean): Flow<List<ChatRoomWithStartChat>>
 
     @Query("SELECT * FROM chat_room where id = :chatRoomId")
     fun get(chatRoomId: Long): Flow<ChatRoom>
