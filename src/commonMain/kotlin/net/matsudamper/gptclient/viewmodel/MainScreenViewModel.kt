@@ -51,7 +51,8 @@ class MainScreenViewModel(
                                 items = viewModelState.rooms.map { room ->
                                     MainScreenUiState.HistoryItem(
                                         listener = HistoryItemListenerImpl(room.chatRoom.id),
-                                        text = room.textMessage.orEmpty(),
+                                        text = room.textMessage?.takeIf { it.isNotBlank() }
+                                            ?: "(空白)",
                                     )
                                 }
                             )
