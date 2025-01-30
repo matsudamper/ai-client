@@ -16,8 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -29,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
@@ -44,8 +48,26 @@ import net.matsudamper.gptclient.ui.SettingsScreen
 import net.matsudamper.gptclient.ui.platform.BackHandler
 
 data class MainScreenUiState(
+    val history: History,
     val listener: Listener,
 ) {
+    sealed interface History {
+        data object Loading : History
+        data class Loaded(
+            val items: List<HistoryItem>,
+        ) : History
+    }
+
+    data class HistoryItem(
+        val text: String,
+        val listener: HistoryItemListener
+    )
+
+    @Immutable
+    interface HistoryItemListener {
+        fun onClick()
+    }
+
     @Immutable
     interface Listener {
         fun onClickSettings()
@@ -95,6 +117,7 @@ public fun MainScreen(
                             }
                         },
                     onClickSettings = { rootUiState.listener.onClickSettings() },
+                    history = rootUiState.history,
                 )
                 Box(
                     modifier = Modifier.fillMaxHeight()
@@ -181,6 +204,7 @@ private fun Navigation(
 private fun SidePanel(
     onClickSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    history: MainScreenUiState.History,
 ) {
     Column(
         modifier = modifier.statusBarsPadding()
@@ -195,7 +219,38 @@ private fun SidePanel(
                 .padding(24.dp),
             text = "New Chat",
         )
-        Spacer(Modifier.weight(1f))
+        Text(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            text = "History",
+        )
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth()
+                .weight(1f)
+        ) {
+            when (history) {
+                is MainScreenUiState.History.Loaded -> {
+                    items(history.items) { item ->
+                        Text(
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable { item.listener.onClick() }
+                                .padding(12.dp),
+                            text = item.text
+                        )
+                    }
+                }
+
+                is MainScreenUiState.History.Loading -> {
+                    item {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+            }
+
+        }
         Row {
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onClickSettings) {

@@ -20,5 +20,4 @@ data class ChatRoom(
     @ColumnInfo(name = "builtin_project_id") val builtInProjectId: BuiltinChatRoomId? = null,
     @ColumnInfo(name = "model_name") val modelName: String,
     @ColumnInfo(name = "create_date_at") val createDateAt: Instant = Instant.now(),
-) {
-}
+)

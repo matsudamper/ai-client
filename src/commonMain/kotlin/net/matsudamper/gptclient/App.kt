@@ -75,6 +75,7 @@ internal fun App() {
                         val viewModel = viewModel(viewModelStoreOwner) {
                             MainScreenViewModel(
                                 navControllerProvider = { navController },
+                                appDatabase = getKoin().get(),
                             )
                         }
 
