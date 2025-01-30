@@ -19,7 +19,7 @@ interface ChatRoomDao {
             AND chat.`index` = (
                 SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id
             )
-    """
+        """
     )
     fun getAllChatRoomWithStartChat(): Flow<List<ChatRoomWithStartChat>>
 
