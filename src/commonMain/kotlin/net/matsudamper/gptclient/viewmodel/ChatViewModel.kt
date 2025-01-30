@@ -40,14 +40,24 @@ class ChatViewModel(
         ChatListUiState(
             items = listOf(),
             selectedMedia = listOf(),
+            visibleMediaLoading = false,
             listener = object : ChatListUiState.Listener {
                 override fun onClickImage() {
                     viewModelScope.launch {
-                        val media = platformRequest.getMedia()
-                        viewModelStateFlow.update {
-                            it.copy(
-                                selectedMedia = media,
-                            )
+                        try {
+                            viewModelStateFlow.update {
+                                it.copy(isMediaLoading = true)
+                            }
+                            val media = platformRequest.getMedia()
+                            viewModelStateFlow.update {
+                                it.copy(
+                                    selectedMedia = media,
+                                )
+                            }
+                        } finally {
+                            viewModelStateFlow.update {
+                                it.copy(isMediaLoading = false)
+                            }
                         }
                     }
                 }
@@ -111,6 +121,7 @@ class ChatViewModel(
                 uiState.update {
                     it.copy(
                         selectedMedia = viewModelState.selectedMedia,
+                        visibleMediaLoading = viewModelState.isMediaLoading,
                         items = viewModelState.chats.mapNotNull { chat ->
                             val message = chat.textMessage ?: return@mapNotNull null
                             // TODO: it.imageMessage
@@ -260,5 +271,6 @@ class ChatViewModel(
         val room: ChatRoom? = null,
         val chats: List<Chat> = listOf(),
         val selectedMedia: List<String> = listOf(),
+        val isMediaLoading: Boolean = false,
     )
 }

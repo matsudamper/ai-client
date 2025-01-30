@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,6 +38,7 @@ import net.matsudamper.gptclient.ui.component.ChatFooter
 data class ChatListUiState(
     val items: List<Item>,
     val selectedMedia: List<String>,
+    val visibleMediaLoading: Boolean,
     val listener: Listener,
 ) {
     sealed interface Item {
@@ -102,15 +104,29 @@ public fun ChatList(
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .navigationBarsPadding(),
         ) {
+            val imageModifier = Modifier.size(120.dp)
+                .padding(12.dp)
             LazyRow {
                 items(uiState.selectedMedia) { media ->
                     AsyncImage(
-                        modifier = Modifier.size(120.dp)
-                            .padding(12.dp),
+                        modifier = imageModifier,
                         model = media,
                         contentScale = ContentScale.Crop,
                         contentDescription = null,
                     )
+                }
+                if (uiState.visibleMediaLoading) {
+                    item {
+                        Box(
+                            modifier = imageModifier
+                                .background(MaterialTheme.colorScheme.secondary),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                        }
+                    }
                 }
             }
 
