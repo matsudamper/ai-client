@@ -15,10 +15,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import net.matsudamper.gptclient.Navigation
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.gpt.GptResponse
+import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
@@ -26,7 +26,7 @@ import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.ui.ChatListUiState
 
 class ChatViewModel(
-    openContext: Navigation.Chat.OpenContext,
+    openContext: Navigator.Chat.ChatOpenContext,
     private val appDatabase: AppDatabase,
     private val settingDataStore: SettingDataStore,
     private val navControllerProvider: () -> NavController,
@@ -47,7 +47,7 @@ class ChatViewModel(
     ).also { uiState ->
         viewModelScope.launch {
             when (openContext) {
-                is Navigation.Chat.OpenContext.NewMessage -> {
+                is Navigator.Chat.ChatOpenContext.NewMessage -> {
                     val room = withContext(Dispatchers.IO) {
                         val room = ChatRoom(
                             modelName = "gpt-4o-mini",
@@ -63,7 +63,7 @@ class ChatViewModel(
                     addRequest(openContext.initialMessage)
                 }
 
-                is Navigation.Chat.OpenContext.OpenChat -> {
+                is Navigator.Chat.ChatOpenContext.OpenChat -> {
                     restoreChatRoom(openContext.chatRoomId)
                 }
             }

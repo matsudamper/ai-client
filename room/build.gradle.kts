@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidxRoom)
 }
 
@@ -26,6 +27,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(libs.androidxRoomRuntime)
+                implementation(libs.kotlinxSerializationCore)
+                implementation(libs.androidxSqliteBundled)
             }
         }
     }

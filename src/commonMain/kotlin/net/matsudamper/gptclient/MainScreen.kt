@@ -33,52 +33,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import kotlinx.serialization.Serializable
-import net.matsudamper.gptclient.room.entity.ChatRoomId
+import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.ChatList
-import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChat
-import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreen
-import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.ui.platform.BackHandler
-
-@Immutable
-sealed interface Navigation {
-    @Serializable
-    data object StartChat : Navigation
-
-    @Serializable
-    data class Chat(val openContext: OpenContext) : Navigation {
-        sealed interface OpenContext {
-            data class NewMessage(val initialMessage: String) : OpenContext
-            data class OpenChat(val chatRoomId: ChatRoomId) : OpenContext
-        }
-    }
-
-    @Serializable
-    data object Settings : Navigation
-}
-
-@Immutable
-interface UiStateProvider {
-    @Composable
-    fun provideNewChatUiState(entry: NavBackStackEntry): NewChatUiState
-
-    @Composable
-    fun provideChatUiState(entry: NavBackStackEntry, navigation: Navigation.Chat): ChatListUiState
-
-    @Composable
-    fun provideSettingUiState(entry: NavBackStackEntry): SettingsScreenUiState
-
-    @Composable
-    fun provideMainScreenUiState(): MainScreenUiState
-}
 
 data class MainScreenUiState(
     val listener: Listener,
@@ -181,9 +144,9 @@ private fun Navigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Navigation.StartChat,
+        startDestination = Navigator.StartChat,
     ) {
-        composable<Navigation.StartChat> {
+        composable<Navigator.StartChat> {
             val uiState = uiStateProvider.provideNewChatUiState(entry = it)
             NewChat(
                 modifier = Modifier.fillMaxSize(),
@@ -191,9 +154,11 @@ private fun Navigation(
                 onClickMenu = { onClickMenu() },
             )
         }
-        composable<Navigation.Chat> {
-            val navigationItem = it.toRoute<Navigation.Chat>()
-            val uiState = uiStateProvider.provideChatUiState(entry = it, navigation = navigationItem)
+        composable<Navigator.Chat>(
+            typeMap = Navigator.Chat.typeMap
+        ) {
+            val navigatorItem = it.toRoute<Navigator.Chat>()
+            val uiState = uiStateProvider.provideChatUiState(entry = it, navigator = navigatorItem)
 
             ChatList(
                 modifier = Modifier.fillMaxSize(),
@@ -201,7 +166,7 @@ private fun Navigation(
                 onClickMenu = { onClickMenu() },
             )
         }
-        composable<Navigation.Settings> {
+        composable<Navigator.Settings> {
             val uiState = uiStateProvider.provideSettingUiState(entry = it)
             SettingsScreen(
                 modifier = Modifier.fillMaxSize(),

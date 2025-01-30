@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import net.matsudamper.gptclient.Navigation
+import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.NewChatUiState
 
 class NewChatViewModel(
@@ -19,7 +19,7 @@ class NewChatViewModel(
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     navControllerProvider().navigate(
-                        Navigation.Chat(Navigation.Chat.OpenContext.NewMessage(text))
+                        Navigator.Chat(Navigator.Chat.ChatOpenContext.NewMessage(text))
                     )
                 }
             }

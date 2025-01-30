@@ -5,7 +5,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.matsudamper.gptclient.MainScreenUiState
-import net.matsudamper.gptclient.Navigation
+import net.matsudamper.gptclient.navigation.Navigator
 
 class MainScreenViewModel(
     private val navControllerProvider: () -> NavController,
@@ -15,7 +15,7 @@ class MainScreenViewModel(
             listener = object : MainScreenUiState.Listener {
                 override fun onClickSettings() {
                     navControllerProvider().navigate(
-                        Navigation.Settings
+                        Navigator.Settings
                     )
                 }
             }
