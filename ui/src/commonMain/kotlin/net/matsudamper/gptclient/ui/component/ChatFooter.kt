@@ -34,7 +34,8 @@ internal fun ChatFooter(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.height(IntrinsicSize.Min)
+        modifier = modifier
+            .height(IntrinsicSize.Min)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -52,7 +53,7 @@ internal fun ChatFooter(
             decorator = { content ->
                 Box(
                     modifier = Modifier.clip(MaterialTheme.shapes.medium)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .background(MaterialTheme.colorScheme.onSecondary)
                         .padding(6.dp),
                     contentAlignment = Alignment.CenterStart,
                 ) {

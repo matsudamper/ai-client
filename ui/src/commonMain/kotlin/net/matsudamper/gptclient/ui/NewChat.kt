@@ -1,5 +1,6 @@
 package net.matsudamper.gptclient.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -66,7 +67,6 @@ public fun NewChat(
 ) {
     BoxWithConstraints(
         modifier = modifier
-            .navigationBarsPadding()
             .imePadding(),
     ) {
         val maxWidth = maxWidth
@@ -147,7 +147,9 @@ public fun NewChat(
             }
             val state = rememberTextFieldState()
             ChatFooter(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .navigationBarsPadding(),
                 state = state,
                 onClickImage = { },
                 onClickVoice = { },

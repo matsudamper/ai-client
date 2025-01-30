@@ -92,8 +92,10 @@ public fun ChatList(
         }
         val state = rememberTextFieldState()
         ChatFooter(
+            modifier = Modifier.fillMaxWidth()
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .navigationBarsPadding(),
             state = state,
-            modifier = Modifier.fillMaxWidth(),
             onClickImage = { uiState.listener.onClickImage() },
             onClickVoice = { uiState.listener.onClickVoice() },
             onClickSend = {}
