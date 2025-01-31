@@ -42,6 +42,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import net.matsudamper.gptclient.navigation.Navigator
+import net.matsudamper.gptclient.ui.BuiltinProject
 import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
 import net.matsudamper.gptclient.ui.SettingsScreen
@@ -196,6 +197,16 @@ private fun Navigation(
                 modifier = Modifier.fillMaxSize(),
                 uiState = uiState,
                 onClickMenu = { onClickMenu() }
+            )
+        }
+        composable<Navigator.BuiltinProject> {
+            val navigatorItem = it.toRoute<Navigator.BuiltinProject>()
+            val uiState = uiStateProvider.provideBuiltinProjectUiState(entry = it, navigator = navigatorItem)
+
+            BuiltinProject(
+                modifier = Modifier.fillMaxSize(),
+                uiState = uiState,
+                onClickMenu = {onClickMenu()},
             )
         }
     }

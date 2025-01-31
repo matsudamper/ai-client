@@ -11,13 +11,13 @@ import java.time.Instant
 @TypeConverters(
     InstantConverter::class,
     ChatRoomId.Converter::class,
-    BuiltinChatRoomId.Converter::class,
+    BuiltinProjectId.Converter::class,
     ProjectId.Converter::class,
 )
 data class ChatRoom(
     @ColumnInfo(name = "id") @PrimaryKey(autoGenerate = true) val id: ChatRoomId = ChatRoomId(0),
     @ColumnInfo(name = "project_id") val projectId: ProjectId? = null,
-    @ColumnInfo(name = "builtin_project_id") val builtInProjectId: BuiltinChatRoomId? = null,
+    @ColumnInfo(name = "builtin_project_id") val builtInProjectId: BuiltinProjectId? = null,
     @ColumnInfo(name = "model_name") val modelName: String,
     @ColumnInfo(name = "create_date_at") val createDateAt: Instant = Instant.now(),
 )

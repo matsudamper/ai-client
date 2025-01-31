@@ -11,9 +11,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.rememberNavController
 import net.matsudamper.gptclient.navigation.Navigator
+import net.matsudamper.gptclient.ui.BuiltinProjectUiState
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
+import net.matsudamper.gptclient.viewmodel.BuiltinProjectViewModel
 import net.matsudamper.gptclient.viewmodel.ChatViewModel
 import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
 import net.matsudamper.gptclient.viewmodel.NewChatViewModel
@@ -77,6 +79,21 @@ internal fun App() {
                             MainScreenViewModel(
                                 navControllerProvider = { navController },
                                 appDatabase = getKoin().get(),
+                            )
+                        }
+
+                        return viewModel.uiStateFlow.collectAsState().value
+                    }
+
+                    @Composable
+                    override fun provideBuiltinProjectUiState(
+                        entry: NavBackStackEntry,
+                        navigator: Navigator.BuiltinProject,
+                    ): BuiltinProjectUiState {
+                        val viewModel = viewModel(viewModelStoreOwner) {
+                            BuiltinProjectViewModel(
+                                navControllerProvider = { navController },
+                                initialProjectName = navigator.title,
                             )
                         }
 

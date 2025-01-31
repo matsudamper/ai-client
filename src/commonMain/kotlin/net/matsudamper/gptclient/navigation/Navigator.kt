@@ -3,6 +3,7 @@ package net.matsudamper.gptclient.navigation
 import androidx.compose.runtime.Immutable
 import androidx.navigation.NavType
 import kotlinx.serialization.Serializable
+import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -32,6 +33,12 @@ sealed interface Navigator {
             )
         }
     }
+
+    @Serializable
+    data class BuiltinProject(
+        val title: String,
+        val builtinProjectId: BuiltinProjectId,
+    )
 
     @Serializable
     data object Settings : Navigator
