@@ -83,9 +83,6 @@ public fun MainScreen(
     val rootUiState = uiStateProvider.provideMainScreenUiState()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
-    BackHandler(isVisibleSidePanel) {
-        isVisibleSidePanel = false
-    }
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow
             .collect {
@@ -137,9 +134,11 @@ public fun MainScreen(
                         modifier = Modifier.fillMaxHeight()
                     ) {
                         Navigation(
+                            enableNavigationBack = isVisibleSidePanel.not(),
                             navController = navController,
                             uiStateProvider = uiStateProvider,
                             onClickMenu = { isVisibleSidePanel = true },
+                            requestBack = { isVisibleSidePanel = false },
                         )
                     }
                     val alpha by animateFloatAsState(if (isVisibleSidePanel) 0.4f else 0f, tween(250))
@@ -164,6 +163,8 @@ private fun Navigation(
     navController: NavHostController,
     uiStateProvider: UiStateProvider,
     onClickMenu: () -> Unit,
+    enableNavigationBack: Boolean,
+    requestBack: () -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -198,6 +199,7 @@ private fun Navigation(
             )
         }
     }
+    BackHandler(enableNavigationBack.not()) {requestBack()}
 }
 
 @Composable
