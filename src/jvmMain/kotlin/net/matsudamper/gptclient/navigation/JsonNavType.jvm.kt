@@ -4,6 +4,9 @@ import androidx.core.bundle.Bundle
 import androidx.navigation.NavType
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Suppress("FunctionName")
 public actual fun <T> JsonNavType(kSerializer: KSerializer<T>, isNullableAllowed: Boolean) : NavType<T> {
@@ -14,15 +17,23 @@ public actual fun <T> JsonNavType(kSerializer: KSerializer<T>, isNullableAllowed
         }
 
         override fun parseValue(value: String): T {
-            return Json.decodeFromString(kSerializer, value)
+            return Json.decodeFromString(kSerializer, value.urlDecode())
         }
 
         override fun put(bundle: Bundle, key: String, value: T) {
-            bundle.putString(key, Json.encodeToString(kSerializer, value))
+            bundle.putString(key, Json.encodeToString(kSerializer, value).urlEncode())
         }
 
         override fun serializeAsValue(value: T): String {
-            return Json.encodeToString(kSerializer, value)
+            return Json.encodeToString(kSerializer, value).urlEncode()
+        }
+
+        private fun String.urlEncode(): String {
+            return URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
+        }
+
+        private fun String.urlDecode(): String {
+            return URLDecoder.decode(this, StandardCharsets.UTF_8.toString())
         }
     }
 }
