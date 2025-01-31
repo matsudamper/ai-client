@@ -21,6 +21,7 @@ import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.gpt.GptResponse
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
+import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -81,7 +82,7 @@ class ChatViewModel(
         viewModelScope.launch {
             when (openContext) {
                 is Navigator.Chat.ChatOpenContext.NewMessage -> {
-                    val room = createRoom()
+                    val room = createRoom(builtinProjectId = null)
 
                     viewModelStateFlow.update {
                         it.copy(room = room)
@@ -94,7 +95,7 @@ class ChatViewModel(
                 }
 
                 is Navigator.Chat.ChatOpenContext.NewBuiltinMessage -> {
-                    val room = createRoom()
+                    val room = createRoom(builtinProjectId = openContext.builtinProjectId)
                     viewModelStateFlow.update {
                         it.copy(room = room)
                     }
@@ -206,10 +207,11 @@ class ChatViewModel(
         }
     }
 
-    private suspend fun createRoom(): ChatRoom {
+    private suspend fun createRoom(builtinProjectId: BuiltinProjectId?): ChatRoom {
         return withContext(Dispatchers.IO) {
             val room = ChatRoom(
                 modelName = "gpt-4o-mini", // TODO SELECT
+                builtInProjectId = builtinProjectId,
             )
             room.copy(
                 id = ChatRoomId(appDatabase.chatRoomDao().insert(room))
