@@ -3,6 +3,7 @@ package net.matsudamper.gptclient.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -154,30 +155,36 @@ public fun ChatList(
     }
 }
 
+private val AgentUserHorizontalPadding = 24.dp
+private val ChatHorizontalPadding = 12.dp
+
 @Composable
 private fun AgentItem(
     item: ChatListUiState.Message.Agent,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
-        Spacer(modifier = Modifier.width(24.dp))
+    Row(modifier = modifier) {
         Box(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
             contentAlignment = Alignment.CenterStart,
         ) {
-            when(val content = item.content) {
+            when (val content = item.content) {
                 is ChatListUiState.MessageContent.Text -> {
                     TextContentItem(
+                        modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
                         item = content,
                     )
                 }
+
                 is ChatListUiState.MessageContent.Image -> {
                     ImageContentItem(
+                        modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
                         item = content,
                     )
                 }
             }
         }
+        Spacer(modifier = Modifier.width(AgentUserHorizontalPadding))
     }
 }
 
@@ -186,26 +193,29 @@ private fun UserItem(
     item: ChatListUiState.Message.User,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
+    Row(modifier = modifier) {
+        Spacer(modifier = Modifier.width(AgentUserHorizontalPadding))
         Box(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
             contentAlignment = Alignment.CenterEnd,
         ) {
-            when(val content = item.content) {
+            when (val content = item.content) {
                 is ChatListUiState.MessageContent.Text -> {
                     TextContentItem(
+                        modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
                         item = content,
                     )
                 }
+
                 is ChatListUiState.MessageContent.Image -> {
                     ImageContentItem(
+                        modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
                         item = content,
                     )
                 }
             }
         }
     }
-    Spacer(modifier = Modifier.width(24.dp))
 }
 
 @Composable
@@ -215,7 +225,6 @@ private fun TextContentItem(
 ) {
     Text(
         modifier = modifier
-            .padding(horizontal = 24.dp)
             .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(6.dp),

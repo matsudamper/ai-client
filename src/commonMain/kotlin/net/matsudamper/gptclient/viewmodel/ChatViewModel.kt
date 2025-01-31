@@ -267,7 +267,7 @@ class ChatViewModel(
                     chatRoomId = chatRoomId,
                     index = newChatIndex + 1 + index,
                     textMessage = choice.message.content,
-                    imageUri = null, // TODO
+                    imageUri = null,
                     role = when (choice.message.role) {
                         GptResponse.Choice.Role.System -> {
                             Chat.Role.System
