@@ -93,7 +93,8 @@ internal fun App() {
                         val viewModel = viewModel(viewModelStoreOwner) {
                             BuiltinProjectViewModel(
                                 navControllerProvider = { navController },
-                                initialProjectName = navigator.title,
+                                navigator = navigator,
+                                platformRequest = getKoin().get(),
                             )
                         }
 

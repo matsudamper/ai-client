@@ -81,14 +81,7 @@ class ChatViewModel(
         viewModelScope.launch {
             when (openContext) {
                 is Navigator.Chat.ChatOpenContext.NewMessage -> {
-                    val room = withContext(Dispatchers.IO) {
-                        val room = ChatRoom(
-                            modelName = "gpt-4o-mini", // TODO SELECT
-                        )
-                        room.copy(
-                            id = ChatRoomId(appDatabase.chatRoomDao().insert(room))
-                        )
-                    }
+                    val room = createRoom()
 
                     viewModelStateFlow.update {
                         it.copy(room = room)
@@ -98,6 +91,24 @@ class ChatViewModel(
 
                 is Navigator.Chat.ChatOpenContext.OpenChat -> {
                     restoreChatRoom(openContext.chatRoomId)
+                }
+
+                is Navigator.Chat.ChatOpenContext.NewBuiltinMessage -> {
+                    val room = createRoom()
+                    viewModelStateFlow.update {
+                        it.copy(room = room)
+                    }
+
+                    val builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
+                        openContext.builtinProjectId,
+                    )
+                    viewModelStateFlow.update {
+                        it.copy(builtinProjectInfo = builtinProjectInfo)
+                    }
+                    addRequest(
+                        message = openContext.initialMessage,
+                        uris = openContext.uriList,
+                    )
                 }
             }
         }
@@ -195,6 +206,17 @@ class ChatViewModel(
         }
     }
 
+    private suspend fun createRoom(): ChatRoom {
+        return withContext(Dispatchers.IO) {
+            val room = ChatRoom(
+                modelName = "gpt-4o-mini", // TODO SELECT
+            )
+            room.copy(
+                id = ChatRoomId(appDatabase.chatRoomDao().insert(room))
+            )
+        }
+    }
+
     private fun addRequest(message: String, uris: List<String> = listOf()) {
         viewModelScope.launch {
             val chatRoomId = viewModelStateFlow.value.room?.id ?: return@launch
@@ -229,6 +251,13 @@ class ChatViewModel(
             val chats = chatDao.get(chatRoomId = chatRoomId.value)
                 .first()
 
+            val systemMessage = run {
+                val systemInfo = viewModelStateFlow.value.builtinProjectInfo ?: return@run null
+                ChatGptClient.GptMessage(
+                    role = ChatGptClient.GptMessage.Role.System,
+                    contents = listOf(ChatGptClient.GptMessage.Content.Text(systemInfo.systemMessage))
+                )
+            }
             val messages = chats.map {
                 val role = when (it.role) {
                     Chat.Role.System -> ChatGptClient.GptMessage.Role.System
@@ -260,7 +289,10 @@ class ChatViewModel(
                 )
             }
             val response = getGptClient().request(
-                messages = messages,
+                messages = buildList {
+                    add(systemMessage)
+                    addAll(messages)
+                }.filterNotNull(),
             )
             val roomChats = response.choices.mapIndexed { index, choice ->
                 Chat(
@@ -303,5 +335,6 @@ class ChatViewModel(
         val chats: List<Chat> = listOf(),
         val selectedMedia: List<String> = listOf(),
         val isMediaLoading: Boolean = false,
+        val builtinProjectInfo: GetBuiltinProjectInfoUseCase.Info? = null,
     )
 }

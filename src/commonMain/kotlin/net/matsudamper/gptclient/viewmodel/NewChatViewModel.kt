@@ -33,6 +33,7 @@ class NewChatViewModel(
                 )
             ),
             selectedMedia = listOf(),
+            visibleMediaLoading = false,
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     navControllerProvider().navigate(

@@ -41,6 +41,7 @@ import kotlin.math.ceil
 public data class NewChatUiState(
     val projects: List<Project>,
     val selectedMedia: List<String>,
+    val visibleMediaLoading: Boolean,
     val listener: Listener,
 ) {
     data class Project(
@@ -160,14 +161,15 @@ public fun NewChat(
             }
             val state = rememberTextFieldState()
             ChatFooter(
-                state = state,
+                textFieldState = state,
                 onClickImage = { },
                 onClickVoice = { },
                 onClickSend = { uiState.listener.send(state.text.toString()) },
+                selectedMedia = uiState.selectedMedia,
+                visibleMediaLoading = uiState.visibleMediaLoading,
                 modifier = Modifier.fillMaxWidth()
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .navigationBarsPadding(),
-                selectedMedia = uiState.selectedMedia,
             )
         }
     }

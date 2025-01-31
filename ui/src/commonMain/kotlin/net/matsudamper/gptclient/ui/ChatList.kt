@@ -12,13 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -113,43 +111,18 @@ public fun ChatList(
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .navigationBarsPadding(),
         ) {
-            val imageModifier = Modifier.size(120.dp)
-                .padding(12.dp)
-            LazyRow {
-                items(uiState.selectedMedia) { media ->
-                    AsyncImage(
-                        modifier = imageModifier,
-                        model = media,
-                        contentScale = ContentScale.Crop,
-                        contentDescription = null,
-                    )
-                }
-                if (uiState.visibleMediaLoading) {
-                    item {
-                        Box(
-                            modifier = imageModifier
-                                .background(MaterialTheme.colorScheme.secondary),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator(
-                                color = MaterialTheme.colorScheme.onSecondary
-                            )
-                        }
-                    }
-                }
-            }
-
             val state = rememberTextFieldState()
             ChatFooter(
                 modifier = Modifier.fillMaxWidth(),
-                state = state,
+                textFieldState = state,
                 onClickImage = { uiState.listener.onClickImage() },
                 onClickVoice = { uiState.listener.onClickVoice() },
+                selectedMedia = uiState.selectedMedia,
+                visibleMediaLoading = uiState.visibleMediaLoading,
                 onClickSend = {
                     uiState.listener.onClickSend(state.text.toString())
                     state.clearText()
                 },
-                selectedMedia = uiState.selectedMedia,
             )
         }
     }
