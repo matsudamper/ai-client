@@ -220,6 +220,8 @@ class ChatViewModel(
     }
 
     private fun addRequest(message: String, uris: List<String> = listOf()) {
+        if (message.isEmpty() && uris.isEmpty()) return
+
         viewModelScope.launch {
             val chatRoomId = viewModelStateFlow.value.room?.id ?: return@launch
             val chatDao = appDatabase.chatDao()
@@ -227,7 +229,6 @@ class ChatViewModel(
                 chatRoomId = chatRoomId.value,
             )
             val newChatIndex = lastItem?.index?.plus(1) ?: 0
-
             chatDao.insertAll(
                 uris
                     .map {
@@ -240,15 +241,17 @@ class ChatViewModel(
                         )
                     }
             )
-            chatDao.insertAll(
-                Chat(
-                    chatRoomId = chatRoomId,
-                    index = newChatIndex,
-                    textMessage = message,
-                    imageUri = null,
-                    role = Chat.Role.User,
+            if (message.isNotEmpty()) {
+                chatDao.insertAll(
+                    Chat(
+                        chatRoomId = chatRoomId,
+                        index = newChatIndex,
+                        textMessage = message,
+                        imageUri = null,
+                        role = Chat.Role.User,
+                    )
                 )
-            )
+            }
 
             val chats = chatDao.get(chatRoomId = chatRoomId.value)
                 .first()
