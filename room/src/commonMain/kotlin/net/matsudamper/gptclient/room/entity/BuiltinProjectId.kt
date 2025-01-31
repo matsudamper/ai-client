@@ -13,4 +13,5 @@ value class BuiltinProjectId(val id: String) {
         @TypeConverter
         fun toString(value: BuiltinProjectId): String = value.id
     }
+    companion object;
 } 
