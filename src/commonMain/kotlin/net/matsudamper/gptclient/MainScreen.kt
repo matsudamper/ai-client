@@ -208,11 +208,11 @@ private fun Navigation(
             BuiltinProject(
                 modifier = Modifier.fillMaxSize(),
                 uiState = uiState,
-                onClickMenu = {onClickMenu()},
+                onClickMenu = { onClickMenu() },
             )
         }
     }
-    BackHandler(enableNavigationBack.not()) {requestBack()}
+    BackHandler(enableNavigationBack.not()) { requestBack() }
 }
 
 @Composable
