@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,7 +73,7 @@ public fun NewChat(
         val maxWidth = maxWidth
         Column {
             val projectModifier = Modifier.fillMaxWidth()
-                .height(300.dp)
+                .height(150.dp)
 
             TopAppBar(
                 modifier = Modifier,
@@ -101,7 +102,7 @@ public fun NewChat(
                         }.toFloat()
                     ).toInt()
                 ),
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.Center,
             ) {
                 item(
@@ -119,7 +120,19 @@ public fun NewChat(
                 items(uiState.projects) { project ->
                     Project(
                         modifier = projectModifier,
-                        content = { Text(project.name) },
+                        content = {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Favorite,
+                                    contentDescription = null
+                                )
+                                Text(project.name)
+                            }
+                        },
                         onClick = { project.listener.onClick() },
                     )
                 }

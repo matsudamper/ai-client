@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -240,7 +241,7 @@ private fun SidePanel(
         )
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
-                .weight(1f)
+                .weight(1f),
         ) {
             when (history) {
                 is MainScreenUiState.History.Loaded -> {
