@@ -4,6 +4,7 @@ import androidx.room.useWriterConnection
 import kotlinx.coroutines.flow.first
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.gpt.GptResponse
 import net.matsudamper.gptclient.room.AppDatabase
@@ -24,8 +25,8 @@ class AddRequestUseCase(
         uris: List<String>,
         format: ChatGptClient.Format,
         systemMessage: String?,
-    ) {
-        if (message.isEmpty() && uris.isEmpty()) return
+    ): Result {
+        if (message.isEmpty() && uris.isEmpty()) return Result.InputError
         val chatDao = appDatabase.chatDao()
         val lastItem = chatDao.getChatRoomLastIndexItem(
             chatRoomId = chatRoomId.value,
@@ -38,13 +39,20 @@ class AddRequestUseCase(
             chatRoomId = chatRoomId,
         )
 
-        val response = gptClientProvider(settingDataStore.getSecretKey()).request(
-            messages = createMessage(
-                systemMessage = systemMessage,
-                chatRoomId = chatRoomId,
-            ),
-            format = format,
-        )
+
+        val response = when (val response = gptClientProvider(settingDataStore.getSecretKey())
+            .request(
+                messages = createMessage(
+                    systemMessage = systemMessage,
+                    chatRoomId = chatRoomId,
+                ),
+                format = format,
+                model = ChatGptModel.Gpt4oMini
+            )
+        ) {
+            is ChatGptClient.GptResult.Error -> return Result.GptResultError(response)
+            is ChatGptClient.GptResult.Success -> response.response
+        }
         val roomChats = response.choices.mapIndexed { index, choice ->
             Chat(
                 chatRoomId = chatRoomId,
@@ -74,6 +82,8 @@ class AddRequestUseCase(
                 insertAll(*roomChats.toTypedArray())
             }
         }
+
+        return Result.Success
     }
 
     private suspend fun insertNewMessage(
@@ -157,5 +167,11 @@ class AddRequestUseCase(
             add(systemMessage)
             addAll(messages)
         }.filterNotNull()
+    }
+
+    sealed interface Result {
+        data object Success : Result
+        data class GptResultError(val gptError: ChatGptClient.GptResult.Error) : Result
+        data object InputError : Result
     }
 }

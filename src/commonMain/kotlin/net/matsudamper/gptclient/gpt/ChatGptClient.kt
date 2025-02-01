@@ -16,14 +16,16 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import net.matsudamper.gptclient.entity.ChatGptModel
 
 class ChatGptClient(
     private val secretKey: String,
 ) {
     suspend fun request(
         messages: List<GptMessage>,
-        format: Format
-    ): GptResponse {
+        format: Format,
+        model: ChatGptModel,
+    ): GptResult {
         val requestMessages = messages.map { message ->
             val role = when (message.role) {
                 GptMessage.Role.Assistant -> GptRequest.Role.Assistant
@@ -40,6 +42,9 @@ class ChatGptClient(
                     }
 
                     is GptMessage.Content.ImageUrl -> {
+                        if (model.enableImage.not()) {
+                            return GptResult.Error(GptResult.ErrorReason.ImageNotSupported)
+                        }
                         GptRequest.Content(
                             type = "image_url",
                             imageUrl = GptRequest.ImageUrl(content.imageUrl)
@@ -61,7 +66,7 @@ class ChatGptClient(
             )
         }
         val sampleGptRequest = GptRequest(
-            model = "gpt-4o-mini",
+            model = model.modelName,
             messages = requestMessages,
             responseFormat = GptRequest.ResponseFormat(
                 type = when (format) {
@@ -96,10 +101,20 @@ class ChatGptClient(
         val responseJson = response.bodyAsText()
         println("Response->${responseJson}")
         return try {
-            Json.decodeFromString(GptResponse.serializer(), responseJson)
+            GptResult.Success(Json.decodeFromString(GptResponse.serializer(), responseJson))
         } catch (e: SerializationException) {
             System.err.println(responseJson)
-            throw e
+            GptResult.Error(GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
+        }
+    }
+
+    sealed interface GptResult {
+        data class Success(val response: GptResponse) : GptResult
+        data class Error(val reason: ErrorReason) : GptResult
+
+        sealed interface ErrorReason {
+            data object ImageNotSupported : ErrorReason
+            data class Unknown(val message: String) : ErrorReason
         }
     }
 
