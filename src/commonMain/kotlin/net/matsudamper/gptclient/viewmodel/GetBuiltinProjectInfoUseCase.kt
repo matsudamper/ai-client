@@ -24,7 +24,7 @@ class GetBuiltinProjectInfoUseCase {
                                     "start_date": "開始日付、時間のISO8601(String)",
                                     "end_date": "終了日付、時間のISO8601。無ければ、内容から推測して12時間以内で設定して(String)",
                                     "title": "カレンダーのタイトル(String)",
-                                    "location": "nullable, 住所等の情報(String?)",
+                                    "location": "nullable, 場所の名前(String?)",
                                     "description": "補足情報(String?)"
                                 }
                             ]
