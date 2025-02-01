@@ -58,6 +58,8 @@ public data class NewChatUiState(
     @Immutable
     interface Listener {
         fun send(text: String)
+        fun onClickSelectMedia()
+        fun onClickVoice()
     }
 }
 
@@ -163,8 +165,8 @@ public fun NewChat(
             val state = rememberTextFieldState()
             ChatFooter(
                 textFieldState = state,
-                onClickImage = { },
-                onClickVoice = { },
+                onClickImage = { uiState.listener.onClickSelectMedia() },
+                onClickVoice = { uiState.listener.onClickVoice() },
                 onClickSend = {
                     uiState.listener.send(state.text.toString())
                     state.clearText()

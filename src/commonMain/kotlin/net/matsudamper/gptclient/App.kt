@@ -42,6 +42,7 @@ internal fun App() {
                         val viewModel = viewModel(entry) {
                             NewChatViewModel(
                                 navControllerProvider = { navController },
+                                platformRequest = getKoin().get(),
                             )
                         }
                         return viewModel.uiState.collectAsState().value
