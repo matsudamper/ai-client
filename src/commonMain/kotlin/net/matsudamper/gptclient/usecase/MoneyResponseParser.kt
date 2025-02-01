@@ -35,7 +35,8 @@ class MoneyResponseParser() {
                                 "?action=TEMPLATE" +
                                 "&title=${result.title.encodeURLParameter()}" +
                                 "&date=${date}" +
-                                "&price=${result.description.orEmpty().encodeURLParameter()}"
+                                "&price=${result.amount}"
+                                "&description=${result.description.orEmpty().encodeURLParameter()}"
                         pushLink(LinkAnnotation.Url(googleCalendarUrl))
                         withStyle(SpanStyle(color = Color.Blue)) {
                             append("Google Calendar追加リンク")
