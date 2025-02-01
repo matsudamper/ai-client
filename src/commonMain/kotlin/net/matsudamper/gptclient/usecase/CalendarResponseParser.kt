@@ -17,12 +17,12 @@ import java.time.temporal.ChronoField
 class CalendarResponseParser() {
     fun parse(original: String): AnnotatedString {
         return try {
-            val result = Json.decodeFromString<CalendarGptResponse>(original)
-            if (result.results.isEmpty()) {
-                AnnotatedString(result.errorMessage ?: original)
+            val response = Json.decodeFromString<CalendarGptResponse>(original)
+            if (response.results.isEmpty()) {
+                AnnotatedString(response.errorMessage ?: original)
             } else {
                 buildAnnotatedString {
-                    for (result in result.results) {
+                    for ((index, result) in response.results.withIndex()) {
                         appendLine(result.title)
                         appendLine("日時: ${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}")
                         appendLine("場所: ${result.location}")
@@ -38,10 +38,13 @@ class CalendarResponseParser() {
                                 "&location=${result.location.orEmpty().encodeURLParameter()}"
                         pushLink(LinkAnnotation.Url(googleCalendarUrl))
                         withStyle(SpanStyle(color = Color.Blue)) {
-                            appendLine("Google Calendar追加リンク")
+                            append("Google Calendar追加リンク")
                         }
                         pop()
-                        appendLine()
+                        if (index < response.results.size - 1) {
+                            appendLine()
+                            appendLine()
+                        }
                     }
                 }
             }
