@@ -83,7 +83,6 @@ fun BuiltinProject(
 ) {
     Column(
         modifier = modifier
-            .navigationBarsPadding()
             .imePadding(),
     ) {
         TopAppBar(
