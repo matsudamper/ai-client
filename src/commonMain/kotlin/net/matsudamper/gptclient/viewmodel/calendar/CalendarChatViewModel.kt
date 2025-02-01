@@ -9,8 +9,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.ktor.http.encodeURLParameter
-import io.ktor.serialization.JsonConvertException
-import io.ktor.utils.io.printStack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -34,10 +33,11 @@ import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
 import net.matsudamper.gptclient.viewmodel.CreateChatMessageUiStateUseCase
 import net.matsudamper.gptclient.viewmodel.GetBuiltinProjectInfoUseCase
-import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.temporal.ChronoField
+
 
 class CalendarChatViewModel(
     openContext: Navigator.CalendarChat.ChatOpenContext,
@@ -137,38 +137,7 @@ class CalendarChatViewModel(
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             agentTransformer = { original ->
-                                try {
-                                    val result = Json.decodeFromString<CalendarGptResponse>(original)
-                                    if (result.results.isEmpty()) {
-                                        AnnotatedString(result.errorMessage ?: original)
-                                    } else {
-                                        buildAnnotatedString {
-                                            for (result in result.results) {
-                                                appendLine(result.title)
-                                                appendLine("日時: ${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}")
-                                                appendLine("場所: ${result.location}")
-                                                appendLine("説明: ${result.description}")
-
-                                                val googleCalendarUrl = "https://calendar.google.com/calendar/render" +
-                                                        "?action=TEMPLATE" +
-                                                        "&text=${result.title.encodeURLParameter()}" +
-                                                        "&dates=${result.startDate.toGoogleCalendarFormat()}/${result.endDate.toGoogleCalendarFormat()}" +
-                                                        "&details=${
-                                                            result.description.orEmpty().encodeURLParameter()
-                                                        }" +
-                                                        "&location=${result.location.orEmpty().encodeURLParameter()}"
-                                                pushLink(LinkAnnotation.Url(googleCalendarUrl))
-                                                withStyle(SpanStyle(color = Color.Blue)) {
-                                                    append("Google Calendar追加リンク")
-                                                }
-                                                pop()
-                                            }
-                                        }
-                                    }
-                                } catch (e: Throwable) {
-                                    e.printStackTrace()
-                                    AnnotatedString(original)
-                                }
+                                calendarResponseTransformer(original)
                             }
                         ),
                     )
@@ -189,6 +158,41 @@ class CalendarChatViewModel(
         }
     }
 
+    private fun calendarResponseTransformer(original: String): AnnotatedString {
+        return try {
+            val result = Json.decodeFromString<CalendarGptResponse>(original)
+            if (result.results.isEmpty()) {
+                AnnotatedString(result.errorMessage ?: original)
+            } else {
+                buildAnnotatedString {
+                    for (result in result.results) {
+                        appendLine(result.title)
+                        appendLine("日時: ${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}")
+                        appendLine("場所: ${result.location}")
+                        appendLine("説明: ${result.description}")
+
+                        val googleCalendarUrl = "https://calendar.google.com/calendar/render" +
+                                "?action=TEMPLATE" +
+                                "&text=${result.title.encodeURLParameter()}" +
+                                "&dates=${result.startDate.toGoogleCalendarFormat()}/${result.endDate.toGoogleCalendarFormat()}" +
+                                "&details=${
+                                    result.description.orEmpty().encodeURLParameter()
+                                }" +
+                                "&location=${result.location.orEmpty().encodeURLParameter()}"
+                        pushLink(LinkAnnotation.Url(googleCalendarUrl))
+                        withStyle(SpanStyle(color = Color.Blue)) {
+                            append("Google Calendar追加リンク")
+                        }
+                        pop()
+                    }
+                }
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            AnnotatedString(original)
+        }
+    }
+
     private suspend fun createRoom(builtinProjectId: BuiltinProjectId?): ChatRoom {
         return withContext(Dispatchers.IO) {
             val room = ChatRoom(
@@ -205,7 +209,7 @@ class CalendarChatViewModel(
         if (message.isEmpty() && uris.isEmpty()) return
         val systemInfo = viewModelStateFlow.value.builtinProjectInfo ?: return
         val chatRoomId = viewModelStateFlow.value.room?.id ?: return
-
+        println("addRequest")
         viewModelScope.launch {
             insertDataAndAddRequestUseCase.add(
                 chatRoomId = chatRoomId,
@@ -217,8 +221,11 @@ class CalendarChatViewModel(
         }
     }
 
-    private fun Instant.toGoogleCalendarFormat(): String {
-        with(LocalDateTime.ofInstant(this, ZoneOffset.ofHours(9))) {
+    private fun LocalDateTime.toGoogleCalendarFormat(): String {
+        with(
+            atZone(ZoneId.systemDefault()).toOffsetDateTime()
+                .withOffsetSameInstant(ZoneOffset.UTC)
+        ) {
             val year = get(ChronoField.YEAR)
             val month = get(ChronoField.MONTH_OF_YEAR).toString().padStart(2, '0')
             val dayOfMonth = get(ChronoField.DAY_OF_MONTH).toString().padStart(2, '0')
@@ -228,8 +235,8 @@ class CalendarChatViewModel(
         }
     }
 
-    private fun Instant.toDisplayFormat(): String {
-        with(LocalDateTime.ofInstant(this, ZoneOffset.ofHours(9))) {
+    private fun LocalDateTime.toDisplayFormat(): String {
+        with(atZone(ZoneId.systemDefault()).toOffsetDateTime()) {
             val year = get(ChronoField.YEAR)
             val month = get(ChronoField.MONTH_OF_YEAR).toString().padStart(2, '0')
             val dayOfMonth = get(ChronoField.DAY_OF_MONTH).toString().padStart(2, '0')
