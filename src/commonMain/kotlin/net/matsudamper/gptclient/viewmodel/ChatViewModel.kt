@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -144,7 +145,6 @@ class ChatViewModel(
 
     private fun addRequest(message: String, uris: List<String> = listOf()) {
         if (message.isEmpty() && uris.isEmpty()) return
-        val systemInfo = viewModelStateFlow.value.builtinProjectInfo ?: return
         val chatRoomId = viewModelStateFlow.value.room?.id ?: return
 
         viewModelScope.launch {
@@ -152,8 +152,8 @@ class ChatViewModel(
                 chatRoomId = chatRoomId,
                 message = message,
                 uris = uris,
-                systemMessage = systemInfo.systemMessage,
-                format = systemInfo.format,
+                systemMessage = null,
+                format = ChatGptClient.Format.Text,
             )
         }
     }
@@ -163,6 +163,5 @@ class ChatViewModel(
         val chats: List<Chat> = listOf(),
         val selectedMedia: List<String> = listOf(),
         val isMediaLoading: Boolean = false,
-        val builtinProjectInfo: GetBuiltinProjectInfoUseCase.Info? = null,
     )
 }
