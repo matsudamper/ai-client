@@ -91,7 +91,11 @@ class MainScreenViewModel(
     private inner class HistoryItemListenerImpl(val roomId: ChatRoomId) : MainScreenUiState.HistoryItemListener {
         override fun onClick() {
             val navHostController: NavHostController = navControllerProvider()
-            navHostController.navigate(Navigator.Chat(Navigator.Chat.ChatOpenContext.OpenChat(roomId)))
+            navHostController.navigate(Navigator.Chat(Navigator.Chat.ChatOpenContext.OpenChat(roomId))) {
+                popUpTo(navHostController.graph.startDestinationRoute!!) {
+                    inclusive = false
+                }
+            }
         }
     }
 
