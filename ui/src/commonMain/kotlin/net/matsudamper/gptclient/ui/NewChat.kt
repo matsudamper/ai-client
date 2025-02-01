@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -164,7 +165,10 @@ public fun NewChat(
                 textFieldState = state,
                 onClickImage = { },
                 onClickVoice = { },
-                onClickSend = { uiState.listener.send(state.text.toString()) },
+                onClickSend = {
+                    uiState.listener.send(state.text.toString())
+                    state.clearText()
+                },
                 selectedMedia = uiState.selectedMedia,
                 visibleMediaLoading = uiState.visibleMediaLoading,
                 modifier = Modifier.fillMaxWidth()
