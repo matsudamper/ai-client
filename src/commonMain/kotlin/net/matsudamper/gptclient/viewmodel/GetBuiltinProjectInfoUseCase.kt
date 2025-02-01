@@ -43,9 +43,9 @@ class GetBuiltinProjectInfoUseCase {
             BuiltinProjectId.Money -> {
                 Info(
                     systemMessage = """
-                        画像から家計簿に予定を追加できる情報が欲しいです。複数あれば全て作成してください。必要な情報が無ければerror_messageで聞き返してください。
-                        あなたは今日の日付を知りません。
                         error_messageが存在する場合はresultsは必ず空の配列でなければなりません。
+                        画像から家計簿に予定を追加できる情報が欲しいです。複数あれば全て作成してください。画像に必要な情報が無ければerror_messageで聞き返してください。
+                        あなたは今日の日付を知りません。
                         時刻は全てOffsetなしとして扱ってください。
                         以下のJSONフォーマットに従ってください。
                         ```json
