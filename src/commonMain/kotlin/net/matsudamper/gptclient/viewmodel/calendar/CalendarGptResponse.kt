@@ -12,7 +12,7 @@ data class CalendarGptResponse(
 ) {
     @Serializable
     data class Result(
-        @Serializable(with =ISO8601LocalDateTimeSerializer::class)
+        @Serializable(with = ISO8601LocalDateTimeSerializer::class)
         @SerialName("start_date") val startDate: LocalDateTime,
         @Serializable(with = ISO8601LocalDateTimeSerializer::class)
         @SerialName("end_date") val endDate: LocalDateTime,
