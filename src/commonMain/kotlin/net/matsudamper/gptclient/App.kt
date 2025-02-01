@@ -10,11 +10,13 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.rememberNavController
+import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.BuiltinProjectUiState
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
+import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
 import net.matsudamper.gptclient.viewmodel.BuiltinProjectViewModel
 import net.matsudamper.gptclient.viewmodel.CalendarChatViewModel
 import net.matsudamper.gptclient.viewmodel.ChatViewModel
@@ -54,9 +56,8 @@ internal fun App() {
                             val koin = getKoin()
                             ChatViewModel(
                                 platformRequest = koin.get(),
-                                settingDataStore = koin.get(),
                                 openContext = navigation.openContext,
-                                navControllerProvider = { navController },
+                                insertDataAndAddRequestUseCase = createInsertDataAndAddRequestUseCase(),
                                 appDatabase = koin.get(),
                             )
                         }
@@ -72,10 +73,9 @@ internal fun App() {
                             val koin = getKoin()
                             CalendarChatViewModel(
                                 platformRequest = koin.get(),
-                                settingDataStore = koin.get(),
                                 openContext = navigator.openContext,
-                                navControllerProvider = { navController },
                                 appDatabase = koin.get(),
+                                insertDataAndAddRequestUseCase = createInsertDataAndAddRequestUseCase()
                             )
                         }
                         return viewModel.uiStateFlow.collectAsState().value
@@ -119,6 +119,16 @@ internal fun App() {
                         }
 
                         return viewModel.uiStateFlow.collectAsState().value
+                    }
+
+                    private fun createInsertDataAndAddRequestUseCase(): AddRequestUseCase {
+                        val koin = getKoin()
+                        return AddRequestUseCase(
+                            appDatabase = koin.get(),
+                            platformRequest = koin.get(),
+                            gptClientProvider = { secretKey -> ChatGptClient(secretKey) },
+                            settingDataStore = koin.get(),
+                        )
                     }
                 }
             }

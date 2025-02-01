@@ -2,8 +2,6 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
-import androidx.room.useWriterConnection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,9 +14,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
-import net.matsudamper.gptclient.datastore.SettingDataStore
-import net.matsudamper.gptclient.gpt.ChatGptClient
-import net.matsudamper.gptclient.gpt.GptResponse
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -26,15 +21,12 @@ import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.ui.ChatListUiState
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 
 class CalendarChatViewModel(
     openContext: Navigator.CalendarChat.ChatOpenContext,
     private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
-    private val settingDataStore: SettingDataStore,
-    private val navControllerProvider: () -> NavController,
+    private val insertDataAndAddRequestUseCase: AddRequestUseCase,
 ) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
@@ -158,120 +150,18 @@ class CalendarChatViewModel(
 
     private fun addRequest(message: String, uris: List<String> = listOf()) {
         if (message.isEmpty() && uris.isEmpty()) return
+        val systemInfo = viewModelStateFlow.value.builtinProjectInfo ?: return
+        val chatRoomId = viewModelStateFlow.value.room?.id ?: return
 
         viewModelScope.launch {
-            val chatRoomId = viewModelStateFlow.value.room?.id ?: return@launch
-            val chatDao = appDatabase.chatDao()
-            val lastItem = chatDao.getChatRoomLastIndexItem(
-                chatRoomId = chatRoomId.value,
+            insertDataAndAddRequestUseCase.add(
+                chatRoomId = chatRoomId,
+                message = message,
+                uris = uris,
+                systemMessage = systemInfo.systemMessage,
+                format = systemInfo.format,
             )
-            val newChatIndex = lastItem?.index?.plus(1) ?: 0
-            chatDao.insertAll(
-                uris
-                    .map {
-                        Chat(
-                            chatRoomId = chatRoomId,
-                            index = newChatIndex,
-                            textMessage = null,
-                            imageUri = it,
-                            role = Chat.Role.User,
-                        )
-                    }
-            )
-            if (message.isNotEmpty()) {
-                chatDao.insertAll(
-                    Chat(
-                        chatRoomId = chatRoomId,
-                        index = newChatIndex,
-                        textMessage = message,
-                        imageUri = null,
-                        role = Chat.Role.User,
-                    )
-                )
-            }
-
-            val chats = chatDao.get(chatRoomId = chatRoomId.value)
-                .first()
-
-            val systemMessage = run {
-                val systemInfo = viewModelStateFlow.value.builtinProjectInfo ?: return@run null
-                ChatGptClient.GptMessage(
-                    role = ChatGptClient.GptMessage.Role.System,
-                    contents = listOf(ChatGptClient.GptMessage.Content.Text(systemInfo.systemMessage))
-                )
-            }
-            val messages = chats.map {
-                val role = when (it.role) {
-                    Chat.Role.System -> ChatGptClient.GptMessage.Role.System
-                    Chat.Role.User -> ChatGptClient.GptMessage.Role.User
-                    Chat.Role.Assistant -> ChatGptClient.GptMessage.Role.Assistant
-                    Chat.Role.Unknown -> ChatGptClient.GptMessage.Role.User
-                }
-                val contents = buildList {
-                    val textMessage = it.textMessage
-                    if (textMessage != null) {
-                        add(ChatGptClient.GptMessage.Content.Text(textMessage))
-                    }
-                    val imageMessage = it.imageUri
-                    if (imageMessage != null) {
-                        val byteArray = platformRequest.readPngByteArray(uri = imageMessage)
-                        byteArray!!
-                        add(
-                            ChatGptClient.GptMessage.Content.Base64Image(
-                                @OptIn(ExperimentalEncodingApi::class)
-                                Base64.encode(byteArray)
-                            )
-                        )
-                    }
-                }
-
-                ChatGptClient.GptMessage(
-                    role = role,
-                    contents = contents
-                )
-            }
-            val response = getGptClient().request(
-                messages = buildList {
-                    add(systemMessage)
-                    addAll(messages)
-                }.filterNotNull(),
-                format = viewModelStateFlow.value.builtinProjectInfo?.format
-                    ?: ChatGptClient.Format.Text,
-            )
-            val roomChats = response.choices.mapIndexed { index, choice ->
-                Chat(
-                    chatRoomId = chatRoomId,
-                    index = newChatIndex + 1 + index,
-                    textMessage = choice.message.content,
-                    imageUri = null,
-                    role = when (choice.message.role) {
-                        GptResponse.Choice.Role.System -> {
-                            Chat.Role.System
-                        }
-
-                        GptResponse.Choice.Role.User -> {
-                            Chat.Role.User
-                        }
-
-                        GptResponse.Choice.Role.Assistant -> {
-                            Chat.Role.Assistant
-                        }
-
-                        null -> Chat.Role.User
-                    }
-                )
-            }
-
-            appDatabase.useWriterConnection {
-                appDatabase.chatDao().apply {
-                    insertAll(*roomChats.toTypedArray())
-                }
-            }
         }
-    }
-
-    private suspend fun getGptClient(): ChatGptClient {
-        return ChatGptClient(settingDataStore.getSecretKey())
     }
 
     private data class ViewModelState(
@@ -282,3 +172,4 @@ class CalendarChatViewModel(
         val builtinProjectInfo: GetBuiltinProjectInfoUseCase.Info? = null,
     )
 }
+
