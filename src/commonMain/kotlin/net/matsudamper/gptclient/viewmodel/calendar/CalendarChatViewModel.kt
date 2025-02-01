@@ -51,6 +51,7 @@ class CalendarChatViewModel(
             items = listOf(),
             selectedMedia = listOf(),
             visibleMediaLoading = false,
+            errorDialogMessage = null,
             listener = object : ChatListUiState.Listener {
                 override fun onClickImage() {
                     viewModelScope.launch {

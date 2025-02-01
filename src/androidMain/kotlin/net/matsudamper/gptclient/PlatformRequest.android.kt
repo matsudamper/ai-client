@@ -2,6 +2,7 @@ package net.matsudamper.gptclient
 
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -70,9 +71,13 @@ class AndroidPlatformRequest(
         )
     }
 
-    override suspend fun deleteFile(uri: String) : Boolean{
+    override suspend fun deleteFile(uri: String): Boolean {
         return withContext(Dispatchers.IO) {
             activity.contentResolver.delete(uri.toUri(), null, null) > 0
         }
+    }
+
+    override fun showToast(text: String) {
+        Toast.makeText(activity, text, Toast.LENGTH_SHORT).show()
     }
 }

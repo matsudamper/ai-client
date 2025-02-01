@@ -12,4 +12,5 @@ interface PlatformRequest {
      * @return 削除が成功したか
      */
     suspend fun deleteFile(uri: String): Boolean
+    fun showToast(text: String)
 }

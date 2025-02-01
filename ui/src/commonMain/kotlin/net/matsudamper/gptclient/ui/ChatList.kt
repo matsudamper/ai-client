@@ -19,6 +19,8 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +54,7 @@ data class ChatListUiState(
     val items: List<Message>,
     val selectedMedia: List<String>,
     val visibleMediaLoading: Boolean,
+    val errorDialogMessage: String?,
     val listener: Listener,
 ) {
     sealed interface Message {
@@ -82,6 +85,23 @@ public fun ChatList(
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (uiState.errorDialogMessage != null) {
+        Dialog(
+            onDismissRequest = { },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+            )
+        ) {
+            Card(
+                modifier = Modifier.fillMaxSize(),
+                colors = CardDefaults.cardColors().copy(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+            ) {
+                Text(uiState.errorDialogMessage)
+            }
+        }
+    }
     var showImageUri by remember { mutableStateOf<String?>(null) }
     if (showImageUri != null) {
         Dialog(

@@ -43,7 +43,7 @@ class ChatGptClient(
 
                     is GptMessage.Content.ImageUrl -> {
                         if (model.enableImage.not()) {
-                            return GptResult.Error(GptResult.ErrorReason.ImageNotSupported)
+                            return GptResult.Error(GptResult.ErrorReason.ImageNotSupported())
                         }
                         GptRequest.Content(
                             type = "image_url",
@@ -113,8 +113,11 @@ class ChatGptClient(
         data class Error(val reason: ErrorReason) : GptResult
 
         sealed interface ErrorReason {
-            data object ImageNotSupported : ErrorReason
-            data class Unknown(val message: String) : ErrorReason
+            val message: String
+            data class ImageNotSupported(
+                override val message: String = "画像をサポートしていないモデルです"
+            ) : ErrorReason
+            data class Unknown(override val message: String) : ErrorReason
         }
     }
 

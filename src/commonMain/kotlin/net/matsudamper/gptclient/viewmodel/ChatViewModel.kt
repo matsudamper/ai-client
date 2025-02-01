@@ -71,6 +71,7 @@ class ChatViewModel(
             selectedMedia = listOf(),
             visibleMediaLoading = false,
             listener = listener,
+            errorDialogMessage = null,
         )
     ).also { uiState ->
         viewModelScope.launch {
@@ -156,14 +157,31 @@ class ChatViewModel(
                 viewModelStateFlow.update {
                     it.copy(isChatLoading = true)
                 }
-                insertDataAndAddRequestUseCase.add(
+                val result = insertDataAndAddRequestUseCase.add(
                     chatRoomId = chatRoomId,
                     message = message,
                     uris = uris,
                     systemMessage = null,
                     format = ChatGptClient.Format.Text,
                 )
-            }finally {
+                when (result) {
+                    is AddRequestUseCase.Result.Success -> Unit
+                    is AddRequestUseCase.Result.InputError -> throw IllegalArgumentException()
+                    is AddRequestUseCase.Result.GptResultError -> when (result.gptError.reason) {
+                        is ChatGptClient.GptResult.ErrorReason.ImageNotSupported -> {
+                            platformRequest.showToast(result.gptError.reason.message)
+                        }
+
+                        is ChatGptClient.GptResult.ErrorReason.Unknown -> {
+                            viewModelStateFlow.update {
+                                it.copy(
+                                    errorDialogMessage = result.gptError.reason.message,
+                                )
+                            }
+                        }
+                    }
+                }
+            } finally {
                 viewModelStateFlow.update {
                     it.copy(isChatLoading = false)
                 }
@@ -177,5 +195,6 @@ class ChatViewModel(
         val selectedMedia: List<String> = listOf(),
         val isMediaLoading: Boolean = false,
         val isChatLoading: Boolean = false,
+        val errorDialogMessage: String? = null,
     )
 }
