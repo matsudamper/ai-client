@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -273,7 +274,6 @@ private fun SidePanel(
     }
     Column(
         modifier = modifier.statusBarsPadding()
-            .navigationBarsPadding()
     ) {
         Text(
             modifier = Modifier
@@ -284,12 +284,14 @@ private fun SidePanel(
                 .padding(24.dp),
             text = "Home",
         )
+        HorizontalDivider()
         Row(
+            modifier = Modifier.padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                modifier = Modifier.padding(horizontal = 24.dp),
                 text = "履歴",
+                style = MaterialTheme.typography.titleLarge,
             )
             Spacer(modifier = Modifier.weight(1f))
             OutlinedButton(onClick = { visibleHistoryDeleteDialog = true }) {
@@ -335,7 +337,10 @@ private fun SidePanel(
             }
 
         }
-        Row {
+        Row(
+            modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer)
+                .navigationBarsPadding()
+        ) {
             TextButton(onClick = { onClickUsage() }) {
                 Text("Usage")
             }
