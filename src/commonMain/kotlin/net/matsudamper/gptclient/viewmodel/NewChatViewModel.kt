@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.Calendar
+import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -54,6 +55,19 @@ class NewChatViewModel(
             ),
             selectedMedia = listOf(),
             visibleMediaLoading = false,
+            models = ChatGptModel.entries.map { gptModel ->
+                NewChatUiState.Model(
+                    name = gptModel.modelName,
+                    listener = object : NewChatUiState.Model.Listener {
+                        override fun onClick() {
+                            viewModelStateFlow.update { viewModelState ->
+                                viewModelState.copy(selectedModel = gptModel)
+                            }
+                        }
+                    }
+                )
+            },
+            selectedModel = "",
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     navControllerProvider().navigate(
@@ -62,6 +76,7 @@ class NewChatViewModel(
                                 initialMessage = text,
                                 uriList = viewModelStateFlow.value.mediaList,
                                 chatType = Navigator.Chat.ChatType.Normal,
+                                model = viewModelStateFlow.value.selectedModel,
                             )
                         )
                     )
@@ -97,6 +112,7 @@ class NewChatViewModel(
                     it.copy(
                         selectedMedia = viewModelState.mediaList,
                         visibleMediaLoading = viewModelState.mediaLoading,
+                        selectedModel = viewModelState.selectedModel.modelName,
                     )
                 }
             }
@@ -106,5 +122,6 @@ class NewChatViewModel(
     private data class ViewModelState(
         val mediaList: List<String> = listOf(),
         val mediaLoading: Boolean = false,
+        val selectedModel: ChatGptModel = ChatGptModel.Gpt4oMini,
     )
 }

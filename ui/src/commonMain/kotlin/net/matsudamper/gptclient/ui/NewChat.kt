@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,17 +21,28 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,8 +57,19 @@ public data class NewChatUiState(
     val projects: List<Project>,
     val selectedMedia: List<String>,
     val visibleMediaLoading: Boolean,
+    val models: List<Model>,
+    val selectedModel: String,
     val listener: Listener,
 ) {
+    data class Model(
+        val name: String,
+        val listener: Listener,
+    ) {
+        interface Listener {
+            fun onClick()
+        }
+    }
+
     data class Project(
         val name: String,
         val icon: Icon,
@@ -56,6 +79,7 @@ public data class NewChatUiState(
             Calendar,
             Card,
         }
+
         @Immutable
         interface Listener {
             fun onClick()
@@ -139,10 +163,11 @@ public fun NewChat(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Icon(
-                                    imageVector = when(project.icon) {
+                                    imageVector = when (project.icon) {
                                         NewChatUiState.Project.Icon.Calendar -> {
                                             FeatherIcons.Calendar
                                         }
+
                                         NewChatUiState.Project.Icon.Card -> {
                                             FeatherIcons.CreditCard
                                         }
@@ -177,6 +202,43 @@ public fun NewChat(
                     )
                 }
             }
+            var expanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally),
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+            ) {
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    for (model in uiState.models) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(text = model.name)
+
+                            },
+                            onClick = {
+                                model.listener.onClick()
+                            }
+                        )
+                    }
+                }
+                OutlinedButton(
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    onClick = { },
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(uiState.selectedModel)
+                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
             val state = rememberTextFieldState()
             ChatFooter(
                 textFieldState = state,

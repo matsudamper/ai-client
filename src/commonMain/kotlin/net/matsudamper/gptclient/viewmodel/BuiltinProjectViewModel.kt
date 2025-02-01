@@ -58,6 +58,7 @@ class BuiltinProjectViewModel(
                 }
 
                 override fun send(text: String) {
+                    val systemInfo = viewModelStateFlow.value.systemInfo ?: return
                     navControllerProvider().navigate(
                         Navigator.Chat(
                             openContext = Navigator.Chat.ChatOpenContext.NewMessage(
@@ -66,6 +67,7 @@ class BuiltinProjectViewModel(
                                 chatType = Navigator.Chat.ChatType.Builtin(
                                     navigator.builtinProjectId,
                                 ),
+                                model = systemInfo.model,
                             )
                         )
                     )

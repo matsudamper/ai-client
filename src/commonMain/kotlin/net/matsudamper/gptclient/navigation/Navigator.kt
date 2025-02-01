@@ -3,6 +3,7 @@ package net.matsudamper.gptclient.navigation
 import androidx.compose.runtime.Immutable
 import androidx.navigation.NavType
 import kotlinx.serialization.Serializable
+import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import kotlin.reflect.KType
@@ -24,6 +25,7 @@ sealed interface Navigator {
                 val initialMessage: String,
                 val uriList: List<String>,
                 val chatType: ChatType,
+                val model: ChatGptModel,
             ) : ChatOpenContext
 
             @Serializable

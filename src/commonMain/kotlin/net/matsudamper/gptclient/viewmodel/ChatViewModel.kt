@@ -171,7 +171,8 @@ class ChatViewModel(
                         builtinProjectId = when (val chatType = openContext.chatType) {
                             is Navigator.Chat.ChatType.Builtin -> chatType.builtinProjectId
                             is Navigator.Chat.ChatType.Normal -> null
-                        }
+                        },
+                        model = openContext.model,
                     )
 
                     viewModelStateFlow.update {
@@ -225,10 +226,13 @@ class ChatViewModel(
         }
     }
 
-    private suspend fun createRoom(builtinProjectId: BuiltinProjectId?): ChatRoom {
+    private suspend fun createRoom(
+        builtinProjectId: BuiltinProjectId?,
+        model: ChatGptModel,
+    ): ChatRoom {
         return withContext(Dispatchers.IO) {
             val room = ChatRoom(
-                modelName = ChatGptModel.Gpt4oMini.modelName, // TODO SELECT
+                modelName = model.modelName,
                 builtInProjectId = builtinProjectId,
             )
             room.copy(

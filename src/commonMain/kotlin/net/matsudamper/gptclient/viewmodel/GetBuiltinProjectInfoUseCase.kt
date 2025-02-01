@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.compose.ui.text.AnnotatedString
 import net.matsudamper.gptclient.entity.Calendar
+import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -37,7 +38,8 @@ class GetBuiltinProjectInfoUseCase {
                     format = ChatGptClient.Format.Json,
                     responseTransformer = {
                         CalendarResponseParser().parse(it)
-                    }
+                    },
+                    model = ChatGptModel.Gpt4oMini,
                 )
             }
             BuiltinProjectId.Money -> {
@@ -65,7 +67,8 @@ class GetBuiltinProjectInfoUseCase {
                     format = ChatGptClient.Format.Json,
                     responseTransformer = {
                         MoneyResponseParser().parse(it)
-                    }
+                    },
+                    model = ChatGptModel.Gpt4oMini,
                 )
             }
             else -> throw NotImplementedError()
@@ -77,5 +80,6 @@ class GetBuiltinProjectInfoUseCase {
         val responseType: String = "",
         val format: ChatGptClient.Format,
         val responseTransformer: (String) -> AnnotatedString,
+        val model: ChatGptModel,
     )
 }
