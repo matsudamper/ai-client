@@ -250,10 +250,10 @@ private fun ImageContentItem(
         modifier = modifier
             .size(200.dp)
             .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable { onClickImage(item.url) },
         contentScale = ContentScale.Crop,
         contentDescription = null,
-        placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
         model = item.url,
     )
 }
