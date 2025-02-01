@@ -46,7 +46,6 @@ sealed interface Navigator {
             @Serializable
             data class NewMessage(
                 val initialMessage: String,
-                val builtinProjectId: BuiltinProjectId,
                 val uriList: List<String>,
             ) : ChatOpenContext
 

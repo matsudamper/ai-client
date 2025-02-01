@@ -65,7 +65,6 @@ class BuiltinProjectViewModel(
                                     openContext = Navigator.CalendarChat.ChatOpenContext.NewMessage(
                                         initialMessage = text,
                                         uriList = viewModelStateFlow.value.uriList,
-                                        builtinProjectId = navigator.builtinProjectId,
                                     )
                                 )
                             )

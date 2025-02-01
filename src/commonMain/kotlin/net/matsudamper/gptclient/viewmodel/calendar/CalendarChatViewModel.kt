@@ -89,19 +89,19 @@ class CalendarChatViewModel(
         )
     ).also { uiState ->
         viewModelScope.launch {
+            val builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
+                BuiltinProjectId.Calendar,
+            )
+            viewModelStateFlow.update {
+                it.copy(builtinProjectInfo = builtinProjectInfo)
+            }
             when (openContext) {
                 is Navigator.CalendarChat.ChatOpenContext.NewMessage -> {
-                    val room = createRoom(builtinProjectId = openContext.builtinProjectId)
+                    val room = createRoom(builtinProjectId = BuiltinProjectId.Calendar)
                     viewModelStateFlow.update {
                         it.copy(room = room)
                     }
 
-                    val builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
-                        openContext.builtinProjectId,
-                    )
-                    viewModelStateFlow.update {
-                        it.copy(builtinProjectInfo = builtinProjectInfo)
-                    }
                     addRequest(
                         message = openContext.initialMessage,
                         uris = openContext.uriList,
