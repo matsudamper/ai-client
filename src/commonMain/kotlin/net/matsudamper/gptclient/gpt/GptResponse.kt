@@ -13,7 +13,7 @@ data class GptResponse(
     @SerialName("choices") val choices: List<Choice>,
     @SerialName("usage") val usage: Usage,
     @SerialName("service_tier") val serviceTier: String,
-    @SerialName("system_fingerprint") val systemFingerprint: String
+    @SerialName("system_fingerprint") val systemFingerprint: String?,
 ) {
     @Serializable
     data class Choice(
