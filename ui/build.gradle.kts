@@ -28,6 +28,7 @@ kotlin {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.ui)
+                implementation(compose.uiUtil)
                 implementation(compose.material3)
                 implementation(compose.foundation)
                 implementation(libs.composeIcons)
