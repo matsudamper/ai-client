@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.clearText
@@ -96,28 +97,35 @@ fun BuiltinProject(
                 Text(text = uiState.projectName)
             }
         )
+        val itemHorizontalPadding = 12.dp
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
                 .weight(1f),
-            contentPadding = PaddingValues(
-                horizontal = 12.dp,
-            )
         ) {
             when (uiState.chatRoomsState) {
                 is BuiltinProjectUiState.ChatRoomsState.Loaded -> {
                     item {
-                        Text("命令")
-                        Text(
-                            modifier = Modifier
-                                .clip(MaterialTheme.shapes.small)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .padding(8.dp),
-                            text = uiState.systemMessage.text,
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                                .padding(horizontal = itemHorizontalPadding)
+                        ) {
+                            Text("命令")
+                            Text(
+                                modifier = Modifier
+                                    .clip(MaterialTheme.shapes.small)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .padding(8.dp),
+                                text = uiState.systemMessage.text,
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
                     }
                     item {
-                        Text("履歴")
+                        Text(
+                            modifier = Modifier.fillMaxWidth()
+                                .padding(horizontal = itemHorizontalPadding),
+                            text = "履歴"
+                        )
                     }
                     items(uiState.chatRoomsState.histories) { history ->
                         Row(
@@ -125,12 +133,16 @@ fun BuiltinProject(
                                 .clickable {
                                     history.listener.onClick()
                                 }
-                                .padding(12.dp),
+                                .padding(
+                                    horizontal = itemHorizontalPadding,
+                                    vertical = 12.dp
+                                ),
                         ) {
                             Icon(
                                 imageVector = FeatherIcons.MessageSquare,
                                 contentDescription = null,
                             )
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(history.text)
                         }
                     }
