@@ -210,7 +210,7 @@ class CalendarChatViewModel(
         if (message.isEmpty() && uris.isEmpty()) return
         val systemInfo = viewModelStateFlow.value.builtinProjectInfo ?: return
         val chatRoomId = viewModelStateFlow.value.room?.id ?: return
-        println("addRequest")
+
         viewModelScope.launch {
             insertDataAndAddRequestUseCase.add(
                 chatRoomId = chatRoomId,
