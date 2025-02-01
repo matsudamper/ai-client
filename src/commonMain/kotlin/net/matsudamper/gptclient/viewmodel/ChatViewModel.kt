@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -74,6 +75,8 @@ class ChatViewModel(
             visibleMediaLoading = false,
             listener = listener,
             errorDialogMessage = null,
+            modelLoadingState = ChatListUiState.ModelLoadingState.Loading,
+            title = "",
         )
     ).also { uiState ->
         viewModelScope.launch {
@@ -95,16 +98,47 @@ class ChatViewModel(
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
                     it.copy(
+                        title = when (val roomInfo = viewModelState.roomInfo) {
+                            is ViewModelState.RoomInfo.BuiltinProject -> {
+                                roomInfo.builtinProjectId.getName()
+                            }
+
+                            is ViewModelState.RoomInfo.Normal -> ""
+                            null -> ""
+                        },
+                        modelLoadingState = run {
+                            val roomInfo = viewModelState.roomInfo ?: return@run ChatListUiState.ModelLoadingState.Loading
+                            ChatListUiState.ModelLoadingState.Loaded(
+                                ChatGptModel.entries.map { model ->
+                                    ChatListUiState.Model(
+                                        modelName = model.modelName,
+                                        selected = model.modelName == roomInfo.room.modelName,
+                                        listener = object : ChatListUiState.Model.Listener {
+                                            override fun onClick() {
+                                                viewModelScope.launch {
+                                                    appDatabase.chatRoomDao().update(
+                                                        roomInfo.room.copy(
+                                                            modelName = model.modelName,
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        },
+                                    )
+                                }
+                            )
+                        },
                         selectedMedia = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isChatLoading,
                             agentTransformer = {
-                                when(val info = viewModelState.roomInfo) {
+                                when (val info = viewModelState.roomInfo) {
                                     is ViewModelState.RoomInfo.BuiltinProject -> {
                                         info.builtinProjectInfo.responseTransformer(it)
                                     }
+
                                     is ViewModelState.RoomInfo.Normal,
                                     null -> AnnotatedString(it)
                                 }
@@ -117,6 +151,19 @@ class ChatViewModel(
     }
 
     init {
+        viewModelScope.launch {
+            viewModelStateFlow.map { viewModelState ->
+                viewModelState.roomInfo?.room?.id
+            }.filterNotNull().stateIn(this).collectLatest { roomId ->
+                appDatabase.chatRoomDao().get(chatRoomId = roomId.value).collectLatest { room ->
+                    viewModelStateFlow.update {
+                        it.copy(
+                            roomInfo = it.roomInfo?.copyOnlyRoom(room)
+                        )
+                    }
+                }
+            }
+        }
         viewModelScope.launch {
             when (openContext) {
                 is Navigator.Chat.ChatOpenContext.NewMessage -> {
@@ -204,14 +251,15 @@ class ChatViewModel(
                     chatRoomId = chatRoomId,
                     message = message,
                     uris = uris,
-                    systemMessage = when(roomInfo) {
+                    systemMessage = when (roomInfo) {
                         is ViewModelState.RoomInfo.BuiltinProject -> roomInfo.builtinProjectInfo.systemMessage
                         is ViewModelState.RoomInfo.Normal -> null
                     },
-                    format = when(roomInfo) {
+                    format = when (roomInfo) {
                         is ViewModelState.RoomInfo.BuiltinProject -> roomInfo.builtinProjectInfo.format
                         is ViewModelState.RoomInfo.Normal -> ChatGptClient.Format.Text
                     },
+                    model = roomInfo.room.modelName,
                 )
                 when (result) {
                     is AddRequestUseCase.Result.Success -> Unit
@@ -228,6 +276,10 @@ class ChatViewModel(
                                 )
                             }
                         }
+                    }
+
+                    AddRequestUseCase.Result.ModelNotFoundError -> {
+                        platformRequest.showToast("モデル: ${roomInfo.room.modelName}がありません")
                     }
                 }
             } finally {
@@ -255,6 +307,11 @@ class ChatViewModel(
                 val builtinProjectId: BuiltinProjectId,
                 val builtinProjectInfo: GetBuiltinProjectInfoUseCase.Info,
             ) : RoomInfo
+
+            fun copyOnlyRoom(room: ChatRoom): RoomInfo = when (this) {
+                is BuiltinProject -> copy(room = room)
+                is Normal -> copy(room = room)
+            }
         }
     }
 }

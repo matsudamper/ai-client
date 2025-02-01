@@ -25,6 +25,7 @@ class AddRequestUseCase(
         uris: List<String>,
         format: ChatGptClient.Format,
         systemMessage: String?,
+        model: String,
     ): Result {
         if (message.isEmpty() && uris.isEmpty()) return Result.InputError
         val chatDao = appDatabase.chatDao()
@@ -47,7 +48,8 @@ class AddRequestUseCase(
                     chatRoomId = chatRoomId,
                 ),
                 format = format,
-                model = ChatGptModel.Gpt4oMini
+                model = ChatGptModel.entries.firstOrNull() { it.modelName == model }
+                    ?: return Result.ModelNotFoundError,
             )
         ) {
             is ChatGptClient.GptResult.Error -> return Result.GptResultError(response)
@@ -148,7 +150,9 @@ class AddRequestUseCase(
                 val imageMessage = it.imageUri
                 if (imageMessage != null) {
                     val byteArray = platformRequest.readPngByteArray(uri = imageMessage)
-                    byteArray!!
+                    if (byteArray == null) {
+                        return listOf()
+                    }
                     add(
                         ChatGptClient.GptMessage.Content.Base64Image(
                             @OptIn(ExperimentalEncodingApi::class)
@@ -173,5 +177,6 @@ class AddRequestUseCase(
         data object Success : Result
         data class GptResultError(val gptError: ChatGptClient.GptResult.Error) : Result
         data object InputError : Result
+        data object ModelNotFoundError: Result
     }
 }

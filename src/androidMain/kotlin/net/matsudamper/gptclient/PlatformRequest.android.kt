@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileNotFoundException
 
 class AndroidPlatformRequest(
     private val activity: ComponentActivity,
@@ -53,7 +54,11 @@ class AndroidPlatformRequest(
     override suspend fun readPngByteArray(uri: String): ByteArray? {
         return withContext(Dispatchers.IO) {
             val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
-            val bitmap = ImageDecoder.decodeBitmap(source)
+            val bitmap = try {
+                ImageDecoder.decodeBitmap(source)
+            }catch (_ : FileNotFoundException) {
+                return@withContext null
+            }
 
             ByteArrayOutputStream().use { outputStream ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
@@ -73,7 +78,9 @@ class AndroidPlatformRequest(
 
     override suspend fun deleteFile(uri: String): Boolean {
         return withContext(Dispatchers.IO) {
-            activity.contentResolver.delete(uri.toUri(), null, null) > 0
+            runCatching {
+                activity.contentResolver.delete(uri.toUri(), null, null) > 0
+            }.getOrNull() == true
         }
     }
 
