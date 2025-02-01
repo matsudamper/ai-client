@@ -30,46 +30,47 @@ class ChatViewModel(
     private val insertDataAndAddRequestUseCase: AddRequestUseCase,
 ) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
+    private val listener = object : ChatListUiState.Listener {
+        override fun onClickImage() {
+            viewModelScope.launch {
+                try {
+                    viewModelStateFlow.update {
+                        it.copy(isMediaLoading = true)
+                    }
+                    val media = platformRequest.getMedia()
+                    viewModelStateFlow.update {
+                        it.copy(
+                            selectedMedia = media,
+                        )
+                    }
+                } finally {
+                    viewModelStateFlow.update {
+                        it.copy(isMediaLoading = false)
+                    }
+                }
+            }
+        }
+
+        override fun onClickVoice() {
+
+        }
+
+        override fun onClickSend(text: String) {
+            addRequest(
+                message = text,
+                uris = viewModelStateFlow.value.selectedMedia,
+            )
+            viewModelStateFlow.update {
+                it.copy(selectedMedia = listOf())
+            }
+        }
+    }
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
         ChatListUiState(
             items = listOf(),
             selectedMedia = listOf(),
             visibleMediaLoading = false,
-            listener = object : ChatListUiState.Listener {
-                override fun onClickImage() {
-                    viewModelScope.launch {
-                        try {
-                            viewModelStateFlow.update {
-                                it.copy(isMediaLoading = true)
-                            }
-                            val media = platformRequest.getMedia()
-                            viewModelStateFlow.update {
-                                it.copy(
-                                    selectedMedia = media,
-                                )
-                            }
-                        } finally {
-                            viewModelStateFlow.update {
-                                it.copy(isMediaLoading = false)
-                            }
-                        }
-                    }
-                }
-
-                override fun onClickVoice() {
-
-                }
-
-                override fun onClickSend(text: String) {
-                    addRequest(
-                        message = text,
-                        uris = viewModelStateFlow.value.selectedMedia,
-                    )
-                    viewModelStateFlow.update {
-                        it.copy(selectedMedia = listOf())
-                    }
-                }
-            }
+            listener = listener,
         )
     ).also { uiState ->
         viewModelScope.launch {
@@ -112,7 +113,10 @@ class ChatViewModel(
                     it.copy(
                         selectedMedia = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
-                        items = CreateChatMessageUiStateUseCase().create(viewModelState.chats),
+                        items = CreateChatMessageUiStateUseCase().create(
+                            chats = viewModelState.chats,
+                            isChatLoading = viewModelState.isChatLoading,
+                        ),
                     )
                 }
             }
@@ -148,13 +152,22 @@ class ChatViewModel(
         val chatRoomId = viewModelStateFlow.value.room?.id ?: return
 
         viewModelScope.launch {
-            insertDataAndAddRequestUseCase.add(
-                chatRoomId = chatRoomId,
-                message = message,
-                uris = uris,
-                systemMessage = null,
-                format = ChatGptClient.Format.Text,
-            )
+            try {
+                viewModelStateFlow.update {
+                    it.copy(isChatLoading = true)
+                }
+                insertDataAndAddRequestUseCase.add(
+                    chatRoomId = chatRoomId,
+                    message = message,
+                    uris = uris,
+                    systemMessage = null,
+                    format = ChatGptClient.Format.Text,
+                )
+            }finally {
+                viewModelStateFlow.update {
+                    it.copy(isChatLoading = false)
+                }
+            }
         }
     }
 
@@ -163,5 +176,6 @@ class ChatViewModel(
         val chats: List<Chat> = listOf(),
         val selectedMedia: List<String> = listOf(),
         val isMediaLoading: Boolean = false,
+        val isChatLoading: Boolean = false,
     )
 }

@@ -8,6 +8,7 @@ class CreateChatMessageUiStateUseCase() {
     fun create(
         chats: List<Chat>,
         agentTransformer: (String) -> AnnotatedString = { AnnotatedString(it) },
+        isChatLoading: Boolean,
     ): List<ChatListUiState.Message> {
         return chats.mapNotNull { chat ->
             sequence {
@@ -63,6 +64,10 @@ class CreateChatMessageUiStateUseCase() {
                 )
             }.filterNotNull()
                 .firstOrNull()
-        }
+        }.plus(
+            ChatListUiState.Message.Agent(
+                content = ChatListUiState.MessageContent.Loading,
+            ).takeIf { isChatLoading }
+        ).filterNotNull()
     }
 }

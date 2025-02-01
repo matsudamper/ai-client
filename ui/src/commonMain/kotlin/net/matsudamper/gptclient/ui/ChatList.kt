@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -37,7 +38,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
@@ -61,6 +64,7 @@ data class ChatListUiState(
     sealed interface MessageContent {
         data class Text(val message: AnnotatedString) : MessageContent
         data class Image(val url: String) : MessageContent
+        data object Loading : MessageContent
     }
 
     @Immutable
@@ -188,6 +192,12 @@ private fun AgentItem(
                         onClickImage = onClickImage,
                     )
                 }
+
+                ChatListUiState.MessageContent.Loading -> {
+                    LoadingItem(
+                        modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.width(AgentUserHorizontalPadding))
@@ -219,6 +229,12 @@ private fun UserItem(
                         item = content,
                         modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
                         onClickImage = onClickImage,
+                    )
+                }
+
+                ChatListUiState.MessageContent.Loading -> {
+                    LoadingItem(
+                        modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
                     )
                 }
             }
@@ -256,4 +272,22 @@ private fun ImageContentItem(
         contentDescription = null,
         model = item.url,
     )
+}
+
+@Composable
+private fun LoadingItem(
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "       "
+        )
+        LinearProgressIndicator()
+    }
 }

@@ -138,7 +138,8 @@ class CalendarChatViewModel(
                             chats = viewModelState.chats,
                             agentTransformer = { original ->
                                 calendarResponseTransformer(original)
-                            }
+                            },
+                            isChatLoading = viewModelState.isChatLoading,
                         ),
                     )
                 }
@@ -212,13 +213,22 @@ class CalendarChatViewModel(
         val chatRoomId = viewModelStateFlow.value.room?.id ?: return
 
         viewModelScope.launch {
-            insertDataAndAddRequestUseCase.add(
-                chatRoomId = chatRoomId,
-                message = message,
-                uris = uris,
-                systemMessage = systemInfo.systemMessage,
-                format = systemInfo.format,
-            )
+            try {
+                viewModelStateFlow.update {
+                    it.copy(isChatLoading = true)
+                }
+                insertDataAndAddRequestUseCase.add(
+                    chatRoomId = chatRoomId,
+                    message = message,
+                    uris = uris,
+                    systemMessage = systemInfo.systemMessage,
+                    format = systemInfo.format,
+                )
+            }finally {
+                viewModelStateFlow.update {
+                    it.copy(isChatLoading = false)
+                }
+            }
         }
     }
 
@@ -253,5 +263,6 @@ class CalendarChatViewModel(
         val selectedMedia: List<String> = listOf(),
         val isMediaLoading: Boolean = false,
         val builtinProjectInfo: GetBuiltinProjectInfoUseCase.Info? = null,
+        val isChatLoading: Boolean = false,
     )
 }
