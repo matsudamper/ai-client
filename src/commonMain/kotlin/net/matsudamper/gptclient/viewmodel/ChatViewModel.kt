@@ -76,25 +76,6 @@ class ChatViewModel(
         )
     ).also { uiState ->
         viewModelScope.launch {
-            when (openContext) {
-                is Navigator.Chat.ChatOpenContext.NewMessage -> {
-                    val room = createRoom(builtinProjectId = null)
-
-                    viewModelStateFlow.update {
-                        it.copy(room = room)
-                    }
-                    addRequest(
-                        message = openContext.initialMessage,
-                        uris = openContext.uriList,
-                    )
-                }
-
-                is Navigator.Chat.ChatOpenContext.OpenChat -> {
-                    restoreChatRoom(openContext.chatRoomId)
-                }
-            }
-        }
-        viewModelScope.launch {
             viewModelStateFlow.map { it.room?.id }
                 .filterNotNull()
                 .stateIn(this)
@@ -120,6 +101,30 @@ class ChatViewModel(
                             isChatLoading = viewModelState.isChatLoading,
                         ),
                     )
+                }
+            }
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            when (openContext) {
+                is Navigator.Chat.ChatOpenContext.NewMessage -> {
+                    val room = createRoom(builtinProjectId = when(val chatType = openContext.chatType) {
+                        is Navigator.Chat.ChatType.Builtin -> chatType.builtinProjectId
+                        is Navigator.Chat.ChatType.Normal -> null
+                    })
+
+                    viewModelStateFlow.update {
+                        it.copy(room = room)
+                    }
+                    addRequest(
+                        message = openContext.initialMessage,
+                        uris = openContext.uriList,
+                    )
+                }
+                is Navigator.Chat.ChatOpenContext.OpenChat -> {
+                    restoreChatRoom(openContext.chatRoomId)
                 }
             }
         }
@@ -197,5 +202,9 @@ class ChatViewModel(
         val isMediaLoading: Boolean = false,
         val isChatLoading: Boolean = false,
         val errorDialogMessage: String? = null,
-    )
+    ) {
+        data class RoomInfo(
+            val id: ChatRoomId,
+        )
+    }
 }

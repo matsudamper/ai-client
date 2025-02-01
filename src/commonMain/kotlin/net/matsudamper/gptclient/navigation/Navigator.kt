@@ -17,17 +17,23 @@ sealed interface Navigator {
     data class Chat(
         val openContext: ChatOpenContext,
     ) : Navigator {
-
         @Serializable
         sealed interface ChatOpenContext {
             @Serializable
             data class NewMessage(
                 val initialMessage: String,
                 val uriList: List<String>,
+                val chatType: ChatType,
             ) : ChatOpenContext
 
             @Serializable
             data class OpenChat(val chatRoomId: ChatRoomId) : ChatOpenContext
+        }
+
+        @Serializable
+        sealed interface ChatType {
+            data object Normal: ChatType
+            data class Builtin(val builtinProjectId: BuiltinProjectId): ChatType
         }
 
         companion object {
