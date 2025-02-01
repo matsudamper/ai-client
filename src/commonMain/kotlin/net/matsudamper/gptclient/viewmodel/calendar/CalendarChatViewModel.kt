@@ -181,9 +181,10 @@ class CalendarChatViewModel(
                                 "&location=${result.location.orEmpty().encodeURLParameter()}"
                         pushLink(LinkAnnotation.Url(googleCalendarUrl))
                         withStyle(SpanStyle(color = Color.Blue)) {
-                            append("Google Calendar追加リンク")
+                            appendLine("Google Calendar追加リンク")
                         }
                         pop()
+                        appendLine()
                     }
                 }
             }
