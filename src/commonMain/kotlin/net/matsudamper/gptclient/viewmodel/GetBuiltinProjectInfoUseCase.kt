@@ -15,14 +15,14 @@ class GetBuiltinProjectInfoUseCase {
                         以下のJSONフォーマットに従ってください。
                         ```json
                         {
-                            "error_message": "日付や日時が指定されていない場合に、ユーザーに入力を促すメッセージ",
+                            "error_message": "日付や日時が指定されていない場合に、ユーザーに入力を促すメッセージ(String?)",
                             "results": [
                                 {
-                                    "start_date": "開始時間のunixtimeのLong型(JST)",
-                                    "end_date": "終了時間のunixtimeのLong型(JST)",
-                                    "title": "カレンダーのタイトル",
-                                    "location": "nullable, 住所等の情報",
-                                    "detail": "補足情報"
+                                    "start_date": "開始時間のunixtime(JST)の(Long)",
+                                    "end_date": "終了時間のunixtime(JST)の(Long)",
+                                    "title": "カレンダーのタイトル(String)",
+                                    "location": "nullable, 住所等の情報(String?)",
+                                    "description": "補足情報(String?)"
                                 }
                             ]
                         }

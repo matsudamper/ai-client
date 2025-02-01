@@ -1,10 +1,14 @@
 package net.matsudamper.gptclient.viewmodel
 
+import androidx.compose.ui.text.AnnotatedString
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.ui.ChatListUiState
 
 class CreateChatMessageUiStateUseCase() {
-    fun create(chats: List<Chat>): List<ChatListUiState.Message> {
+    fun create(
+        chats: List<Chat>,
+        agentTransformer: (String) -> AnnotatedString = { AnnotatedString(it) },
+    ): List<ChatListUiState.Message> {
         return chats.mapNotNull { chat ->
             sequence {
                 yield(
@@ -13,20 +17,20 @@ class CreateChatMessageUiStateUseCase() {
                         when (chat.role) {
                             Chat.Role.System -> {
                                 ChatListUiState.Message.Agent(
-                                    content = ChatListUiState.MessageContent.Text(message),
+                                    content = ChatListUiState.MessageContent.Text(AnnotatedString(message)),
                                 )
                             }
 
                             Chat.Role.User,
                             Chat.Role.Unknown -> {
                                 ChatListUiState.Message.User(
-                                    content = ChatListUiState.MessageContent.Text(message),
+                                    content = ChatListUiState.MessageContent.Text(AnnotatedString(message)),
                                 )
                             }
 
                             Chat.Role.Assistant -> {
                                 ChatListUiState.Message.Agent(
-                                    content = ChatListUiState.MessageContent.Text(message),
+                                    content = ChatListUiState.MessageContent.Text(agentTransformer(message)),
                                 )
                             }
                         }

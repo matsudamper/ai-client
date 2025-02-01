@@ -18,7 +18,7 @@ import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
 import net.matsudamper.gptclient.viewmodel.BuiltinProjectViewModel
-import net.matsudamper.gptclient.viewmodel.CalendarChatViewModel
+import net.matsudamper.gptclient.viewmodel.calendar.CalendarChatViewModel
 import net.matsudamper.gptclient.viewmodel.ChatViewModel
 import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
 import net.matsudamper.gptclient.viewmodel.NewChatViewModel

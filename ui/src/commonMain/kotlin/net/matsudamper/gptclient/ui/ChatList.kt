@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import net.matsudamper.gptclient.ui.component.ChatFooter
@@ -47,7 +48,7 @@ data class ChatListUiState(
     }
 
     sealed interface MessageContent {
-        data class Text(val message: String) : MessageContent
+        data class Text(val message: AnnotatedString) : MessageContent
         data class Image(val url: String) : MessageContent
     }
 

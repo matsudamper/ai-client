@@ -130,8 +130,8 @@ class BuiltinProjectViewModel(
     inner class ChatRoomListener(private val chatRoomId: ChatRoomId) : BuiltinProjectUiState.History.Listener {
         override fun onClick() {
             navControllerProvider().navigate(
-                Navigator.Chat(
-                    openContext = Navigator.Chat.ChatOpenContext.OpenChat(
+                Navigator.CalendarChat(
+                    openContext = Navigator.CalendarChat.ChatOpenContext.OpenChat(
                         chatRoomId = chatRoomId,
                     )
                 )
