@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -48,6 +50,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import androidx.room.util.TableInfo
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.BuiltinProject
 import net.matsudamper.gptclient.ui.ChatList
@@ -305,22 +309,34 @@ private fun SidePanel(
             when (history) {
                 is MainScreenUiState.History.Loaded -> {
                     items(history.items) { item ->
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                                .clickable { item.listener.onClick() }
+                        Row(
+                            modifier = Modifier.clickable { item.listener.onClick() }
                                 .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = item.projectName.orEmpty(),
-                                style = MaterialTheme.typography.labelSmall,
+                            Icon(
+                                imageVector = FeatherIcons.MessageSquare,
+                                contentDescription = null,
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = item.text,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                if (item.projectName != null) {
+                                    Text(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        text = item.projectName,
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+                                Text(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    text = item.text,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
                         }
                     }
                 }
