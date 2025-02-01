@@ -284,7 +284,9 @@ private fun SidePanel(
                 .padding(24.dp),
             text = "Home",
         )
-        Row {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 modifier = Modifier.padding(horizontal = 24.dp),
                 text = "履歴",
