@@ -71,6 +71,9 @@ class BuiltinProjectViewModel(
                         }
                         else -> TODO()
                     }
+                    viewModelStateFlow.update {
+                        it.copy(uriList = listOf())
+                    }
                 }
             }
         )
