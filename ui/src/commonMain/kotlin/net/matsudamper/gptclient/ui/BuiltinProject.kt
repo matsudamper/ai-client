@@ -30,6 +30,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
@@ -107,7 +109,13 @@ fun BuiltinProject(
                 is BuiltinProjectUiState.ChatRoomsState.Loaded -> {
                     item {
                         Text("命令")
-                        Text(uiState.systemMessage.text)
+                        Text(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.small)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(8.dp),
+                            text = uiState.systemMessage.text,
+                        )
                         Spacer(modifier = Modifier.height(24.dp))
                     }
                     item {
