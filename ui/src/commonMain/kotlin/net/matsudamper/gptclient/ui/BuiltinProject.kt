@@ -109,13 +109,17 @@ fun BuiltinProject(
                             modifier = Modifier.fillMaxWidth()
                                 .padding(horizontal = itemHorizontalPadding)
                         ) {
-                            Text("命令")
+                            Text(
+                                style = MaterialTheme.typography.titleLarge,
+                                text = "命令"
+                            )
                             Text(
                                 modifier = Modifier
                                     .clip(MaterialTheme.shapes.small)
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .padding(8.dp),
                                 text = uiState.systemMessage.text,
+                                style = MaterialTheme.typography.bodyMedium,
                             )
                             Spacer(modifier = Modifier.height(24.dp))
                         }
@@ -124,6 +128,7 @@ fun BuiltinProject(
                         Text(
                             modifier = Modifier.fillMaxWidth()
                                 .padding(horizontal = itemHorizontalPadding),
+                            style = MaterialTheme.typography.titleLarge,
                             text = "履歴"
                         )
                     }
