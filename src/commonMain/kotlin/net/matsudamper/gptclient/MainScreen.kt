@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -73,6 +72,7 @@ data class MainScreenUiState(
 
     @Immutable
     interface Listener {
+        fun onClickHome()
         fun onClickSettings()
         fun onClickUsage()
     }
@@ -119,6 +119,7 @@ public fun MainScreen(
                         },
                     onClickSettings = { rootUiState.listener.onClickSettings() },
                     onClickUsage = { rootUiState.listener.onClickUsage() },
+                    onClickHome = { rootUiState.listener.onClickHome() },
                     history = rootUiState.history,
                 )
                 Box(
@@ -235,8 +236,9 @@ private fun Navigation(
 private fun SidePanel(
     onClickSettings: () -> Unit,
     onClickUsage: () -> Unit,
-    modifier: Modifier = Modifier,
+    onClickHome: () -> Unit,
     history: MainScreenUiState.History,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.statusBarsPadding()
@@ -246,10 +248,10 @@ private fun SidePanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-
+                    onClickHome()
                 }
                 .padding(24.dp),
-            text = "New Chat",
+            text = "Home",
         )
         Text(
             modifier = Modifier.padding(horizontal = 24.dp),

@@ -27,7 +27,7 @@ class MainScreenViewModel(
             listener = object : MainScreenUiState.Listener {
                 override fun onClickSettings() {
                     navControllerProvider().navigate(
-                        Navigator.Settings
+                        Navigator.Settings,
                     )
                 }
 
@@ -35,7 +35,14 @@ class MainScreenViewModel(
                     platformRequest.openLink(
                         url = "https://platform.openai.com/settings/organization/usage"
                     )
+                }
 
+                override fun onClickHome() {
+                    navControllerProvider().navigate(
+                        Navigator.StartChat,
+                    ) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             }
         )
