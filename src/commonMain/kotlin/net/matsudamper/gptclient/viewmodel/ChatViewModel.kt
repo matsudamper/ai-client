@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -139,7 +140,7 @@ class ChatViewModel(
     private suspend fun createRoom(builtinProjectId: BuiltinProjectId?): ChatRoom {
         return withContext(Dispatchers.IO) {
             val room = ChatRoom(
-                modelName = "gpt-4o-mini", // TODO SELECT
+                modelName = ChatGptModel.Gpt4oMini.modelName, // TODO SELECT
                 builtInProjectId = builtinProjectId,
             )
             room.copy(
