@@ -1,6 +1,5 @@
 package net.matsudamper.gptclient
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import androidx.activity.ComponentActivity
@@ -14,8 +13,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 class AndroidPlatformRequest(
-    activity: ComponentActivity,
-    private val context: Context
+    private val activity: ComponentActivity,
 ) : PlatformRequest {
     private val mediaLauncher = object {
         private val resultFlow = Channel<List<String>>(Channel.RENDEZVOUS)
@@ -30,11 +28,11 @@ class AndroidPlatformRequest(
     }
 
     override suspend fun getMedia(): List<String> {
-        val cacheDir = context.cacheDir
+        val cacheDir = activity.cacheDir
         return mediaLauncher.launch().map { uriString ->
             withContext(Dispatchers.IO) {
                 val uri = uriString.toUri()
-                val source = ImageDecoder.createSource(context.contentResolver, uri)
+                val source = ImageDecoder.createSource(activity.contentResolver, uri)
                 val bitmap = ImageDecoder.decodeBitmap(source)
 
                 val hash = bitmap.hashCode().toString()
@@ -53,7 +51,7 @@ class AndroidPlatformRequest(
 
     override suspend fun readPngByteArray(uri: String): ByteArray? {
         return withContext(Dispatchers.IO) {
-            val source = ImageDecoder.createSource(context.contentResolver, uri.toUri())
+            val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
             val bitmap = ImageDecoder.decodeBitmap(source)
 
             ByteArrayOutputStream().use { outputStream ->
@@ -64,7 +62,7 @@ class AndroidPlatformRequest(
     }
 
     override fun openLink(url: String) {
-        context.startActivity(
+        activity.startActivity(
             android.content.Intent(
                 android.content.Intent.ACTION_VIEW,
                 url.toUri()
@@ -74,7 +72,7 @@ class AndroidPlatformRequest(
 
     override suspend fun deleteFile(uri: String) : Boolean{
         return withContext(Dispatchers.IO) {
-            context.contentResolver.delete(uri.toUri(), null, null) > 0
+            activity.contentResolver.delete(uri.toUri(), null, null) > 0
         }
     }
 }
