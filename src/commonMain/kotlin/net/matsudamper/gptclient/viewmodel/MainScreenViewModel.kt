@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.MainScreenUiState
+import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -16,6 +17,7 @@ import net.matsudamper.gptclient.room.entity.ChatRoomWithStartChat
 
 class MainScreenViewModel(
     private val appDatabase: AppDatabase,
+    private val platformRequest: PlatformRequest,
     private val navControllerProvider: () -> NavHostController,
 ) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
@@ -27,6 +29,13 @@ class MainScreenViewModel(
                     navControllerProvider().navigate(
                         Navigator.Settings
                     )
+                }
+
+                override fun onClickUsage() {
+                    platformRequest.openLink(
+                        url = "https://platform.openai.com/settings/organization/usage"
+                    )
+
                 }
             }
         )

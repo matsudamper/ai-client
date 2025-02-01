@@ -62,4 +62,13 @@ class AndroidPlatformRequest(
             }
         }
     }
+
+    override fun openLink(url: String) {
+        context.startActivity(
+            android.content.Intent(
+                android.content.Intent.ACTION_VIEW,
+                url.toUri()
+            )
+        )
+    }
 }

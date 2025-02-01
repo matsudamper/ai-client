@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +74,7 @@ data class MainScreenUiState(
     @Immutable
     interface Listener {
         fun onClickSettings()
+        fun onClickUsage()
     }
 }
 
@@ -116,6 +118,7 @@ public fun MainScreen(
                             }
                         },
                     onClickSettings = { rootUiState.listener.onClickSettings() },
+                    onClickUsage = { rootUiState.listener.onClickUsage() },
                     history = rootUiState.history,
                 )
                 Box(
@@ -231,6 +234,7 @@ private fun Navigation(
 @Composable
 private fun SidePanel(
     onClickSettings: () -> Unit,
+    onClickUsage: () -> Unit,
     modifier: Modifier = Modifier,
     history: MainScreenUiState.History,
 ) {
@@ -280,6 +284,9 @@ private fun SidePanel(
 
         }
         Row {
+            TextButton(onClick = { onClickUsage() }) {
+                Text("Usage")
+            }
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onClickSettings) {
                 Icon(

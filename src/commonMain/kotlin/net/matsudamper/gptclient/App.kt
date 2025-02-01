@@ -98,6 +98,7 @@ internal fun App() {
                             MainScreenViewModel(
                                 navControllerProvider = { navController },
                                 appDatabase = getKoin().get(),
+                                platformRequest = getKoin().get(),
                             )
                         }
 
