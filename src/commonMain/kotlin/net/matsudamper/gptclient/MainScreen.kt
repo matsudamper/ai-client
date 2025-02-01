@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -24,6 +25,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,6 +46,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import androidx.room.util.TableInfo
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.BuiltinProject
 import net.matsudamper.gptclient.ui.ChatList
@@ -64,7 +67,8 @@ data class MainScreenUiState(
 
     data class HistoryItem(
         val text: String,
-        val listener: HistoryItemListener
+        val projectName: String?,
+        val listener: HistoryItemListener,
     )
 
     @Immutable
@@ -297,12 +301,23 @@ private fun SidePanel(
             when (history) {
                 is MainScreenUiState.History.Loaded -> {
                     items(history.items) { item ->
-                        Text(
+                        Column(
                             modifier = Modifier.fillMaxWidth()
                                 .clickable { item.listener.onClick() }
                                 .padding(12.dp),
-                            text = item.text
-                        )
+                        ) {
+                            Text(
+                                modifier = Modifier.fillMaxWidth(),
+                                text = item.projectName.orEmpty(),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                modifier = Modifier.fillMaxWidth(),
+                                text = item.text,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                     }
                 }
 

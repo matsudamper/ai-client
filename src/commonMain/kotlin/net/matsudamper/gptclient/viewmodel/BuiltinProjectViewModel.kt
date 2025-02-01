@@ -14,7 +14,7 @@ import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.room.entity.ChatRoomId
-import net.matsudamper.gptclient.room.entity.ChatRoomWithStartChat
+import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
 import net.matsudamper.gptclient.ui.BuiltinProjectUiState
 
 class BuiltinProjectViewModel(
@@ -141,7 +141,7 @@ class BuiltinProjectViewModel(
     private data class ViewModelState(
         val uriList: List<String> = listOf(),
         val mediaLoading: Boolean = false,
-        val chatRooms: List<ChatRoomWithStartChat>? = null,
+        val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: GetBuiltinProjectInfoUseCase.Info? = null,
     )
 }

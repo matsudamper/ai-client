@@ -11,10 +11,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.MainScreenUiState
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
-import net.matsudamper.gptclient.room.entity.ChatRoomWithStartChat
+import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
 import net.matsudamper.gptclient.usecase.DeleteChatRoomUseCase
 
 class MainScreenViewModel(
@@ -74,6 +75,7 @@ class MainScreenViewModel(
                                 items = viewModelState.rooms.map { room ->
                                     MainScreenUiState.HistoryItem(
                                         listener = HistoryItemListenerImpl(room.chatRoom.id),
+                                        projectName = room.projectName ?: room.chatRoom.builtInProjectId?.getName(),
                                         text = room.textMessage?.takeIf { it.isNotBlank() }
                                             ?: "(空白)",
                                     )
@@ -106,6 +108,6 @@ class MainScreenViewModel(
     }
 
     private data class ViewModelState(
-        val rooms: List<ChatRoomWithStartChat>? = null,
+        val rooms: List<ChatRoomWithSummary>? = null,
     )
 }
