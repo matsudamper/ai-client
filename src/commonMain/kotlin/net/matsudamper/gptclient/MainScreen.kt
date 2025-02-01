@@ -49,7 +49,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import androidx.room.util.TableInfo
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.navigation.Navigator

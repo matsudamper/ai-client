@@ -35,6 +35,7 @@ kotlin {
                 implementation(libs.kotlinxSerializationJson)
                 implementation(libs.coil3Compose)
                 implementation(libs.coil3NetworkOkHttp)
+                implementation(libs.zoomable)
             }
         }
     }

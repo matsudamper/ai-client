@@ -1,11 +1,13 @@
 package net.matsudamper.gptclient.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,18 +23,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowUp
 import compose.icons.feathericons.Image
 import compose.icons.feathericons.Mic
 import compose.icons.feathericons.Upload
+import net.engawapg.lib.zoomable.rememberZoomState
+import net.engawapg.lib.zoomable.zoomable
 
 @Composable
 internal fun ChatFooter(
@@ -44,6 +52,23 @@ internal fun ChatFooter(
     onClickSend: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showImageUri by remember { mutableStateOf<String?>(null) }
+    if (showImageUri != null) {
+        Dialog(
+            onDismissRequest = { showImageUri = null },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+            )
+        ) {
+            AsyncImage(
+                modifier = Modifier.fillMaxSize()
+                    .zoomable(rememberZoomState()),
+                model = showImageUri.orEmpty(),
+                contentScale = ContentScale.Fit,
+                contentDescription = null,
+            )
+        }
+    }
     Column(
         modifier = modifier,
     ) {
@@ -52,7 +77,9 @@ internal fun ChatFooter(
         LazyRow {
             items(selectedMedia) { media ->
                 AsyncImage(
-                    modifier = imageModifier,
+                    modifier = Modifier.clickable {
+                        showImageUri = media
+                    }.then(imageModifier),
                     model = media,
                     contentScale = ContentScale.Crop,
                     contentDescription = null,

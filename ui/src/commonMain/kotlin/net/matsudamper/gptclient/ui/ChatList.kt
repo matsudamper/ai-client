@@ -1,10 +1,12 @@
 package net.matsudamper.gptclient.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -25,13 +27,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import net.engawapg.lib.zoomable.rememberZoomState
+import net.engawapg.lib.zoomable.zoomable
 import net.matsudamper.gptclient.ui.component.ChatFooter
 
 data class ChatListUiState(
@@ -67,6 +78,23 @@ public fun ChatList(
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showImageUri by remember { mutableStateOf<String?>(null) }
+    if (showImageUri != null) {
+        Dialog(
+            onDismissRequest = { showImageUri = null },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+            )
+        ) {
+            AsyncImage(
+                modifier = Modifier.fillMaxSize()
+                    .zoomable(rememberZoomState()),
+                model = showImageUri.orEmpty(),
+                contentScale = ContentScale.Fit,
+                contentDescription = null,
+            )
+        }
+    }
     Column(
         modifier = modifier
             .navigationBarsPadding()
@@ -94,6 +122,7 @@ public fun ChatList(
                             AgentItem(
                                 modifier = Modifier.fillMaxWidth(),
                                 item = item,
+                                onClickImage = { showImageUri = it }
                             )
                         }
 
@@ -101,6 +130,7 @@ public fun ChatList(
                             UserItem(
                                 modifier = Modifier.fillMaxWidth(),
                                 item = item,
+                                onClickImage = { showImageUri = it }
                             )
                         }
                     }
@@ -135,6 +165,7 @@ private val ChatHorizontalPadding = 12.dp
 @Composable
 private fun AgentItem(
     item: ChatListUiState.Message.Agent,
+    onClickImage: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier) {
@@ -154,6 +185,7 @@ private fun AgentItem(
                     ImageContentItem(
                         modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
                         item = content,
+                        onClickImage = onClickImage,
                     )
                 }
             }
@@ -165,6 +197,7 @@ private fun AgentItem(
 @Composable
 private fun UserItem(
     item: ChatListUiState.Message.User,
+    onClickImage: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier) {
@@ -183,8 +216,9 @@ private fun UserItem(
 
                 is ChatListUiState.MessageContent.Image -> {
                     ImageContentItem(
-                        modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
                         item = content,
+                        modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
+                        onClickImage = onClickImage,
                     )
                 }
             }
@@ -210,13 +244,16 @@ private fun TextContentItem(
 private fun ImageContentItem(
     item: ChatListUiState.MessageContent.Image,
     modifier: Modifier = Modifier,
+    onClickImage: (String) -> Unit,
 ) {
     AsyncImage(
         modifier = modifier
             .size(200.dp)
-            .clip(MaterialTheme.shapes.small),
+            .clip(MaterialTheme.shapes.small)
+            .clickable { onClickImage(item.url) },
         contentScale = ContentScale.Crop,
         contentDescription = null,
+        placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
         model = item.url,
     )
 }
