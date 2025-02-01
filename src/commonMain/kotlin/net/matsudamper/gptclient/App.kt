@@ -16,6 +16,7 @@ import net.matsudamper.gptclient.ui.BuiltinProjectUiState
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
+import net.matsudamper.gptclient.usecase.DeleteChatRoomUseCase
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
 import net.matsudamper.gptclient.viewmodel.BuiltinProjectViewModel
 import net.matsudamper.gptclient.viewmodel.calendar.CalendarChatViewModel
@@ -100,6 +101,10 @@ internal fun App() {
                                 navControllerProvider = { navController },
                                 appDatabase = getKoin().get(),
                                 platformRequest = getKoin().get(),
+                                deleteChatRoomUseCase = DeleteChatRoomUseCase(
+                                    appDatabase = getKoin().get(),
+                                    platformRequest = getKoin().get(),
+                                )
                             )
                         }
 

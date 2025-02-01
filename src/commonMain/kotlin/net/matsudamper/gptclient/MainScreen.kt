@@ -20,9 +20,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -75,6 +77,7 @@ data class MainScreenUiState(
         fun onClickHome()
         fun onClickSettings()
         fun onClickUsage()
+        fun clearHistory()
     }
 }
 
@@ -120,6 +123,7 @@ public fun MainScreen(
                     onClickSettings = { rootUiState.listener.onClickSettings() },
                     onClickUsage = { rootUiState.listener.onClickUsage() },
                     onClickHome = { rootUiState.listener.onClickHome() },
+                    historyClear = { rootUiState.listener.clearHistory() },
                     history = rootUiState.history,
                 )
                 Box(
@@ -237,9 +241,32 @@ private fun SidePanel(
     onClickSettings: () -> Unit,
     onClickUsage: () -> Unit,
     onClickHome: () -> Unit,
+    historyClear: () -> Unit,
     history: MainScreenUiState.History,
     modifier: Modifier = Modifier,
 ) {
+    var visibleHistoryDeleteDialog by remember { mutableStateOf(false) }
+    if (visibleHistoryDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { visibleHistoryDeleteDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    visibleHistoryDeleteDialog = false
+                    historyClear()
+                }) {
+                    Text("削除する")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { visibleHistoryDeleteDialog = false }) {
+                    Text("キャンセル")
+                }
+            },
+            title = {
+                Text("履歴を削除しますか？")
+            },
+        )
+    }
     Column(
         modifier = modifier.statusBarsPadding()
             .navigationBarsPadding()
@@ -253,10 +280,16 @@ private fun SidePanel(
                 .padding(24.dp),
             text = "Home",
         )
-        Text(
-            modifier = Modifier.padding(horizontal = 24.dp),
-            text = "History",
-        )
+        Row {
+            Text(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                text = "履歴",
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            OutlinedButton(onClick = { visibleHistoryDeleteDialog = true }) {
+                Text("クリア")
+            }
+        }
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
                 .weight(1f),

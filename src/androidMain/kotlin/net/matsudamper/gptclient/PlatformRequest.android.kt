@@ -71,4 +71,10 @@ class AndroidPlatformRequest(
             )
         )
     }
+
+    override suspend fun deleteFile(uri: String) : Boolean{
+        return withContext(Dispatchers.IO) {
+            context.contentResolver.delete(uri.toUri(), null, null) > 0
+        }
+    }
 }

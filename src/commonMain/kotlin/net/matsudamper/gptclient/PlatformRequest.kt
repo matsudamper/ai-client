@@ -7,4 +7,9 @@ interface PlatformRequest {
     suspend fun getMedia(): List<String>
     suspend fun readPngByteArray(uri: String): ByteArray?
     fun openLink(url: String)
+
+    /**
+     * @return 削除が成功したか
+     */
+    suspend fun deleteFile(uri: String): Boolean
 }

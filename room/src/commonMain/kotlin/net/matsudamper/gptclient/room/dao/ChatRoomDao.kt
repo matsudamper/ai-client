@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient.room.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
@@ -44,4 +45,7 @@ interface ChatRoomDao {
 
     @Insert
     suspend fun insert(chatRoom: ChatRoom): Long
+
+    @Query("DELETE FROM chat_room where id = :chatRoomId")
+    suspend fun delete(chatRoomId: Long)
 }

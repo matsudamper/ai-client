@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.MainScreenUiState
@@ -14,10 +15,12 @@ import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ChatRoomWithStartChat
+import net.matsudamper.gptclient.usecase.DeleteChatRoomUseCase
 
 class MainScreenViewModel(
     private val appDatabase: AppDatabase,
     private val platformRequest: PlatformRequest,
+    private val deleteChatRoomUseCase: DeleteChatRoomUseCase,
     private val navControllerProvider: () -> NavHostController,
 ) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
@@ -43,6 +46,10 @@ class MainScreenViewModel(
                     ) {
                         popUpTo(0) { inclusive = true }
                     }
+                }
+
+                override fun clearHistory() {
+                    clearAllHistory()
                 }
             }
         )
@@ -83,6 +90,18 @@ class MainScreenViewModel(
         override fun onClick() {
             val navHostController: NavHostController = navControllerProvider()
             navHostController.navigate(Navigator.Chat(Navigator.Chat.ChatOpenContext.OpenChat(roomId)))
+        }
+    }
+
+    private fun clearAllHistory() {
+        viewModelScope.launch {
+            val allChatRooms = appDatabase.chatRoomDao().getAll().first()
+
+            for (chatRoom in allChatRooms) {
+                deleteChatRoomUseCase.deleteChatRoom(
+                    chatRoomId = chatRoom.id
+                )
+            }
         }
     }
 

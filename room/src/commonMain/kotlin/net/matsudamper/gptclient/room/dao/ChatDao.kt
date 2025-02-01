@@ -34,6 +34,9 @@ interface ChatDao {
     @Query("DELETE FROM chat where chat_room_id = :chatRoomId")
     suspend fun deleteByChatRoomId(chatRoomId: Long)
 
+    @Query("SELECT * FROM chat where chat_room_id != :chatRoomId AND image_uri IN (:imageUriList)")
+    suspend fun getOtherChatroomUseImageUri(chatRoomId: Long, imageUriList: List<String>): List<Chat>
+
     @Query("DELETE FROM chat where id = :id & `index` >= :index")
     suspend fun deleteItemsAtOrAfterIndex(id: String, index: Int)
 }
