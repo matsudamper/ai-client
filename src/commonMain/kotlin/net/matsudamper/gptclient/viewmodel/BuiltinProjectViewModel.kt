@@ -58,23 +58,17 @@ class BuiltinProjectViewModel(
                 }
 
                 override fun send(text: String) {
-                    when (navigator.builtinProjectId) {
-                        BuiltinProjectId.Calendar -> {
-                            navControllerProvider().navigate(
-                                Navigator.Chat(
-                                    openContext = Navigator.Chat.ChatOpenContext.NewMessage(
-                                        initialMessage = text,
-                                        uriList = viewModelStateFlow.value.uriList,
-                                        chatType = Navigator.Chat.ChatType.Builtin(
-                                            navigator.builtinProjectId,
-                                        ),
-                                    )
-                                )
+                    navControllerProvider().navigate(
+                        Navigator.Chat(
+                            openContext = Navigator.Chat.ChatOpenContext.NewMessage(
+                                initialMessage = text,
+                                uriList = viewModelStateFlow.value.uriList,
+                                chatType = Navigator.Chat.ChatType.Builtin(
+                                    navigator.builtinProjectId,
+                                ),
                             )
-                        }
-
-                        else -> TODO()
-                    }
+                        )
+                    )
                     viewModelStateFlow.update {
                         it.copy(uriList = listOf())
                     }

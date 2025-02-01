@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -19,7 +20,6 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +35,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
+import compose.icons.feathericons.Calendar
+import compose.icons.feathericons.CreditCard
 import compose.icons.feathericons.Menu
 import net.matsudamper.gptclient.ui.component.ChatFooter
 import kotlin.math.ceil
@@ -47,8 +49,13 @@ public data class NewChatUiState(
 ) {
     data class Project(
         val name: String,
+        val icon: Icon,
         val listener: Listener,
     ) {
+        enum class Icon {
+            Calendar,
+            Card,
+        }
         @Immutable
         interface Listener {
             fun onClick()
@@ -78,6 +85,7 @@ public fun NewChat(
         Column {
             val projectModifier = Modifier.fillMaxWidth()
                 .height(150.dp)
+                .padding(bottom = 8.dp)
 
             TopAppBar(
                 modifier = Modifier,
@@ -131,7 +139,14 @@ public fun NewChat(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Favorite,
+                                    imageVector = when(project.icon) {
+                                        NewChatUiState.Project.Icon.Calendar -> {
+                                            FeatherIcons.Calendar
+                                        }
+                                        NewChatUiState.Project.Icon.Card -> {
+                                            FeatherIcons.CreditCard
+                                        }
+                                    },
                                     contentDescription = null
                                 )
                                 Text(project.name)

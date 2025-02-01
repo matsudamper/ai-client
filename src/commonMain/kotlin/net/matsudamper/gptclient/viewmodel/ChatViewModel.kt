@@ -208,7 +208,10 @@ class ChatViewModel(
                         is ViewModelState.RoomInfo.BuiltinProject -> roomInfo.builtinProjectInfo.systemMessage
                         is ViewModelState.RoomInfo.Normal -> null
                     },
-                    format = ChatGptClient.Format.Text,
+                    format = when(roomInfo) {
+                        is ViewModelState.RoomInfo.BuiltinProject -> roomInfo.builtinProjectInfo.format
+                        is ViewModelState.RoomInfo.Normal -> ChatGptClient.Format.Text
+                    },
                 )
                 when (result) {
                     is AddRequestUseCase.Result.Success -> Unit

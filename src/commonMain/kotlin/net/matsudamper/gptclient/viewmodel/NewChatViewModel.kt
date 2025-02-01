@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.Calendar
+import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.ui.NewChatUiState
@@ -24,12 +25,27 @@ class NewChatViewModel(
             projects = listOf(
                 NewChatUiState.Project(
                     name = "カレンダー追加",
+                    icon = NewChatUiState.Project.Icon.Calendar,
                     listener = object : NewChatUiState.Project.Listener {
                         override fun onClick() {
                             navControllerProvider().navigate(
                                 Navigator.BuiltinProject(
                                     title = "カレンダー追加",
                                     builtinProjectId = BuiltinProjectId.Calendar,
+                                )
+                            )
+                        }
+                    },
+                ),
+                NewChatUiState.Project(
+                    name = "家計簿追加",
+                    icon = NewChatUiState.Project.Icon.Card,
+                    listener = object : NewChatUiState.Project.Listener {
+                        override fun onClick() {
+                            navControllerProvider().navigate(
+                                Navigator.BuiltinProject(
+                                    title = "家計簿追加",
+                                    builtinProjectId = BuiltinProjectId.Money,
                                 )
                             )
                         }

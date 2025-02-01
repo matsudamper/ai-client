@@ -6,6 +6,7 @@ import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.usecase.CalendarResponseParser
+import net.matsudamper.gptclient.usecase.MoneyResponseParser
 
 class GetBuiltinProjectInfoUseCase {
     fun exec(builtinProjectId: BuiltinProjectId) : Info {
@@ -39,7 +40,34 @@ class GetBuiltinProjectInfoUseCase {
                     }
                 )
             }
-            BuiltinProjectId.Money -> TODO()
+            BuiltinProjectId.Money -> {
+                Info(
+                    systemMessage = """
+                        画像から家計簿に予定を追加できる情報が欲しいです。複数あれば全て作成してください。必要な情報が無ければerror_messageで聞き返してください。
+                        あなたは今日の日付を知りません。
+                        error_messageが存在する場合はresultsは必ず空の配列でなければなりません。
+                        時刻は全てOffsetなしとして扱ってください。
+                        以下のJSONフォーマットに従ってください。
+                        ```json
+                        {
+                            "error_message": "日付や金額が画像から見つからない場合に、ユーザーに入力を促すメッセージ(String?)",
+                            "results": [
+                                {
+                                    "date": "日付、時間のISO8601(String)",
+                                    "amount": "日本円の金額、ドル表記であればドルで良い(Int)",
+                                    "title": "使用用途のタイトル(String)",
+                                    "description": "補足情報(String?)"
+                                }
+                            ]
+                        }
+                        ```
+                    """.trimIndent(),
+                    format = ChatGptClient.Format.Json,
+                    responseTransformer = {
+                        MoneyResponseParser().parse(it)
+                    }
+                )
+            }
             else -> throw NotImplementedError()
         }
     }
