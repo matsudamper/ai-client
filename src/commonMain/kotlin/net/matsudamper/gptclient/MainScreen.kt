@@ -181,10 +181,22 @@ private fun Navigation(
             )
         }
         composable<Navigator.Chat>(
-            typeMap = Navigator.Chat.typeMap
+            typeMap = Navigator.Chat.typeMap,
         ) {
             val navigatorItem = it.toRoute<Navigator.Chat>()
             val uiState = uiStateProvider.provideChatUiState(entry = it, navigator = navigatorItem)
+
+            ChatList(
+                modifier = Modifier.fillMaxSize(),
+                uiState = uiState,
+                onClickMenu = { onClickMenu() },
+            )
+        }
+        composable<Navigator.CalendarChat>(
+            typeMap = Navigator.CalendarChat.typeMap,
+        ) {
+            val navigatorItem = it.toRoute<Navigator.CalendarChat>()
+            val uiState = uiStateProvider.provideCalendarChatUiState(entry = it, navigator = navigatorItem)
 
             ChatList(
                 modifier = Modifier.fillMaxSize(),

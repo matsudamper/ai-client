@@ -29,8 +29,8 @@ import net.matsudamper.gptclient.ui.ChatListUiState
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-class ChatViewModel(
-    openContext: Navigator.Chat.ChatOpenContext,
+class CalendarChatViewModel(
+    openContext: Navigator.CalendarChat.ChatOpenContext,
     private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
     private val settingDataStore: SettingDataStore,
@@ -81,11 +81,17 @@ class ChatViewModel(
     ).also { uiState ->
         viewModelScope.launch {
             when (openContext) {
-                is Navigator.Chat.ChatOpenContext.NewMessage -> {
-                    val room = createRoom(builtinProjectId = null)
-
+                is Navigator.CalendarChat.ChatOpenContext.NewMessage -> {
+                    val room = createRoom(builtinProjectId = openContext.builtinProjectId)
                     viewModelStateFlow.update {
                         it.copy(room = room)
+                    }
+
+                    val builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
+                        openContext.builtinProjectId,
+                    )
+                    viewModelStateFlow.update {
+                        it.copy(builtinProjectInfo = builtinProjectInfo)
                     }
                     addRequest(
                         message = openContext.initialMessage,
@@ -93,7 +99,7 @@ class ChatViewModel(
                     )
                 }
 
-                is Navigator.Chat.ChatOpenContext.OpenChat -> {
+                is Navigator.CalendarChat.ChatOpenContext.OpenChat -> {
                     restoreChatRoom(openContext.chatRoomId)
                 }
             }

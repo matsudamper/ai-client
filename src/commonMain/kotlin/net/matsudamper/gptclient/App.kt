@@ -16,6 +16,7 @@ import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.viewmodel.BuiltinProjectViewModel
+import net.matsudamper.gptclient.viewmodel.CalendarChatViewModel
 import net.matsudamper.gptclient.viewmodel.ChatViewModel
 import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
 import net.matsudamper.gptclient.viewmodel.NewChatViewModel
@@ -55,6 +56,24 @@ internal fun App() {
                                 platformRequest = koin.get(),
                                 settingDataStore = koin.get(),
                                 openContext = navigation.openContext,
+                                navControllerProvider = { navController },
+                                appDatabase = koin.get(),
+                            )
+                        }
+                        return viewModel.uiStateFlow.collectAsState().value
+                    }
+
+                    @Composable
+                    override fun provideCalendarChatUiState(
+                        entry: NavBackStackEntry,
+                        navigator: Navigator.CalendarChat
+                    ): ChatListUiState {
+                        val viewModel = viewModel(entry) {
+                            val koin = getKoin()
+                            CalendarChatViewModel(
+                                platformRequest = koin.get(),
+                                settingDataStore = koin.get(),
+                                openContext = navigator.openContext,
                                 navControllerProvider = { navController },
                                 appDatabase = koin.get(),
                             )

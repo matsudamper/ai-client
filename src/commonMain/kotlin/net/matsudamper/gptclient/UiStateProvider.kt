@@ -19,6 +19,9 @@ interface UiStateProvider {
     fun provideChatUiState(entry: NavBackStackEntry, navigator: Navigator.Chat): ChatListUiState
 
     @Composable
+    fun provideCalendarChatUiState(entry: NavBackStackEntry, navigator: Navigator.CalendarChat): ChatListUiState
+
+    @Composable
     fun provideSettingUiState(entry: NavBackStackEntry): SettingsScreenUiState
 
     @Composable

@@ -9,8 +9,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
+import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ChatRoomWithStartChat
 import net.matsudamper.gptclient.ui.BuiltinProjectUiState
@@ -56,15 +58,20 @@ class BuiltinProjectViewModel(
                 }
 
                 override fun send(text: String) {
-                    navControllerProvider().navigate(
-                        Navigator.Chat(
-                            openContext = Navigator.Chat.ChatOpenContext.NewBuiltinMessage(
-                                initialMessage = text,
-                                uriList = viewModelStateFlow.value.uriList,
-                                builtinProjectId = navigator.builtinProjectId,
+                    when(navigator.builtinProjectId) {
+                        BuiltinProjectId.Calendar -> {
+                            navControllerProvider().navigate(
+                                Navigator.CalendarChat(
+                                    openContext = Navigator.CalendarChat.ChatOpenContext.NewMessage(
+                                        initialMessage = text,
+                                        uriList = viewModelStateFlow.value.uriList,
+                                        builtinProjectId = navigator.builtinProjectId,
+                                    )
+                                )
                             )
-                        )
-                    )
+                        }
+                        else -> TODO()
+                    }
                 }
             }
         )

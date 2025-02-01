@@ -37,7 +37,12 @@ class NewChatViewModel(
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     navControllerProvider().navigate(
-                        Navigator.Chat(Navigator.Chat.ChatOpenContext.NewMessage(text))
+                        Navigator.Chat(
+                            Navigator.Chat.ChatOpenContext.NewMessage(
+                                initialMessage = text,
+                                uriList = listOf(),
+                            )
+                        )
                     )
                 }
             }
