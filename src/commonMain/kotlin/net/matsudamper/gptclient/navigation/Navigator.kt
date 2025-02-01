@@ -44,28 +44,6 @@ sealed interface Navigator {
     }
 
     @Serializable
-    data class CalendarChat(
-        val openContext: ChatOpenContext
-    ) {
-        @Serializable
-        sealed interface ChatOpenContext {
-            @Serializable
-            data class NewMessage(
-                val initialMessage: String,
-                val uriList: List<String>,
-            ) : ChatOpenContext
-
-            @Serializable
-            data class OpenChat(val chatRoomId: ChatRoomId) : ChatOpenContext
-        }
-        companion object {
-            val typeMap: Map<KType, NavType<*>> = mapOf(
-                typeOf<ChatOpenContext>() to JsonNavType<ChatOpenContext>(ChatOpenContext.serializer(), false),
-            )
-        }
-    }
-
-    @Serializable
     data class BuiltinProject(
         val title: String,
         val builtinProjectId: BuiltinProjectId,

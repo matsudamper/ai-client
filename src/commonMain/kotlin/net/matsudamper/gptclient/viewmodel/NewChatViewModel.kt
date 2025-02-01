@@ -45,6 +45,7 @@ class NewChatViewModel(
                             Navigator.Chat.ChatOpenContext.NewMessage(
                                 initialMessage = text,
                                 uriList = viewModelStateFlow.value.mediaList,
+                                chatType = Navigator.Chat.ChatType.Normal,
                             )
                         )
                     )

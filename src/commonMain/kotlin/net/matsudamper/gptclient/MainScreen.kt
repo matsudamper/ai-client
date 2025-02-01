@@ -208,18 +208,6 @@ private fun Navigation(
                 onClickMenu = { onClickMenu() },
             )
         }
-        composable<Navigator.CalendarChat>(
-            typeMap = Navigator.CalendarChat.typeMap,
-        ) {
-            val navigatorItem = it.toRoute<Navigator.CalendarChat>()
-            val uiState = uiStateProvider.provideCalendarChatUiState(entry = it, navigator = navigatorItem)
-
-            ChatList(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
-        }
         composable<Navigator.Settings> {
             val uiState = uiStateProvider.provideSettingUiState(entry = it)
             SettingsScreen(

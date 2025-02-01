@@ -1,5 +1,6 @@
 package net.matsudamper.gptclient.viewmodel
 
+import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -76,7 +77,7 @@ class ChatViewModel(
         )
     ).also { uiState ->
         viewModelScope.launch {
-            viewModelStateFlow.map { it.room?.id }
+            viewModelStateFlow.map { it.roomInfo?.room?.id }
                 .filterNotNull()
                 .stateIn(this)
                 .collectLatest { roomId ->
@@ -99,6 +100,15 @@ class ChatViewModel(
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isChatLoading,
+                            agentTransformer = {
+                                when(val info = viewModelState.roomInfo) {
+                                    is ViewModelState.RoomInfo.BuiltinProject -> {
+                                        info.builtinProjectInfo.responseTransformer(it)
+                                    }
+                                    is ViewModelState.RoomInfo.Normal,
+                                    null -> AnnotatedString(it)
+                                }
+                            }
                         ),
                     )
                 }
@@ -110,34 +120,60 @@ class ChatViewModel(
         viewModelScope.launch {
             when (openContext) {
                 is Navigator.Chat.ChatOpenContext.NewMessage -> {
-                    val room = createRoom(builtinProjectId = when(val chatType = openContext.chatType) {
-                        is Navigator.Chat.ChatType.Builtin -> chatType.builtinProjectId
-                        is Navigator.Chat.ChatType.Normal -> null
-                    })
+                    val room = createRoom(
+                        builtinProjectId = when (val chatType = openContext.chatType) {
+                            is Navigator.Chat.ChatType.Builtin -> chatType.builtinProjectId
+                            is Navigator.Chat.ChatType.Normal -> null
+                        }
+                    )
 
                     viewModelStateFlow.update {
-                        it.copy(room = room)
+                        it.copy(
+                            roomInfo = when (val chatType = openContext.chatType) {
+                                is Navigator.Chat.ChatType.Builtin -> {
+                                    ViewModelState.RoomInfo.BuiltinProject(
+                                        room = room,
+                                        builtinProjectId = chatType.builtinProjectId,
+                                        builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
+                                            chatType.builtinProjectId,
+                                        )
+                                    )
+                                }
+
+                                is Navigator.Chat.ChatType.Normal -> {
+                                    ViewModelState.RoomInfo.Normal(room)
+                                }
+                            },
+                        )
                     }
+
                     addRequest(
                         message = openContext.initialMessage,
                         uris = openContext.uriList,
                     )
                 }
-                is Navigator.Chat.ChatOpenContext.OpenChat -> {
-                    restoreChatRoom(openContext.chatRoomId)
-                }
-            }
-        }
-    }
 
-    private fun restoreChatRoom(chatRoomId: ChatRoomId) {
-        viewModelScope.launch {
-            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value)
-                .first()
-            viewModelStateFlow.update {
-                it.copy(
-                    room = room,
-                )
+                is Navigator.Chat.ChatOpenContext.OpenChat -> {
+                    val room = appDatabase.chatRoomDao()
+                        .get(chatRoomId = openContext.chatRoomId.value)
+                        .first()
+                    val builtInProjectId = room.builtInProjectId
+                    viewModelStateFlow.update {
+                        it.copy(
+                            roomInfo = if (builtInProjectId != null) {
+                                ViewModelState.RoomInfo.BuiltinProject(
+                                    room = room,
+                                    builtinProjectId = builtInProjectId,
+                                    builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
+                                        builtInProjectId,
+                                    )
+                                )
+                            } else {
+                                ViewModelState.RoomInfo.Normal(room = room)
+                            },
+                        )
+                    }
+                }
             }
         }
     }
@@ -156,7 +192,8 @@ class ChatViewModel(
 
     private fun addRequest(message: String, uris: List<String> = listOf()) {
         if (message.isEmpty() && uris.isEmpty()) return
-        val chatRoomId = viewModelStateFlow.value.room?.id ?: return
+        val roomInfo = viewModelStateFlow.value.roomInfo ?: return
+        val chatRoomId = roomInfo.room.id
 
         viewModelScope.launch {
             try {
@@ -167,7 +204,10 @@ class ChatViewModel(
                     chatRoomId = chatRoomId,
                     message = message,
                     uris = uris,
-                    systemMessage = null,
+                    systemMessage = when(roomInfo) {
+                        is ViewModelState.RoomInfo.BuiltinProject -> roomInfo.builtinProjectInfo.systemMessage
+                        is ViewModelState.RoomInfo.Normal -> null
+                    },
                     format = ChatGptClient.Format.Text,
                 )
                 when (result) {
@@ -196,15 +236,22 @@ class ChatViewModel(
     }
 
     private data class ViewModelState(
-        val room: ChatRoom? = null,
+        val roomInfo: RoomInfo? = null,
         val chats: List<Chat> = listOf(),
         val selectedMedia: List<String> = listOf(),
         val isMediaLoading: Boolean = false,
         val isChatLoading: Boolean = false,
         val errorDialogMessage: String? = null,
     ) {
-        data class RoomInfo(
-            val id: ChatRoomId,
-        )
+        sealed interface RoomInfo {
+            val room: ChatRoom
+
+            data class Normal(override val room: ChatRoom) : RoomInfo
+            data class BuiltinProject(
+                override val room: ChatRoom,
+                val builtinProjectId: BuiltinProjectId,
+                val builtinProjectInfo: GetBuiltinProjectInfoUseCase.Info,
+            ) : RoomInfo
+        }
     }
 }

@@ -58,17 +58,21 @@ class BuiltinProjectViewModel(
                 }
 
                 override fun send(text: String) {
-                    when(navigator.builtinProjectId) {
+                    when (navigator.builtinProjectId) {
                         BuiltinProjectId.Calendar -> {
                             navControllerProvider().navigate(
-                                Navigator.CalendarChat(
-                                    openContext = Navigator.CalendarChat.ChatOpenContext.NewMessage(
+                                Navigator.Chat(
+                                    openContext = Navigator.Chat.ChatOpenContext.NewMessage(
                                         initialMessage = text,
                                         uriList = viewModelStateFlow.value.uriList,
+                                        chatType = Navigator.Chat.ChatType.Builtin(
+                                            navigator.builtinProjectId,
+                                        ),
                                     )
                                 )
                             )
                         }
+
                         else -> TODO()
                     }
                     viewModelStateFlow.update {
@@ -132,10 +136,10 @@ class BuiltinProjectViewModel(
     inner class ChatRoomListener(private val chatRoomId: ChatRoomId) : BuiltinProjectUiState.History.Listener {
         override fun onClick() {
             navControllerProvider().navigate(
-                Navigator.CalendarChat(
-                    openContext = Navigator.CalendarChat.ChatOpenContext.OpenChat(
+                Navigator.Chat(
+                    openContext = Navigator.Chat.ChatOpenContext.OpenChat(
                         chatRoomId = chatRoomId,
-                    )
+                    ),
                 )
             )
         }

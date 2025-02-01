@@ -1,9 +1,11 @@
 package net.matsudamper.gptclient.viewmodel
 
+import androidx.compose.ui.text.AnnotatedString
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
+import net.matsudamper.gptclient.usecase.CalendarResponseParser
 
 class GetBuiltinProjectInfoUseCase {
     fun exec(builtinProjectId: BuiltinProjectId) : Info {
@@ -32,6 +34,9 @@ class GetBuiltinProjectInfoUseCase {
                         ```
                     """.trimIndent(),
                     format = ChatGptClient.Format.Json,
+                    responseTransformer = {
+                        CalendarResponseParser().parse(it)
+                    }
                 )
             }
             BuiltinProjectId.Money -> TODO()
@@ -43,5 +48,6 @@ class GetBuiltinProjectInfoUseCase {
         val systemMessage: String,
         val responseType: String = "",
         val format: ChatGptClient.Format,
+        val responseTransformer: (String) -> AnnotatedString,
     )
 }
