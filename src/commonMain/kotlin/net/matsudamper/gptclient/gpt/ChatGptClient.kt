@@ -71,7 +71,7 @@ class ChatGptClient(
             ),
             topP = 1.0,
             temperature = 0.3,
-            maxCompletionTokens = 100,
+            maxCompletionTokens = 500,
             frequencyPenalty = 0.0,
             presencePenalty = 0.0
         )
