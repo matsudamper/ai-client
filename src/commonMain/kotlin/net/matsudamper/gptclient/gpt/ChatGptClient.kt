@@ -29,7 +29,15 @@ class ChatGptClient(
         val requestMessages = messages.map { message ->
             val role = when (message.role) {
                 GptMessage.Role.Assistant -> GptRequest.Role.Assistant
-                GptMessage.Role.System -> GptRequest.Role.System
+                GptMessage.Role.System -> {
+                    when (model) {
+                        ChatGptModel.O1Preview,
+                        ChatGptModel.O1mini -> GptRequest.Role.User
+
+                        else -> GptRequest.Role.System
+                    }
+                }
+
                 GptMessage.Role.User -> GptRequest.Role.User
             }
             val contents = message.contents.map { content ->
@@ -75,7 +83,11 @@ class ChatGptClient(
                 }
             ),
             topP = 1.0,
-            temperature = 0.3,
+            temperature = when (model) {
+                ChatGptModel.O1mini,
+                ChatGptModel.O1Preview -> 1.0
+                else -> 0.3
+            },
             maxCompletionTokens = 500,
             frequencyPenalty = 0.0,
             presencePenalty = 0.0
@@ -114,9 +126,11 @@ class ChatGptClient(
 
         sealed interface ErrorReason {
             val message: String
+
             data class ImageNotSupported(
                 override val message: String = "画像をサポートしていないモデルです"
             ) : ErrorReason
+
             data class Unknown(override val message: String) : ErrorReason
         }
     }

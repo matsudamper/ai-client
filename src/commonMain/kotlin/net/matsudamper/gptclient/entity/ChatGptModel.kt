@@ -8,6 +8,14 @@ enum class ChatGptModel {
     Gpt4oMini {
         override val modelName: String = "gpt-4o-mini"
         override val enableImage: Boolean = true
+    },
+    O1Preview {
+        override val modelName: String = "o1-preview"
+        override val enableImage: Boolean = false
+    },
+    O1mini {
+        override val modelName: String = "o1-mini"
+        override val enableImage: Boolean = false
     }
     ;
     abstract val modelName: String
