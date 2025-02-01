@@ -95,6 +95,7 @@ internal fun App() {
                                 navControllerProvider = { navController },
                                 navigator = navigator,
                                 platformRequest = getKoin().get(),
+                                appDatabase = getKoin().get(),
                             )
                         }
 

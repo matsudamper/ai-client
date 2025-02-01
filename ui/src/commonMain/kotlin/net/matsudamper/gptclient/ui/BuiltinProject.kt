@@ -4,9 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -35,16 +38,22 @@ import net.matsudamper.gptclient.ui.component.ChatFooter
 data class BuiltinProjectUiState(
     val projectName: String,
     val selectedMedia: List<String>,
+    val systemMessage: SystemMessage,
     val visibleMediaLoading: Boolean,
-    val state: LoadingState,
+    val chatRoomsState: ChatRoomsState,
     val listener: Listener,
 ) {
-    sealed interface LoadingState {
-        object Loading : LoadingState
+    sealed interface ChatRoomsState {
+        object Loading : ChatRoomsState
         data class Loaded(
             val histories: List<History>,
-        ) : LoadingState
+        ) : ChatRoomsState
     }
+
+    data class SystemMessage(
+        val text: String,
+        val editable: Boolean,
+    )
 
     data class History(
         val text: String,
@@ -89,18 +98,22 @@ fun BuiltinProject(
         )
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
-                .weight(1f)
+                .weight(1f),
+            contentPadding = PaddingValues(
+                horizontal = 12.dp,
+            )
         ) {
-            when (uiState.state) {
-                is BuiltinProjectUiState.LoadingState.Loaded -> {
+            when (uiState.chatRoomsState) {
+                is BuiltinProjectUiState.ChatRoomsState.Loaded -> {
                     item {
                         Text("命令")
-                        Text("～してください")
+                        Text(uiState.systemMessage.text)
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
                     item {
                         Text("履歴")
                     }
-                    items(uiState.state.histories) { history ->
+                    items(uiState.chatRoomsState.histories) { history ->
                         Row(
                             modifier = Modifier.fillMaxSize()
                                 .clickable {
@@ -117,7 +130,7 @@ fun BuiltinProject(
                     }
                 }
 
-                is BuiltinProjectUiState.LoadingState.Loading -> {
+                is BuiltinProjectUiState.ChatRoomsState.Loading -> {
                     item {
                         Box(
                             modifier = Modifier.fillMaxSize(),

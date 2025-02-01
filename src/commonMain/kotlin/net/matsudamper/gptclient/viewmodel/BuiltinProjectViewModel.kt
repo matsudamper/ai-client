@@ -10,20 +10,28 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.navigation.Navigator
+import net.matsudamper.gptclient.room.AppDatabase
+import net.matsudamper.gptclient.room.entity.ChatRoomId
+import net.matsudamper.gptclient.room.entity.ChatRoomWithStartChat
 import net.matsudamper.gptclient.ui.BuiltinProjectUiState
 
 class BuiltinProjectViewModel(
     private val navigator: Navigator.BuiltinProject,
     private val platformRequest: PlatformRequest,
+    private val appDatabase: AppDatabase,
     private val navControllerProvider: () -> NavHostController
 ) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     val uiStateFlow: StateFlow<BuiltinProjectUiState> = MutableStateFlow(
         BuiltinProjectUiState(
             projectName = navigator.title,
-            state = BuiltinProjectUiState.LoadingState.Loading,
+            chatRoomsState = BuiltinProjectUiState.ChatRoomsState.Loading,
             visibleMediaLoading = false,
             selectedMedia = listOf(),
+            systemMessage = BuiltinProjectUiState.SystemMessage(
+                text = "",
+                editable = false,
+            ),
             listener = object : BuiltinProjectUiState.Listener {
                 override fun recordVoice() {
 
@@ -60,21 +68,74 @@ class BuiltinProjectViewModel(
                 }
             }
         )
-    ).also { uiState ->
+    ).also { uiStateFlow ->
+        viewModelScope.launch {
+            appDatabase.chatRoomDao().getFromBuiltInChatRoomId(
+                builtInChatRoomId = navigator.builtinProjectId.id,
+                isAsc = false,
+            ).collectLatest { chatRooms ->
+                viewModelStateFlow.update { viewModelState ->
+                    viewModelState.copy(
+                        chatRooms = chatRooms,
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            val systemInfo = GetBuiltinProjectInfoUseCase().exec(navigator.builtinProjectId)
+            viewModelStateFlow.update {
+                it.copy(
+                    systemInfo = systemInfo,
+                )
+            }
+        }
         viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
-                uiState.update {
-                    it.copy(
+                uiStateFlow.update { uiState ->
+                    uiState.copy(
+                        systemMessage = BuiltinProjectUiState.SystemMessage(
+                            text = viewModelState.systemInfo?.systemMessage.orEmpty(),
+                            editable = false,
+                        ),
                         selectedMedia = viewModelState.uriList,
-                        visibleMediaLoading = viewModelState.mediaLoading
+                        visibleMediaLoading = viewModelState.mediaLoading,
+                        chatRoomsState = run rooms@{
+                            val chatRooms = viewModelState.chatRooms
+                                ?: return@rooms BuiltinProjectUiState.ChatRoomsState.Loading
+
+                            BuiltinProjectUiState.ChatRoomsState.Loaded(
+                                histories = chatRooms.map { room ->
+                                    BuiltinProjectUiState.History(
+                                        text = room.textMessage ?: "空白",
+                                        listener = ChatRoomListener(
+                                            chatRoomId = room.chatRoom.id,
+                                        ),
+                                    )
+                                }
+                            )
+                        }
                     )
                 }
             }
         }
     }
 
+    inner class ChatRoomListener(private val chatRoomId: ChatRoomId) : BuiltinProjectUiState.History.Listener {
+        override fun onClick() {
+            navControllerProvider().navigate(
+                Navigator.Chat(
+                    openContext = Navigator.Chat.ChatOpenContext.OpenChat(
+                        chatRoomId = chatRoomId,
+                    )
+                )
+            )
+        }
+    }
+
     private data class ViewModelState(
         val uriList: List<String> = listOf(),
         val mediaLoading: Boolean = false,
+        val chatRooms: List<ChatRoomWithStartChat>? = null,
+        val systemInfo: GetBuiltinProjectInfoUseCase.Info? = null,
     )
 }
