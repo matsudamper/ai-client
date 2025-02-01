@@ -20,7 +20,10 @@ import kotlinx.serialization.json.Json
 class ChatGptClient(
     private val secretKey: String,
 ) {
-    suspend fun request(messages: List<GptMessage>): GptResponse {
+    suspend fun request(
+        messages: List<GptMessage>,
+        format: Format
+    ): GptResponse {
         val requestMessages = messages.map { message ->
             val role = when (message.role) {
                 GptMessage.Role.Assistant -> GptRequest.Role.Assistant
@@ -60,7 +63,12 @@ class ChatGptClient(
         val sampleGptRequest = GptRequest(
             model = "gpt-4o-mini",
             messages = requestMessages,
-            responseFormat = GptRequest.ResponseFormat(type = "text"),
+            responseFormat = GptRequest.ResponseFormat(
+                type = when (format) {
+                    Format.Text -> "text"
+                    Format.Json -> "json_object"
+                }
+            ),
             topP = 1.0,
             temperature = 0.3,
             maxCompletionTokens = 100,
@@ -110,5 +118,10 @@ class ChatGptClient(
             data class ImageUrl(val imageUrl: String) : Content
             data class Base64Image(val base64: String) : Content
         }
+    }
+
+    enum class Format {
+        Text,
+        Json,
     }
 }

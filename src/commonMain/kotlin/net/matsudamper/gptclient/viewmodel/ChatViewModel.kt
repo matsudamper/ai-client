@@ -298,6 +298,8 @@ class ChatViewModel(
                     add(systemMessage)
                     addAll(messages)
                 }.filterNotNull(),
+                format = viewModelStateFlow.value.builtinProjectInfo?.format
+                    ?: ChatGptClient.Format.Text,
             )
             val roomChats = response.choices.mapIndexed { index, choice ->
                 Chat(
