@@ -55,7 +55,7 @@ class GetBuiltinProjectInfoUseCase {
                             "error_message": "日付や金額が画像から見つからない場合に、ユーザーに入力を促すメッセージ(String?)",
                             "results": [
                                 {
-                                    "date": "日付、時間のISO8601(String)",
+                                    "date": "日付、時間の ISO8601 Offsetなし (String)",
                                     "amount": "日本円の金額、ドル表記であればドルで良い(Int)",
                                     "title": "使用用途のタイトル(String)",
                                     "description": "補足情報(String?)"
