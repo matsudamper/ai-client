@@ -258,6 +258,7 @@ class ChatViewModel(
                 modelName = model.modelName,
                 builtInProjectId = builtinProjectId,
                 projectId = projectId,
+                summary = null,
             )
             room.copy(
                 id = ChatRoomId(appDatabase.chatRoomDao().insert(room)),
@@ -291,6 +292,17 @@ class ChatViewModel(
                             -> ChatGptClient.Format.Text
                     },
                     model = roomInfo.room.modelName,
+                    summaryProvider = {
+                        when (roomInfo) {
+                            is ViewModelState.RoomInfo.BuiltinProject -> {
+                                roomInfo.builtinProjectInfo.summaryProvider(it)
+                            }
+
+                            is ViewModelState.RoomInfo.Normal,
+                            is ViewModelState.RoomInfo.Project,
+                                -> null
+                        }
+                    },
                 )
                 when (result) {
                     is AddRequestUseCase.Result.Success -> Unit

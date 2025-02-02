@@ -162,7 +162,7 @@ class ProjectViewModel(
                             ProjectUiState.ChatRoomsState.Loaded(
                                 histories = chatRooms.map { room ->
                                     ProjectUiState.History(
-                                        text = room.textMessage?.replace("\n", "") ?: "空白",
+                                        text = room.chatRoom.summary ?: room.textMessage?.replace("\n", "") ?: "空白",
                                         listener = ChatRoomListener(
                                             chatRoomId = room.chatRoom.id,
                                         ),

@@ -12,7 +12,16 @@ import net.matsudamper.gptclient.viewmodel.calendar.MoneyGptResponse
 import java.time.format.DateTimeFormatterBuilder
 
 class MoneyResponseParser() {
-    fun parse(original: String): AnnotatedString {
+    fun parse(original: String): MoneyGptResponse? {
+        return try {
+             Json.decodeFromString<MoneyGptResponse>(original)
+        }catch (e: Throwable){
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun toAnnotatedString(original: String): AnnotatedString {
         return try {
             val response = Json.decodeFromString<MoneyGptResponse>(original)
             if (response.results.isEmpty()) {

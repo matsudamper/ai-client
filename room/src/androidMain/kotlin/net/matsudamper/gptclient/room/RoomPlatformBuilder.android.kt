@@ -7,7 +7,7 @@ object RoomPlatformBuilder {
     fun create(context: Context): AppDatabase {
         return Room.databaseBuilder<AppDatabase>(
             context = context,
-            "app-database"
+            "app-database",
         ).build()
     }
 }

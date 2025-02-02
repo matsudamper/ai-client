@@ -10,8 +10,8 @@ import net.matsudamper.gptclient.usecase.CalendarResponseParser
 import net.matsudamper.gptclient.usecase.MoneyResponseParser
 
 class GetBuiltinProjectInfoUseCase {
-    fun exec(builtinProjectId: BuiltinProjectId) : Info {
-        return when(builtinProjectId) {
+    fun exec(builtinProjectId: BuiltinProjectId): Info {
+        return when (builtinProjectId) {
             BuiltinProjectId.Calendar -> {
                 Info(
                     systemMessage = """
@@ -37,11 +37,13 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = ChatGptClient.Format.Json,
                     responseTransformer = {
-                        CalendarResponseParser().parse(it)
+                        CalendarResponseParser().toAnnotatedString(it)
                     },
+                    summaryProvider = { CalendarResponseParser().parse(it)?.results?.firstOrNull()?.title },
                     model = ChatGptModel.Gpt4oMini,
                 )
             }
+
             BuiltinProjectId.Money -> {
                 Info(
                     systemMessage = """
@@ -66,11 +68,13 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = ChatGptClient.Format.Json,
                     responseTransformer = {
-                        MoneyResponseParser().parse(it)
+                        MoneyResponseParser().toAnnotatedString(it)
                     },
                     model = ChatGptModel.Gpt4oMini,
+                    summaryProvider = { MoneyResponseParser().parse(it)?.results?.firstOrNull()?.title },
                 )
             }
+
             else -> throw NotImplementedError()
         }
     }
@@ -79,6 +83,7 @@ class GetBuiltinProjectInfoUseCase {
         val systemMessage: String,
         val format: ChatGptClient.Format,
         val responseTransformer: (String) -> AnnotatedString,
+        val summaryProvider: (String) -> String?,
         val model: ChatGptModel,
     )
 }

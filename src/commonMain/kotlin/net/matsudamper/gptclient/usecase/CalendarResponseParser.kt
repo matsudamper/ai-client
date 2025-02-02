@@ -15,7 +15,16 @@ import java.time.ZoneOffset
 import java.time.temporal.ChronoField
 
 class CalendarResponseParser() {
-    fun parse(original: String): AnnotatedString {
+    fun parse(original: String): CalendarGptResponse? {
+        return try {
+            Json.decodeFromString<CalendarGptResponse>(original)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun toAnnotatedString(original: String): AnnotatedString {
         return try {
             val response = Json.decodeFromString<CalendarGptResponse>(original)
             if (response.results.isEmpty()) {
@@ -57,7 +66,7 @@ class CalendarResponseParser() {
     private fun LocalDateTime.toGoogleCalendarFormat(): String {
         with(
             atZone(ZoneId.systemDefault()).toOffsetDateTime()
-                .withOffsetSameInstant(ZoneOffset.UTC)
+                .withOffsetSameInstant(ZoneOffset.UTC),
         ) {
             val year = get(ChronoField.YEAR)
             val month = get(ChronoField.MONTH_OF_YEAR).toString().padStart(2, '0')

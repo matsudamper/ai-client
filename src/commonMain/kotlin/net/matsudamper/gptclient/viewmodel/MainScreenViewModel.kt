@@ -37,7 +37,7 @@ class MainScreenViewModel(
 
                 override fun onClickUsage() {
                     platformRequest.openLink(
-                        url = "https://platform.openai.com/settings/organization/usage"
+                        url = "https://platform.openai.com/settings/organization/usage",
                     )
                 }
 
@@ -52,14 +52,14 @@ class MainScreenViewModel(
                 override fun clearHistory() {
                     clearAllHistory()
                 }
-            }
-        )
+            },
+        ),
     ).also { uiState ->
         viewModelScope.launch {
             appDatabase.chatRoomDao().getAllChatRoomWithStartChat(isAsc = false).collectLatest { rooms ->
                 viewModelStateFlow.update { viewModelState ->
                     viewModelState.copy(
-                        rooms = rooms
+                        rooms = rooms,
                     )
                 }
             }
@@ -76,12 +76,13 @@ class MainScreenViewModel(
                                     MainScreenUiState.HistoryItem(
                                         listener = HistoryItemListenerImpl(room.chatRoom.id),
                                         projectName = room.projectName ?: room.chatRoom.builtInProjectId?.getName(),
-                                        text = room.textMessage?.replace("\n", "")?.takeIf { it.isNotBlank() }
+                                        text = room.chatRoom.summary
+                                            ?: room.textMessage?.replace("\n", "")?.takeIf { it.isNotBlank() }
                                             ?: "(空白)",
                                     )
-                                }
+                                },
                             )
-                        }
+                        },
                     )
                 }
             }
@@ -105,7 +106,7 @@ class MainScreenViewModel(
 
             for (chatRoom in allChatRooms) {
                 deleteChatRoomUseCase.deleteChatRoom(
-                    chatRoomId = chatRoom.id
+                    chatRoomId = chatRoom.id,
                 )
             }
         }

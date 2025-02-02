@@ -26,6 +26,7 @@ class AddRequestUseCase(
         format: ChatGptClient.Format,
         systemMessage: String?,
         model: String,
+        summaryProvider: (String) -> String?,
     ): Result {
         if (message.isEmpty() && uris.isEmpty()) return Result.InputError
         val chatDao = appDatabase.chatDao()
@@ -39,7 +40,6 @@ class AddRequestUseCase(
             newChatIndex = newChatIndex,
             chatRoomId = chatRoomId,
         )
-
 
         val response = when (val response = gptClientProvider(settingDataStore.getSecretKey())
             .request(
@@ -75,7 +75,7 @@ class AddRequestUseCase(
                     }
 
                     null -> Chat.Role.User
-                }
+                },
             )
         }
 
@@ -84,8 +84,33 @@ class AddRequestUseCase(
                 insertAll(*roomChats.toTypedArray())
             }
         }
+        writeSummary(
+            chatRoomId = chatRoomId,
+            response = response,
+            summaryProvider = summaryProvider,
+        )
 
         return Result.Success
+    }
+
+    private suspend fun writeSummary(
+        chatRoomId: ChatRoomId,
+        response: GptResponse,
+        summaryProvider: (String) -> String?,
+    ) {
+        val chatRoomDao = appDatabase.chatRoomDao()
+        chatRoomDao.get(chatRoomId = chatRoomId.value).first().let { room ->
+            if (room.summary == null) {
+                val message = response.choices
+                    .firstOrNull { it.message.role == GptResponse.Choice.Role.Assistant }
+                    ?.message ?: return@let
+
+                val summary = summaryProvider(message.content) ?: return@let
+                chatRoomDao.update(
+                    room.copy(summary = summary)
+                )
+            }
+        }
     }
 
     private suspend fun insertNewMessage(
@@ -105,7 +130,7 @@ class AddRequestUseCase(
                         imageUri = it,
                         role = Chat.Role.User,
                     )
-                }
+                },
         )
         if (message.isNotEmpty()) {
             chatDao.insertAll(
@@ -115,7 +140,7 @@ class AddRequestUseCase(
                     textMessage = message,
                     imageUri = null,
                     role = Chat.Role.User,
-                )
+                ),
             )
         }
     }
@@ -132,7 +157,7 @@ class AddRequestUseCase(
             systemMessage ?: return@run null
             ChatGptClient.GptMessage(
                 role = ChatGptClient.GptMessage.Role.System,
-                contents = listOf(ChatGptClient.GptMessage.Content.Text(systemMessage))
+                contents = listOf(ChatGptClient.GptMessage.Content.Text(systemMessage)),
             )
         }
         val messages = chats.map {
@@ -156,15 +181,15 @@ class AddRequestUseCase(
                     add(
                         ChatGptClient.GptMessage.Content.Base64Image(
                             @OptIn(ExperimentalEncodingApi::class)
-                            Base64.encode(byteArray)
-                        )
+                            Base64.encode(byteArray),
+                        ),
                     )
                 }
             }
 
             ChatGptClient.GptMessage(
                 role = role,
-                contents = contents
+                contents = contents,
             )
         }
         return buildList {
@@ -177,6 +202,6 @@ class AddRequestUseCase(
         data object Success : Result
         data class GptResultError(val gptError: ChatGptClient.GptResult.Error) : Result
         data object InputError : Result
-        data object ModelNotFoundError: Result
+        data object ModelNotFoundError : Result
     }
 }

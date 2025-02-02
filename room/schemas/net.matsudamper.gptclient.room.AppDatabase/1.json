@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "d6dc784d73cc7f0db4c41cd4dfbbca36",
+    "identityHash": "a73c7a4cd38e1cb68095ff352a83524e",
     "entities": [
       {
         "tableName": "chat",
@@ -58,7 +58,7 @@
       },
       {
         "tableName": "chat_room",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `project_id` INTEGER, `builtin_project_id` TEXT, `model_name` TEXT NOT NULL, `create_date_at` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `project_id` INTEGER, `builtin_project_id` TEXT, `model_name` TEXT NOT NULL, `summary` TEXT, `create_date_at` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -81,6 +81,11 @@
             "columnName": "model_name",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "summary",
+            "columnName": "summary",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "createDateAt",
@@ -141,7 +146,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd6dc784d73cc7f0db4c41cd4dfbbca36')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a73c7a4cd38e1cb68095ff352a83524e')"
     ]
   }
 }
