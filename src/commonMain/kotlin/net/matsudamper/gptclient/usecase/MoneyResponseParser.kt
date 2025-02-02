@@ -25,7 +25,6 @@ class MoneyResponseParser() {
                             .toFormatter()
                             .format(result.date)
 
-                        appendLine(result.title)
                         appendLine("タイトル: ${result.title}")
                         appendLine("日付: ${date}")
                         appendLine("金額: ${result.amount}")
