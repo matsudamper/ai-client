@@ -19,8 +19,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +34,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -120,6 +128,33 @@ fun ProjectScreen(
             title = {
                 Text(text = uiState.projectName)
             },
+            actions = {
+                var visibleMenu by remember { mutableStateOf(false) }
+                if (visibleMenu) {
+                    DropdownMenu(
+                        expanded = true,
+                        onDismissRequest = { visibleMenu = false }
+                    ) {
+                        for (model in uiState.modelState.models) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(model.modelName)
+                                },
+                                onClick = { model.listener.onClick() },
+                                trailingIcon = {
+                                    if (model.selected) {
+                                        Icon(imageVector = Icons.Default.Check, contentDescription = "check")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
+                IconButton(onClick = { visibleMenu = !visibleMenu }) {
+                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+                }
+            }
         )
         val itemHorizontalPadding = 12.dp
         LazyColumn(

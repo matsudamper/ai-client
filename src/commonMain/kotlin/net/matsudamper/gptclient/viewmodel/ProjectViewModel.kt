@@ -41,6 +41,60 @@ class ProjectViewModel(
             }
         }
     }
+    private val listener = object : ProjectUiState.Listener {
+        override fun recordVoice() {
+
+        }
+
+        override fun selectMedia() {
+            viewModelScope.launch {
+                try {
+                    viewModelStateFlow.update {
+                        it.copy(mediaLoading = true)
+                    }
+                    val uriList = platformRequest.getMedia()
+                    viewModelStateFlow.update {
+                        it.copy(uriList = uriList)
+                    }
+                } finally {
+                    viewModelStateFlow.update {
+                        it.copy(mediaLoading = false)
+                    }
+                }
+            }
+        }
+
+        override fun send(text: String) {
+            val systemInfo = viewModelStateFlow.value.systemInfo ?: return
+            val chatType = when (navigator.type) {
+                is Navigator.Project.ProjectType.Builtin -> {
+                    Navigator.Chat.ChatType.BuiltinProject(
+                        navigator.type.builtinProjectId,
+                    )
+                }
+
+                is Navigator.Project.ProjectType.Project -> {
+                    Navigator.Chat.ChatType.Project(
+                        navigator.type.projectId,
+                    )
+                }
+            }
+            navControllerProvider().navigate(
+                Navigator.Chat(
+                    openContext = Navigator.Chat.ChatOpenContext.NewMessage(
+                        initialMessage = text,
+                        uriList = viewModelStateFlow.value.uriList,
+                        chatType = chatType,
+                        model = systemInfo.getInfo().model,
+                    ),
+                ),
+            )
+
+            viewModelStateFlow.update {
+                it.copy(uriList = listOf())
+            }
+        }
+    }
     val uiStateFlow: StateFlow<ProjectUiState> = MutableStateFlow(
         ProjectUiState(
             projectName = navigator.title,
@@ -52,60 +106,8 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            listener = object : ProjectUiState.Listener {
-                override fun recordVoice() {
-
-                }
-
-                override fun selectMedia() {
-                    viewModelScope.launch {
-                        try {
-                            viewModelStateFlow.update {
-                                it.copy(mediaLoading = true)
-                            }
-                            val uriList = platformRequest.getMedia()
-                            viewModelStateFlow.update {
-                                it.copy(uriList = uriList)
-                            }
-                        } finally {
-                            viewModelStateFlow.update {
-                                it.copy(mediaLoading = false)
-                            }
-                        }
-                    }
-                }
-
-                override fun send(text: String) {
-                    val systemInfo = viewModelStateFlow.value.systemInfo ?: return
-                    val chatType = when (navigator.type) {
-                        is Navigator.Project.ProjectType.Builtin -> {
-                            Navigator.Chat.ChatType.BuiltinProject(
-                                navigator.type.builtinProjectId,
-                            )
-                        }
-
-                        is Navigator.Project.ProjectType.Project -> {
-                            Navigator.Chat.ChatType.Project(
-                                navigator.type.projectId,
-                            )
-                        }
-                    }
-                    navControllerProvider().navigate(
-                        Navigator.Chat(
-                            openContext = Navigator.Chat.ChatOpenContext.NewMessage(
-                                initialMessage = text,
-                                uriList = viewModelStateFlow.value.uriList,
-                                chatType = chatType,
-                                model = systemInfo.getInfo().model,
-                            ),
-                        ),
-                    )
-
-                    viewModelStateFlow.update {
-                        it.copy(uriList = listOf())
-                    }
-                }
-            },
+            modelState = createModelState(ChatGptModel.Gpt4oMini),
+            listener = listener,
         ),
     ).also { uiStateFlow ->
         viewModelScope.launch {
@@ -163,6 +165,11 @@ class ProjectViewModel(
                                 },
                             )
                         },
+                        modelState = createModelState(
+                            viewModelState.overwriteModel
+                                ?: viewModelState.systemInfo?.getInfo()?.model
+                                ?: ChatGptModel.Gpt4oMini,
+                        ),
                     )
                 }
             }
@@ -207,11 +214,41 @@ class ProjectViewModel(
         }
     }
 
+    private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState {
+        return ProjectUiState.ModelState(
+            selectedModel = selectedModel.modelName,
+            models = ChatGptModel.entries.map { model ->
+                ProjectUiState.ModelState.Item(
+                    modelName = model.modelName,
+                    selected = model == selectedModel,
+                    listener = object : ProjectUiState.ModelState.ItemListener {
+                        override fun onClick() {
+                            when (val info = viewModelStateFlow.value.systemInfo) {
+                                is ViewModelState.SystemInfoType.BuiltinInfo,
+                                null -> Unit
+                                is ViewModelState.SystemInfoType.Project -> {
+                                    viewModelScope.launch {
+                                        appDatabase.projectDao().update(
+                                            info.project.copy(
+                                                modelName = model.modelName,
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    },
+                )
+            },
+        )
+    }
+
     private data class ViewModelState(
         val uriList: List<String> = listOf(),
         val mediaLoading: Boolean = false,
         val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: SystemInfoType? = null,
+        val overwriteModel: ChatGptModel? = null,
     ) {
         sealed interface SystemInfoType {
             data class BuiltinInfo(val info: GetBuiltinProjectInfoUseCase.Info) : SystemInfoType {
