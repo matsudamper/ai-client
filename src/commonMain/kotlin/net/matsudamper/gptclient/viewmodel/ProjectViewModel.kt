@@ -16,7 +16,7 @@ import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
-import net.matsudamper.gptclient.ui.BuiltinProjectUiState
+import net.matsudamper.gptclient.ui.ProjectUiState
 
 class ProjectViewModel(
     private val navigator: Navigator.Project,
@@ -25,7 +25,7 @@ class ProjectViewModel(
     private val navControllerProvider: () -> NavHostController,
 ) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
-    private val systemMessageListener = object : BuiltinProjectUiState.SystemMessage.Listener {
+    private val systemMessageListener = object : ProjectUiState.SystemMessage.Listener {
         override fun onChange(text: String) {
             when (val info = viewModelStateFlow.value.systemInfo ?: return) {
                 is ViewModelState.SystemInfoType.BuiltinInfo -> Unit
@@ -41,18 +41,18 @@ class ProjectViewModel(
             }
         }
     }
-    val uiStateFlow: StateFlow<BuiltinProjectUiState> = MutableStateFlow(
-        BuiltinProjectUiState(
+    val uiStateFlow: StateFlow<ProjectUiState> = MutableStateFlow(
+        ProjectUiState(
             projectName = navigator.title,
-            chatRoomsState = BuiltinProjectUiState.ChatRoomsState.Loading,
+            chatRoomsState = ProjectUiState.ChatRoomsState.Loading,
             visibleMediaLoading = false,
             selectedMedia = listOf(),
-            systemMessage = BuiltinProjectUiState.SystemMessage(
+            systemMessage = ProjectUiState.SystemMessage(
                 text = "",
                 editable = false,
                 listener = systemMessageListener,
             ),
-            listener = object : BuiltinProjectUiState.Listener {
+            listener = object : ProjectUiState.Listener {
                 override fun recordVoice() {
 
                 }
@@ -79,7 +79,7 @@ class ProjectViewModel(
                     val systemInfo = viewModelStateFlow.value.systemInfo ?: return
                     val chatType = when (navigator.type) {
                         is Navigator.Project.ProjectType.Builtin -> {
-                            Navigator.Chat.ChatType.Builtin(
+                            Navigator.Chat.ChatType.BuiltinProject(
                                 navigator.type.builtinProjectId,
                             )
                         }
@@ -141,7 +141,7 @@ class ProjectViewModel(
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiStateFlow.update { uiState ->
                     uiState.copy(
-                        systemMessage = BuiltinProjectUiState.SystemMessage(
+                        systemMessage = ProjectUiState.SystemMessage(
                             text = viewModelState.systemInfo?.getInfo()?.systemMessage.orEmpty(),
                             editable = true,
                             listener = systemMessageListener,
@@ -150,11 +150,11 @@ class ProjectViewModel(
                         visibleMediaLoading = viewModelState.mediaLoading,
                         chatRoomsState = run rooms@{
                             val chatRooms = viewModelState.chatRooms
-                                ?: return@rooms BuiltinProjectUiState.ChatRoomsState.Loading
+                                ?: return@rooms ProjectUiState.ChatRoomsState.Loading
 
-                            BuiltinProjectUiState.ChatRoomsState.Loaded(
+                            ProjectUiState.ChatRoomsState.Loaded(
                                 histories = chatRooms.map { room ->
-                                    BuiltinProjectUiState.History(
+                                    ProjectUiState.History(
                                         text = room.textMessage ?: "空白",
                                         listener = ChatRoomListener(
                                             chatRoomId = room.chatRoom.id,
@@ -195,7 +195,7 @@ class ProjectViewModel(
         }
     }
 
-    inner class ChatRoomListener(private val chatRoomId: ChatRoomId) : BuiltinProjectUiState.History.Listener {
+    inner class ChatRoomListener(private val chatRoomId: ChatRoomId) : ProjectUiState.History.Listener {
         override fun onClick() {
             navControllerProvider().navigate(
                 Navigator.Chat(

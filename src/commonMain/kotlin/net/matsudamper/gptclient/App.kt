@@ -12,7 +12,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.rememberNavController
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.navigation.Navigator
-import net.matsudamper.gptclient.ui.BuiltinProjectUiState
+import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
@@ -98,7 +98,7 @@ internal fun App() {
                     override fun provideBuiltinProjectUiState(
                         entry: NavBackStackEntry,
                         navigator: Navigator.Project,
-                    ): BuiltinProjectUiState {
+                    ): ProjectUiState {
                         val viewModel = viewModel(viewModelStoreOwner) {
                             ProjectViewModel(
                                 navControllerProvider = { navController },

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,14 +38,32 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.ui.component.ChatFooter
 
-data class BuiltinProjectUiState(
+data class ProjectUiState(
     val projectName: String,
     val selectedMedia: List<String>,
     val systemMessage: SystemMessage,
     val visibleMediaLoading: Boolean,
     val chatRoomsState: ChatRoomsState,
+    val modelState: ModelState,
     val listener: Listener,
 ) {
+    data class ModelState(
+        val selectedModel: String,
+        val models: List<Item>
+    ) {
+        data class Item(
+            val modelName: String,
+            val selected: Boolean,
+            val listener: ItemListener,
+        )
+
+        @Immutable
+        interface ItemListener {
+            fun onClick()
+        }
+    }
+
+    @Immutable
     sealed interface ChatRoomsState {
         object Loading : ChatRoomsState
         data class Loaded(
@@ -84,8 +101,8 @@ data class BuiltinProjectUiState(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BuiltinProject(
-    uiState: BuiltinProjectUiState,
+fun ProjectScreen(
+    uiState: ProjectUiState,
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -110,7 +127,7 @@ fun BuiltinProject(
                 .weight(1f),
         ) {
             when (uiState.chatRoomsState) {
-                is BuiltinProjectUiState.ChatRoomsState.Loaded -> {
+                is ProjectUiState.ChatRoomsState.Loaded -> {
                     item {
                         Column(
                             modifier = Modifier.fillMaxWidth()
@@ -166,7 +183,7 @@ fun BuiltinProject(
                     }
                 }
 
-                is BuiltinProjectUiState.ChatRoomsState.Loading -> {
+                is ProjectUiState.ChatRoomsState.Loading -> {
                     item {
                         Box(
                             modifier = Modifier.fillMaxSize(),

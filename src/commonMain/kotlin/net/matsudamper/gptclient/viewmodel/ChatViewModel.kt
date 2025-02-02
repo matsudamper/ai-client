@@ -177,12 +177,12 @@ class ChatViewModel(
                 is Navigator.Chat.ChatOpenContext.NewMessage -> {
                     val room = createRoom(
                         builtinProjectId = when (val chatType = openContext.chatType) {
-                            is Navigator.Chat.ChatType.Builtin -> chatType.builtinProjectId
+                            is Navigator.Chat.ChatType.BuiltinProject -> chatType.builtinProjectId
                             else -> null
                         },
                         projectId = when (val chatType = openContext.chatType) {
                             is Navigator.Chat.ChatType.Project -> chatType.projectId
-                            is Navigator.Chat.ChatType.Builtin,
+                            is Navigator.Chat.ChatType.BuiltinProject,
                             is Navigator.Chat.ChatType.Normal,
                                 -> null
                         },
@@ -190,7 +190,7 @@ class ChatViewModel(
                     )
 
                     val roomInfo = when (val chatType = openContext.chatType) {
-                        is Navigator.Chat.ChatType.Builtin -> {
+                        is Navigator.Chat.ChatType.BuiltinProject -> {
                             ViewModelState.RoomInfo.BuiltinProject(
                                 room = room,
                                 builtinProjectId = chatType.builtinProjectId,

@@ -38,7 +38,7 @@ sealed interface Navigator {
             @Serializable
             data object Normal: ChatType
             @Serializable
-            data class Builtin(val builtinProjectId: BuiltinProjectId): ChatType
+            data class BuiltinProject(val builtinProjectId: BuiltinProjectId): ChatType
             @Serializable
             data class Project(val projectId: ProjectId): ChatType
         }
