@@ -275,6 +275,7 @@ public fun NewChat(
 
                             },
                             onClick = {
+                                expanded = false
                                 model.listener.onClick()
                             },
                         )
