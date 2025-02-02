@@ -142,10 +142,15 @@ class ProjectViewModel(
         viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiStateFlow.update { uiState ->
+                    val editable = when(viewModelState.systemInfo) {
+                        null,
+                        is ViewModelState.SystemInfoType.BuiltinInfo -> false
+                        is ViewModelState.SystemInfoType.Project -> true
+                    }
                     uiState.copy(
                         systemMessage = ProjectUiState.SystemMessage(
                             text = viewModelState.systemInfo?.getInfo()?.systemMessage.orEmpty(),
-                            editable = true,
+                            editable = editable,
                             listener = systemMessageListener,
                         ),
                         selectedMedia = viewModelState.uriList,
