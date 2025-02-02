@@ -38,7 +38,7 @@ class MoneyResponseParser() {
                                 "&description=${result.description.orEmpty().encodeURLParameter()}"
                         pushLink(LinkAnnotation.Url(googleCalendarUrl))
                         withStyle(SpanStyle(color = Color.Blue)) {
-                            append("Google Calendar追加リンク")
+                            append("家計簿への追加リンク")
                         }
                         pop()
                         if (index < response.results.size - 1) {
