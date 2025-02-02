@@ -19,7 +19,7 @@ interface ChatRoomDao {
         SELECT *, project.name as project_name FROM chat_room
         LEFT JOIN chat ON chat_room.id = chat.chat_room_id
             AND chat.`index` = (
-                SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id
+                SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id AND chat.text_message != ''
             )
         LEFT JOIN project ON chat_room.project_id = project.id
         ORDER BY  
@@ -36,7 +36,7 @@ interface ChatRoomDao {
         SELECT * FROM chat_room
         LEFT JOIN chat ON chat_room.id = chat.chat_room_id
             AND chat.`index` = (
-                SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id
+                SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id AND chat.text_message != ''
             )
         WHERE builtin_project_id = :builtInChatRoomId
         ORDER BY  
@@ -49,7 +49,7 @@ interface ChatRoomDao {
         SELECT * FROM chat_room
         LEFT JOIN chat ON chat_room.id = chat.chat_room_id
             AND chat.`index` = (
-                SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id
+                SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id AND chat.text_message != ''
             )
         WHERE project_id = :projectId
         ORDER BY  
