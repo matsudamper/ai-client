@@ -321,6 +321,7 @@ private fun SidePanel(
                                 Text(
                                     modifier = Modifier.fillMaxWidth(),
                                     text = item.text,
+                                    maxLines = 1,
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                             }

@@ -57,7 +57,7 @@ data class ProjectUiState(
 ) {
     data class ModelState(
         val selectedModel: String,
-        val models: List<Item>
+        val models: List<Item>,
     ) {
         data class Item(
             val modelName: String,
@@ -133,7 +133,7 @@ fun ProjectScreen(
                 if (visibleMenu) {
                     DropdownMenu(
                         expanded = true,
-                        onDismissRequest = { visibleMenu = false }
+                        onDismissRequest = { visibleMenu = false },
                     ) {
                         for (model in uiState.modelState.models) {
                             DropdownMenuItem(
@@ -145,7 +145,7 @@ fun ProjectScreen(
                                     if (model.selected) {
                                         Icon(imageVector = Icons.Default.Check, contentDescription = "check")
                                     }
-                                }
+                                },
                             )
                         }
                     }
@@ -154,7 +154,7 @@ fun ProjectScreen(
                 IconButton(onClick = { visibleMenu = !visibleMenu }) {
                     Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
                 }
-            }
+            },
         )
         val itemHorizontalPadding = 12.dp
         LazyColumn(
@@ -213,7 +213,10 @@ fun ProjectScreen(
                                 contentDescription = null,
                             )
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(history.text)
+                            Text(
+                                history.text,
+                                maxLines = 1,
+                            )
                         }
                     }
                 }
