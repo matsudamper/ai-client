@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,11 +18,15 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -32,6 +37,7 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -41,8 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,8 +64,18 @@ public data class NewChatUiState(
     val visibleMediaLoading: Boolean,
     val models: List<Model>,
     val selectedModel: String,
+    val projectNameDialog: ProjectNameDialog?,
     val listener: Listener,
 ) {
+    data class ProjectNameDialog(
+        val listener: Listener,
+    ) {
+        interface Listener {
+            fun onDone(text: String)
+            fun onCancel()
+        }
+    }
+
     data class Model(
         val name: String,
         val listener: Listener,
@@ -78,6 +93,7 @@ public data class NewChatUiState(
         enum class Icon {
             Calendar,
             Card,
+            Favorite,
         }
 
         @Immutable
@@ -91,6 +107,7 @@ public data class NewChatUiState(
         fun send(text: String)
         fun onClickSelectMedia()
         fun onClickVoice()
+        fun addProject()
     }
 }
 
@@ -101,6 +118,43 @@ public fun NewChat(
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    run {
+        val projectNameDialog = uiState.projectNameDialog
+        if (projectNameDialog != null) {
+            val state = rememberTextFieldState()
+            AlertDialog(
+                onDismissRequest = { projectNameDialog.listener.onCancel() },
+                dismissButton = {
+                    TextButton(onClick = { projectNameDialog.listener.onCancel() }) {
+                        Text("キャンセル")
+                    }
+                },
+                text = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        BasicTextField(
+                            modifier = Modifier.fillMaxWidth()
+                                .padding(8.dp),
+                            state = state,
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            projectNameDialog.listener.onDone(state.text.toString())
+                        },
+                    ) {
+                        Text("決定")
+                    }
+                },
+            )
+        }
+    }
     BoxWithConstraints(
         modifier = modifier
             .imePadding(),
@@ -120,10 +174,10 @@ public fun NewChat(
                     IconButton(onClick = { onClickMenu() }) {
                         Icon(
                             imageVector = FeatherIcons.Menu,
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     }
-                }
+                },
             )
             LazyVerticalGrid(
                 modifier = Modifier.fillMaxWidth()
@@ -135,14 +189,14 @@ public fun NewChat(
                     ceil(
                         with(LocalDensity.current) {
                             maxWidth.roundToPx() / 160.dp.roundToPx()
-                        }.toFloat()
-                    ).toInt()
+                        }.toFloat(),
+                    ).toInt(),
                 ),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.Center,
             ) {
                 item(
-                    span = { GridItemSpan(maxLineSpan) }
+                    span = { GridItemSpan(maxLineSpan) },
                 ) {
                     Column {
                         Text(
@@ -171,8 +225,12 @@ public fun NewChat(
                                         NewChatUiState.Project.Icon.Card -> {
                                             FeatherIcons.CreditCard
                                         }
+
+                                        NewChatUiState.Project.Icon.Favorite -> {
+                                            Icons.Default.Favorite
+                                        }
                                     },
-                                    contentDescription = null
+                                    contentDescription = null,
                                 )
                                 Text(project.name)
                             }
@@ -196,9 +254,7 @@ public fun NewChat(
                                 Text("追加")
                             }
                         },
-                        onClick = {
-
-                        }
+                        onClick = { uiState.listener.addProject() },
                     )
                 }
             }
@@ -221,7 +277,7 @@ public fun NewChat(
                             },
                             onClick = {
                                 model.listener.onClick()
-                            }
+                            },
                         )
                     }
                 }

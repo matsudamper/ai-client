@@ -7,6 +7,7 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
+import net.matsudamper.gptclient.room.entity.ProjectId
 
 @Dao
 interface ChatRoomDao {
@@ -43,6 +44,19 @@ interface ChatRoomDao {
             CASE WHEN :isAsc == FALSE THEN  chat_room.`create_date_at` END DESC
     """)
     fun getFromBuiltInChatRoomId(builtInChatRoomId: String, isAsc: Boolean): Flow<List<ChatRoomWithSummary>>
+
+    @Query("""
+        SELECT * FROM chat_room
+        LEFT JOIN chat ON chat_room.id = chat.chat_room_id
+            AND chat.`index` = (
+                SELECT MIN(`index`) FROM chat WHERE chat.chat_room_id = chat_room.id
+            )
+        WHERE project_id = :projectId
+        ORDER BY  
+            CASE WHEN :isAsc == TRUE THEN chat_room.`create_date_at` END ASC,
+            CASE WHEN :isAsc == FALSE THEN  chat_room.`create_date_at` END DESC
+    """)
+    fun getFromProjectInChatRoomId(projectId: Long, isAsc: Boolean): Flow<List<ChatRoomWithSummary>>
 
     @Insert
     suspend fun insert(chatRoom: ChatRoom): Long

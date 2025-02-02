@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
@@ -29,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,7 +57,12 @@ data class BuiltinProjectUiState(
     data class SystemMessage(
         val text: String,
         val editable: Boolean,
-    )
+        val listener: Listener,
+    ) {
+        interface Listener {
+            fun onChange(text: String)
+        }
+    }
 
     data class History(
         val text: String,
@@ -95,7 +102,7 @@ fun BuiltinProject(
             },
             title = {
                 Text(text = uiState.projectName)
-            }
+            },
         )
         val itemHorizontalPadding = 12.dp
         LazyColumn(
@@ -107,19 +114,25 @@ fun BuiltinProject(
                     item {
                         Column(
                             modifier = Modifier.fillMaxWidth()
-                                .padding(horizontal = itemHorizontalPadding)
+                                .padding(horizontal = itemHorizontalPadding),
                         ) {
                             Text(
                                 style = MaterialTheme.typography.titleLarge,
-                                text = "命令"
+                                text = "命令",
                             )
-                            Text(
+                            val state = rememberTextFieldState(uiState.systemMessage.text)
+                            LaunchedEffect(state.text) {
+                                uiState.systemMessage.listener.onChange(state.text.toString())
+                            }
+                            BasicTextField(
                                 modifier = Modifier
+                                    .fillMaxWidth()
                                     .clip(MaterialTheme.shapes.small)
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .padding(8.dp),
-                                text = uiState.systemMessage.text,
-                                style = MaterialTheme.typography.bodyMedium,
+                                textStyle = MaterialTheme.typography.bodyMedium,
+                                state = state,
+                                enabled = uiState.systemMessage.editable,
                             )
                             Spacer(modifier = Modifier.height(24.dp))
                         }
@@ -129,7 +142,7 @@ fun BuiltinProject(
                             modifier = Modifier.fillMaxWidth()
                                 .padding(horizontal = itemHorizontalPadding),
                             style = MaterialTheme.typography.titleLarge,
-                            text = "履歴"
+                            text = "履歴",
                         )
                     }
                     items(uiState.chatRoomsState.histories) { history ->
@@ -140,7 +153,7 @@ fun BuiltinProject(
                                 }
                                 .padding(
                                     horizontal = itemHorizontalPadding,
-                                    vertical = 12.dp
+                                    vertical = 12.dp,
                                 ),
                         ) {
                             Icon(

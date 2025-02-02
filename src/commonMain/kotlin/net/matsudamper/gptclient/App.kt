@@ -18,7 +18,7 @@ import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.usecase.DeleteChatRoomUseCase
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
-import net.matsudamper.gptclient.viewmodel.BuiltinProjectViewModel
+import net.matsudamper.gptclient.viewmodel.ProjectViewModel
 import net.matsudamper.gptclient.viewmodel.ChatViewModel
 import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
 import net.matsudamper.gptclient.viewmodel.NewChatViewModel
@@ -43,6 +43,7 @@ internal fun App() {
                             NewChatViewModel(
                                 navControllerProvider = { navController },
                                 platformRequest = getKoin().get(),
+                                appDatabase = getKoin().get(),
                             )
                         }
                         return viewModel.uiState.collectAsState().value
@@ -96,10 +97,10 @@ internal fun App() {
                     @Composable
                     override fun provideBuiltinProjectUiState(
                         entry: NavBackStackEntry,
-                        navigator: Navigator.BuiltinProject,
+                        navigator: Navigator.Project,
                     ): BuiltinProjectUiState {
                         val viewModel = viewModel(viewModelStoreOwner) {
-                            BuiltinProjectViewModel(
+                            ProjectViewModel(
                                 navControllerProvider = { navController },
                                 navigator = navigator,
                                 platformRequest = getKoin().get(),

@@ -1,8 +1,10 @@
 package net.matsudamper.gptclient.room.entity
 
 import androidx.room.TypeConverter
+import kotlinx.serialization.Serializable
 
 @JvmInline
+@Serializable
 value class ProjectId(val id: Long) {
     object Converter {
         @TypeConverter

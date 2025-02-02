@@ -216,10 +216,10 @@ private fun Navigation(
                 onClickMenu = { onClickMenu() }
             )
         }
-        composable<Navigator.BuiltinProject>(
-            typeMap = Navigator.BuiltinProject.typeMap
+        composable<Navigator.Project>(
+            typeMap = Navigator.Project.typeMap
         ) {
-            val navigatorItem = it.toRoute<Navigator.BuiltinProject>()
+            val navigatorItem = it.toRoute<Navigator.Project>()
             val uiState = uiStateProvider.provideBuiltinProjectUiState(entry = it, navigator = navigatorItem)
 
             BuiltinProject(

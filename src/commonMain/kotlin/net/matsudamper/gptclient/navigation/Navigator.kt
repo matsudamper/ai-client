@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.room.entity.ChatRoomId
+import net.matsudamper.gptclient.room.entity.ProjectId
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -38,6 +39,8 @@ sealed interface Navigator {
             data object Normal: ChatType
             @Serializable
             data class Builtin(val builtinProjectId: BuiltinProjectId): ChatType
+            @Serializable
+            data class Project(val projectId: ProjectId): ChatType
         }
 
         companion object {
@@ -48,13 +51,20 @@ sealed interface Navigator {
     }
 
     @Serializable
-    data class BuiltinProject(
+    data class Project(
         val title: String,
-        val builtinProjectId: BuiltinProjectId,
+        val type: ProjectType,
     ) {
+        @Serializable
+        sealed interface ProjectType {
+            @Serializable
+            data class Builtin(val builtinProjectId: BuiltinProjectId):ProjectType
+            @Serializable
+            data class Project(val projectId: ProjectId):ProjectType
+        }
         companion object {
             val typeMap: Map<KType, NavType<*>> = mapOf(
-                typeOf<BuiltinProjectId>() to JsonNavType<BuiltinProjectId>(BuiltinProjectId.serializer(), false),
+                typeOf<ProjectType>() to JsonNavType<ProjectType>(ProjectType.serializer(), false),
             )
         }
     }

@@ -77,7 +77,6 @@ class GetBuiltinProjectInfoUseCase {
 
     data class Info(
         val systemMessage: String,
-        val responseType: String = "",
         val format: ChatGptClient.Format,
         val responseTransformer: (String) -> AnnotatedString,
         val model: ChatGptModel,

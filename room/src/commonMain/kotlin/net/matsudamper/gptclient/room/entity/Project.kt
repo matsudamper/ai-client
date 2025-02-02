@@ -11,4 +11,6 @@ data class Project(
     @ColumnInfo("id") @PrimaryKey(autoGenerate = true) val id: ProjectId = ProjectId(0),
     @ColumnInfo("index") val index: Int,
     @ColumnInfo("name") val name: String,
+    @ColumnInfo("model_name") val modelName: String,
+    @ColumnInfo("system_message") val systemMessage: String,
 )
