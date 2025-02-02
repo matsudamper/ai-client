@@ -13,4 +13,5 @@ interface PlatformRequest {
      */
     suspend fun deleteFile(uri: String): Boolean
     fun showToast(text: String)
+    fun copyToClipboard(text: String)
 }

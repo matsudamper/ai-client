@@ -87,4 +87,10 @@ class AndroidPlatformRequest(
     override fun showToast(text: String) {
         Toast.makeText(activity, text, Toast.LENGTH_SHORT).show()
     }
+
+    override fun copyToClipboard(text: String) {
+        val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val clip = android.content.ClipData.newPlainText("Copied Text", text)
+        clipboard.setPrimaryClip(clip)
+    }
 }
