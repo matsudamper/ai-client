@@ -95,7 +95,7 @@ internal fun App() {
                     }
 
                     @Composable
-                    override fun provideBuiltinProjectUiState(
+                    override fun provideProjectUiState(
                         entry: NavBackStackEntry,
                         navigator: Navigator.Project,
                     ): ProjectUiState {

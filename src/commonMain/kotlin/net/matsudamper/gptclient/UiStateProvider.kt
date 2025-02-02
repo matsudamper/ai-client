@@ -25,5 +25,5 @@ interface UiStateProvider {
     fun provideMainScreenUiState(): MainScreenUiState
 
     @Composable
-    fun provideBuiltinProjectUiState(entry: NavBackStackEntry, navigator: Navigator.Project): ProjectUiState
+    fun provideProjectUiState(entry: NavBackStackEntry, navigator: Navigator.Project): ProjectUiState
 }

@@ -220,7 +220,7 @@ private fun Navigation(
             typeMap = Navigator.Project.typeMap
         ) {
             val navigatorItem = it.toRoute<Navigator.Project>()
-            val uiState = uiStateProvider.provideBuiltinProjectUiState(entry = it, navigator = navigatorItem)
+            val uiState = uiStateProvider.provideProjectUiState(entry = it, navigator = navigatorItem)
 
             ProjectScreen(
                 modifier = Modifier.fillMaxSize(),
