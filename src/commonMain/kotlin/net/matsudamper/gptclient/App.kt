@@ -99,7 +99,10 @@ internal fun App() {
                         entry: NavBackStackEntry,
                         navigator: Navigator.Project,
                     ): ProjectUiState {
-                        val viewModel = viewModel(viewModelStoreOwner) {
+                        val viewModel = viewModel(
+                            viewModelStoreOwner = viewModelStoreOwner,
+                            key = navigator.type.toString(),
+                        ) {
                             ProjectViewModel(
                                 navControllerProvider = { navController },
                                 navigator = navigator,
