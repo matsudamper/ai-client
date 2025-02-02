@@ -88,7 +88,7 @@ class ChatGptClient(
                 ChatGptModel.O1Preview -> 1.0
                 else -> 0.3
             },
-            maxCompletionTokens = 500,
+            maxCompletionTokens = model.defaultToken,
             frequencyPenalty = 0.0,
             presencePenalty = 0.0
         )
