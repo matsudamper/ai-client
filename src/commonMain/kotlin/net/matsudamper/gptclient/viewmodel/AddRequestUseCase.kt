@@ -107,7 +107,7 @@ class AddRequestUseCase(
 
                 val summary = summaryProvider(message.content) ?: return@let
                 chatRoomDao.update(
-                    room.copy(summary = summary)
+                    room.copy(summary = summary),
                 )
             }
         }
