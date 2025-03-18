@@ -152,6 +152,7 @@ class ChatViewModel(
                                 }
                             },
                         ),
+                        errorDialogMessage = viewModelState.errorDialogMessage,
                     )
                 }
             }
