@@ -32,7 +32,8 @@ class ChatGptClient(
                 GptMessage.Role.System -> {
                     when (model) {
                         ChatGptModel.O1Preview,
-                        ChatGptModel.O1mini -> GptRequest.Role.User
+                        ChatGptModel.O1mini,
+                            -> GptRequest.Role.User
 
                         else -> GptRequest.Role.System
                     }
@@ -55,14 +56,14 @@ class ChatGptClient(
                         }
                         GptRequest.Content(
                             type = "image_url",
-                            imageUrl = GptRequest.ImageUrl(content.imageUrl)
+                            imageUrl = GptRequest.ImageUrl(content.imageUrl),
                         )
                     }
 
                     is GptMessage.Content.Text -> {
                         GptRequest.Content(
                             type = "text",
-                            text = content.text
+                            text = content.text,
                         )
                     }
                 }
@@ -80,21 +81,23 @@ class ChatGptClient(
                 type = when (format) {
                     Format.Text -> "text"
                     Format.Json -> "json_object"
-                }
+                },
             ),
             topP = 1.0,
             temperature = when (model) {
                 ChatGptModel.O1mini,
-                ChatGptModel.O1Preview -> 1.0
+                ChatGptModel.O1Preview,
+                    -> 1.0
+
                 else -> 0.3
             },
             maxCompletionTokens = model.defaultToken,
             frequencyPenalty = 0.0,
-            presencePenalty = 0.0
+            presencePenalty = 0.0,
         )
         val jsonString = Json.encodeToString(
             GptRequest.serializer(),
-            sampleGptRequest
+            sampleGptRequest,
         )
         println("Request->$jsonString")
         val response: HttpResponse = withContext(Dispatchers.IO) {
@@ -128,7 +131,7 @@ class ChatGptClient(
             val message: String
 
             data class ImageNotSupported(
-                override val message: String = "画像をサポートしていないモデルです"
+                override val message: String = "画像をサポートしていないモデルです",
             ) : ErrorReason
 
             data class Unknown(override val message: String) : ErrorReason
