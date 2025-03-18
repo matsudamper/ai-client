@@ -67,7 +67,7 @@ class GetBuiltinProjectInfoUseCase {
                                     "date": "日付、時間の ISO8601 Offsetなし (String)",
                                     "amount": "合計金額(税込み)。日本円の金額、ドル表記であればドルで良い(Int)",
                                     "title": "店名(String)",
-                                    "description": "補足情報(String?)"
+                                    "description": "商品名一覧(String?)",
                                 },
                                 /* 以下商品の配列 */
                                 {
