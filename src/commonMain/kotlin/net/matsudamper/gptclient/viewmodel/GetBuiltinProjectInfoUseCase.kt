@@ -61,7 +61,7 @@ class GetBuiltinProjectInfoUseCase {
                         以下のJSONフォーマットに従ってください。
                         ```json5
                         {
-                            "error_message": "日付や金額が画像から見つからない場合に、ユーザーに入力を促すメッセージ(String?)",
+                            "error_message": "エラーの内容。日付や金額が画像から見つからない場合に、ユーザーに入力を促すメッセージ等(String?)",
                             "results": [
                                 {
                                     "date": "日付、時間の ISO8601 Offsetなし (String)",
