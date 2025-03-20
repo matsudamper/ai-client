@@ -118,7 +118,7 @@ class ChatGptClient(
         return try {
             GptResult.Success(Json.decodeFromString(GptResponse.serializer(), responseJson))
         } catch (e: SerializationException) {
-            System.err.println(responseJson)
+            e.printStackTrace()
             GptResult.Error(GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
         }
     }
