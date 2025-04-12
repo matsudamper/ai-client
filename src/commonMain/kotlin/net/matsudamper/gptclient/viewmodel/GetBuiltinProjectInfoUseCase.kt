@@ -1,19 +1,25 @@
 package net.matsudamper.gptclient.viewmodel
 
-import androidx.compose.ui.text.AnnotatedString
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatterBuilder
+import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
+import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.usecase.CalendarResponseParser
+import net.matsudamper.gptclient.usecase.EmojiResponseParser
 import net.matsudamper.gptclient.usecase.MoneyResponseParser
 
 class GetBuiltinProjectInfoUseCase {
-    fun exec(builtinProjectId: BuiltinProjectId): Info {
+    fun exec(
+        builtinProjectId: BuiltinProjectId,
+        platformRequest: PlatformRequest,
+    ): Info {
         val date = DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd")
             .toFormatter()
@@ -44,7 +50,7 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = ChatGptClient.Format.Json,
                     responseTransformer = {
-                        CalendarResponseParser().toAnnotatedString(it)
+                        TextMessageComposableInterface(CalendarResponseParser().toAnnotatedString(it))
                     },
                     summaryProvider = { CalendarResponseParser().parse(it)?.results?.firstOrNull()?.title },
                     model = ChatGptModel.Gpt4oMini,
@@ -81,11 +87,31 @@ class GetBuiltinProjectInfoUseCase {
                         ```
                     """.trimIndent(),
                     format = ChatGptClient.Format.Json,
-                    responseTransformer = {
-                        MoneyResponseParser().toAnnotatedString(it)
-                    },
+                    responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
                     model = ChatGptModel.Gpt4oMini,
                     summaryProvider = { MoneyResponseParser().parse(it)?.results?.firstOrNull()?.title },
+                )
+            }
+
+            BuiltinProjectId.Emoji -> {
+                Info(
+                    systemMessage = """
+                        与えられたテキストにマッチした絵文字の候補を10個あげてください。
+                        以下のJSONフォーマットに従ってください。
+                        ```json5
+                        {
+                            "results": ["emoji1", "emoji2", ...],
+                        }
+                        ```
+                    """.trimIndent(),
+                    format = ChatGptClient.Format.Json,
+                    responseTransformer = {
+                        EmojiResponseParser().getEmojiList(it) { emoji ->
+                            platformRequest.copyToClipboard(emoji)
+                        }
+                    },
+                    model = ChatGptModel.Gpt4oMini,
+                    summaryProvider = { null },
                 )
             }
 
@@ -96,7 +122,7 @@ class GetBuiltinProjectInfoUseCase {
     data class Info(
         val systemMessage: String,
         val format: ChatGptClient.Format,
-        val responseTransformer: (String) -> AnnotatedString,
+        val responseTransformer: (String) -> ChatMessageComposableInterface,
         val summaryProvider: (String) -> String?,
         val model: ChatGptModel,
     )

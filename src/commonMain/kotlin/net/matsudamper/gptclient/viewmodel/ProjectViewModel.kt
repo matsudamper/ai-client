@@ -17,6 +17,8 @@ import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
 import net.matsudamper.gptclient.ui.ProjectUiState
+import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 
 class ProjectViewModel(
     private val navigator: Navigator.Project,
@@ -185,7 +187,10 @@ class ProjectViewModel(
         viewModelScope.launch {
             when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
-                    val systemInfo = GetBuiltinProjectInfoUseCase().exec(navigator.type.builtinProjectId)
+                    val systemInfo = GetBuiltinProjectInfoUseCase().exec(
+                        navigator.type.builtinProjectId,
+                        platformRequest = platformRequest,
+                    )
 
                     viewModelStateFlow.update {
                         it.copy(
@@ -272,7 +277,7 @@ class ProjectViewModel(
                     return Info(
                         systemMessage = project.systemMessage,
                         format = ChatGptClient.Format.Text,
-                        responseTransformer = { AnnotatedString(it) },
+                        responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
                         model = ChatGptModel.entries.firstOrNull { it.modelName == project.modelName }
                             ?: ChatGptModel.Gpt4oMini,
                     )
@@ -285,7 +290,7 @@ class ProjectViewModel(
         data class Info(
             val systemMessage: String,
             val format: ChatGptClient.Format,
-            val responseTransformer: (String) -> AnnotatedString,
+            val responseTransformer: (String) -> ChatMessageComposableInterface,
             val model: ChatGptModel,
         )
     }

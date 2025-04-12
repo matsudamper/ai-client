@@ -3,11 +3,15 @@ package net.matsudamper.gptclient.viewmodel
 import androidx.compose.ui.text.AnnotatedString
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.ui.ChatListUiState
+import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.ImageMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.LoadingMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 
 class CreateChatMessageUiStateUseCase() {
     fun create(
         chats: List<Chat>,
-        agentTransformer: (String) -> AnnotatedString = { AnnotatedString(it) },
+        agentTransformer: (String) -> ChatMessageComposableInterface = { TextMessageComposableInterface(AnnotatedString(it)) },
         isChatLoading: Boolean,
     ): List<ChatListUiState.Message> {
         return chats.mapNotNull { chat ->
@@ -18,24 +22,25 @@ class CreateChatMessageUiStateUseCase() {
                         when (chat.role) {
                             Chat.Role.System -> {
                                 ChatListUiState.Message.Agent(
-                                    content = ChatListUiState.MessageContent.Text(AnnotatedString(message)),
+                                    uiSet = TextMessageComposableInterface(AnnotatedString(message)),
                                 )
                             }
 
                             Chat.Role.User,
-                            Chat.Role.Unknown -> {
+                            Chat.Role.Unknown,
+                                -> {
                                 ChatListUiState.Message.User(
-                                    content = ChatListUiState.MessageContent.Text(AnnotatedString(message)),
+                                    uiSet = TextMessageComposableInterface(AnnotatedString(message)),
                                 )
                             }
 
                             Chat.Role.Assistant -> {
                                 ChatListUiState.Message.Agent(
-                                    content = ChatListUiState.MessageContent.Text(agentTransformer(message)),
+                                    uiSet = agentTransformer(message),
                                 )
                             }
                         }
-                    }
+                    },
                 )
                 yield(
                     run image@{
@@ -43,31 +48,32 @@ class CreateChatMessageUiStateUseCase() {
                         when (chat.role) {
                             Chat.Role.System -> {
                                 ChatListUiState.Message.Agent(
-                                    content = ChatListUiState.MessageContent.Image(uri),
+                                    uiSet = ImageMessageComposableInterface(ImageMessageComposableInterface.UiState(uri)),
                                 )
                             }
 
                             Chat.Role.User,
-                            Chat.Role.Unknown -> {
+                            Chat.Role.Unknown,
+                                -> {
                                 ChatListUiState.Message.User(
-                                    content = ChatListUiState.MessageContent.Image(uri),
+                                    uiSet = ImageMessageComposableInterface(ImageMessageComposableInterface.UiState(uri)),
                                 )
                             }
 
                             Chat.Role.Assistant -> {
                                 ChatListUiState.Message.Agent(
-                                    content = ChatListUiState.MessageContent.Image(uri),
+                                    uiSet = ImageMessageComposableInterface(ImageMessageComposableInterface.UiState(uri)),
                                 )
                             }
                         }
-                    }
+                    },
                 )
             }.filterNotNull()
                 .firstOrNull()
         }.plus(
             ChatListUiState.Message.Agent(
-                content = ChatListUiState.MessageContent.Loading,
-            ).takeIf { isChatLoading }
+                uiSet = LoadingMessageComposableInterface,
+            ).takeIf { isChatLoading },
         ).filterNotNull()
     }
 }

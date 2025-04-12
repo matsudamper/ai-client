@@ -161,8 +161,7 @@ class ChatGptClient(
     }
 
     companion object {
-        @Suppress("JSON_FORMAT_REDUNDANT")
-        val Json = Json {
+        private val Json = Json {
             ignoreUnknownKeys = true
         }
     }

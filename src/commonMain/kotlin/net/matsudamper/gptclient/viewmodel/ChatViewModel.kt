@@ -26,6 +26,7 @@ import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.ChatListUiState
+import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 
 class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
@@ -147,7 +148,7 @@ class ChatViewModel(
                                     is ViewModelState.RoomInfo.Project,
                                     is ViewModelState.RoomInfo.Normal,
                                     null,
-                                        -> AnnotatedString(it)
+                                        -> TextMessageComposableInterface(AnnotatedString(it))
 
                                 }
                             },
@@ -197,6 +198,7 @@ class ChatViewModel(
                                 builtinProjectId = chatType.builtinProjectId,
                                 builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
                                     chatType.builtinProjectId,
+                                    platformRequest = platformRequest,
                                 ),
                             )
                         }
@@ -237,6 +239,7 @@ class ChatViewModel(
                                     builtinProjectId = builtInProjectId,
                                     builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
                                         builtInProjectId,
+                                        platformRequest = platformRequest,
                                     ),
                                 )
                             } else {

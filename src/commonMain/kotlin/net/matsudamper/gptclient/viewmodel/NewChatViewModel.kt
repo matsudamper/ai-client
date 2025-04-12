@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -52,6 +53,22 @@ class NewChatViewModel(
                             title = "家計簿追加",
                             type = Navigator.Project.ProjectType.Builtin(
                                 BuiltinProjectId.Money,
+                            ),
+                        ),
+                    )
+                }
+            },
+        ),
+        NewChatUiState.Project(
+            name = "絵文字追加",
+            icon = NewChatUiState.Project.Icon.Emoji,
+            listener = object : NewChatUiState.Project.Listener {
+                override fun onClick() {
+                    navControllerProvider().navigate(
+                        Navigator.Project(
+                            title = "家計簿追加",
+                            type = Navigator.Project.ProjectType.Builtin(
+                                BuiltinProjectId.Emoji,
                             ),
                         ),
                     )

@@ -8,11 +8,15 @@ val BuiltinProjectId.Companion.Calendar
 val BuiltinProjectId.Companion.Money
     get() = BuiltinProjectId("money")
 
+val BuiltinProjectId.Companion.Emoji
+    get() = BuiltinProjectId("emoji")
+
 
 fun BuiltinProjectId.getName(): String {
     return when (this) {
         BuiltinProjectId.Calendar -> "カレンダー"
         BuiltinProjectId.Money -> "家計簿"
+        BuiltinProjectId.Companion.Emoji -> "絵文字"
         else -> throw NotImplementedError("Not yet implemented ${this.id}")
     }
 }

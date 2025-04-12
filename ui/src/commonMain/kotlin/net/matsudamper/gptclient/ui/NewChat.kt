@@ -92,6 +92,7 @@ public data class NewChatUiState(
         enum class Icon {
             Calendar,
             Card,
+            Emoji,
             Favorite,
         }
 
@@ -215,22 +216,34 @@ public fun NewChat(
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Icon(
-                                    imageVector = when (project.icon) {
-                                        NewChatUiState.Project.Icon.Calendar -> {
-                                            FeatherIcons.Calendar
-                                        }
+                                when (project.icon) {
+                                    NewChatUiState.Project.Icon.Calendar -> {
+                                        Icon(
+                                            imageVector = FeatherIcons.Calendar,
+                                            contentDescription = null,
+                                        )
+                                    }
 
-                                        NewChatUiState.Project.Icon.Card -> {
-                                            FeatherIcons.CreditCard
-                                        }
+                                    NewChatUiState.Project.Icon.Card -> {
+                                        Icon(
+                                            imageVector = FeatherIcons.CreditCard,
+                                            contentDescription = null,
+                                        )
+                                    }
 
-                                        NewChatUiState.Project.Icon.Favorite -> {
-                                            Icons.Default.Favorite
-                                        }
-                                    },
-                                    contentDescription = null,
-                                )
+                                    NewChatUiState.Project.Icon.Favorite -> {
+                                        Icon(
+                                            imageVector = Icons.Filled.Favorite,
+                                            contentDescription = null,
+                                        )
+                                    }
+
+                                    NewChatUiState.Project.Icon.Emoji -> {
+                                        Text(
+                                            text = "☺️",
+                                        )
+                                    }
+                                }
                                 Text(project.name)
                             }
                         },
