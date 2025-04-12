@@ -210,7 +210,7 @@ class ChatViewModel(
                         is Navigator.Chat.ChatType.Project -> {
                             val project = appDatabase.projectDao().get(projectId = chatType.projectId.id).first()
                             ViewModelState.RoomInfo.Project(
-                                project = project,
+                                project = project ?: return@launch,
                                 room = room,
                                 projectId = chatType.projectId,
                             )

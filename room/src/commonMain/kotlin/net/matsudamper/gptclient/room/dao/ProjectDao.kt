@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient.room.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
@@ -13,11 +14,14 @@ interface ProjectDao {
     fun getAll(): Flow<List<Project>>
 
     @Query("SELECT * FROM project where id = :projectId")
-    fun get(projectId: Long): Flow<Project>
+    fun get(projectId: Long): Flow<Project?>
 
     @Insert
     suspend fun insert(project: Project): Long
 
     @Update
     suspend fun update(project: Project)
+
+    @Delete
+    suspend fun delete(project: Project)
 }

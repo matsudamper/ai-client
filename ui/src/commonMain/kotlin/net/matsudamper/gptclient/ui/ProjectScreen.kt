@@ -2,8 +2,11 @@ package net.matsudamper.gptclient.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,17 +22,27 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -41,7 +54,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.ui.component.ChatFooter
@@ -104,6 +121,8 @@ data class ProjectUiState(
         fun send(text: String)
         fun selectMedia()
         fun recordVoice()
+        fun changeName(text: String)
+        fun delete()
     }
 }
 
@@ -114,6 +133,78 @@ fun ProjectScreen(
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val density = LocalDensity.current
+    var visibleDeleteDialog by remember { mutableStateOf(false) }
+    if (visibleDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { visibleDeleteDialog = false },
+            confirmButton = {
+                OutlinedButton(
+                    onClick = {
+                        uiState.listener.delete()
+                        visibleDeleteDialog = false
+                    },
+                ) {
+                    Text("削除")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { visibleDeleteDialog = false },
+                ) {
+                    Text("キャンセル")
+                }
+            },
+            title = {
+                Text("削除しますか？")
+            },
+        )
+    }
+    var visibleChangeNameDialog by remember { mutableStateOf(false) }
+    if (visibleChangeNameDialog) {
+        var newNameState = rememberTextFieldState(uiState.projectName)
+        AlertDialog(
+            onDismissRequest = { visibleChangeNameDialog = false },
+            confirmButton = {
+                OutlinedButton(
+                    onClick = {
+                        uiState.listener.changeName(newNameState.text.toString())
+                        visibleChangeNameDialog = false
+                    },
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { visibleChangeNameDialog = false },
+                ) {
+                    Text("キャンセル")
+                }
+            },
+            title = {
+                Text("名前を変更しますか？")
+            },
+            text = {
+                BasicTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    state = newNameState,
+                    decorator = {
+                        TextFieldDefaults.DecorationBox(
+                            value = newNameState.text.toString(),
+                            innerTextField = {
+                                it()
+                            },
+                            enabled = true,
+                            singleLine = true,
+                            visualTransformation = VisualTransformation.None,
+                            interactionSource = remember { MutableInteractionSource() },
+                        )
+                    },
+                )
+            },
+        )
+    }
     Column(
         modifier = modifier
             .imePadding(),
@@ -135,19 +226,18 @@ fun ProjectScreen(
                         expanded = true,
                         onDismissRequest = { visibleMenu = false },
                     ) {
-                        for (model in uiState.modelState.models) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(model.modelName)
-                                },
-                                onClick = { model.listener.onClick() },
-                                trailingIcon = {
-                                    if (model.selected) {
-                                        Icon(imageVector = Icons.Default.Check, contentDescription = "check")
-                                    }
-                                },
-                            )
-                        }
+                        DropdownMenuItem(
+                            text = {
+                                Text("名前変更")
+                            },
+                            onClick = { visibleChangeNameDialog = true },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text("削除")
+                            },
+                            onClick = { visibleDeleteDialog = true },
+                        )
                     }
                 }
 
@@ -157,81 +247,97 @@ fun ProjectScreen(
             },
         )
         val itemHorizontalPadding = 12.dp
-        LazyColumn(
+        Box(
             modifier = Modifier.fillMaxWidth()
                 .weight(1f),
         ) {
-            when (uiState.chatRoomsState) {
-                is ProjectUiState.ChatRoomsState.Loaded -> {
-                    item {
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                                .padding(horizontal = itemHorizontalPadding),
-                        ) {
-                            Text(
-                                style = MaterialTheme.typography.titleLarge,
-                                text = "命令",
-                            )
-                            val state = rememberTextFieldState(uiState.systemMessage.text)
-                            LaunchedEffect(state.text) {
-                                uiState.systemMessage.listener.onChange(state.text.toString())
-                            }
-                            BasicTextField(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(MaterialTheme.shapes.small)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .padding(8.dp),
-                                textStyle = MaterialTheme.typography.bodyMedium,
-                                state = state,
-                                enabled = uiState.systemMessage.editable,
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
-                    }
-                    item {
-                        Text(
-                            modifier = Modifier.fillMaxWidth()
-                                .padding(horizontal = itemHorizontalPadding),
-                            style = MaterialTheme.typography.titleLarge,
-                            text = "履歴",
-                        )
-                    }
-                    items(uiState.chatRoomsState.histories) { history ->
-                        Row(
-                            modifier = Modifier.fillMaxSize()
-                                .clickable {
-                                    history.listener.onClick()
+            var menuHeight by remember { mutableStateOf(0.dp) }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = menuHeight),
+            ) {
+                when (uiState.chatRoomsState) {
+                    is ProjectUiState.ChatRoomsState.Loaded -> {
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(horizontal = itemHorizontalPadding),
+                            ) {
+                                Text(
+                                    style = MaterialTheme.typography.titleLarge,
+                                    text = "命令",
+                                )
+                                val state = rememberTextFieldState(uiState.systemMessage.text)
+                                LaunchedEffect(state.text) {
+                                    uiState.systemMessage.listener.onChange(state.text.toString())
                                 }
-                                .padding(
-                                    horizontal = itemHorizontalPadding,
-                                    vertical = 12.dp,
-                                ),
-                        ) {
-                            Icon(
-                                imageVector = FeatherIcons.MessageSquare,
-                                contentDescription = null,
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
+                                BasicTextField(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(MaterialTheme.shapes.small)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .padding(8.dp),
+                                    textStyle = MaterialTheme.typography.bodyMedium,
+                                    state = state,
+                                    enabled = uiState.systemMessage.editable,
+                                )
+                                Spacer(modifier = Modifier.height(24.dp))
+                            }
+                        }
+                        item {
                             Text(
-                                history.text,
-                                maxLines = 1,
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(horizontal = itemHorizontalPadding),
+                                style = MaterialTheme.typography.titleLarge,
+                                text = "履歴",
                             )
                         }
+                        items(uiState.chatRoomsState.histories) { history ->
+                            Row(
+                                modifier = Modifier.fillMaxSize()
+                                    .clickable {
+                                        history.listener.onClick()
+                                    }
+                                    .padding(
+                                        horizontal = itemHorizontalPadding,
+                                        vertical = 12.dp,
+                                    ),
+                            ) {
+                                Icon(
+                                    imageVector = FeatherIcons.MessageSquare,
+                                    contentDescription = null,
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    history.text,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
                     }
-                }
 
-                is ProjectUiState.ChatRoomsState.Loading -> {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator()
+                    is ProjectUiState.ChatRoomsState.Loading -> {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
                         }
                     }
                 }
             }
+            ModelMenu(
+                uiState = uiState.modelState,
+                modifier = Modifier.fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .onGloballyPositioned {
+                        menuHeight = with(density) {
+                            it.size.height.toDp()
+                        }
+                    },
+            )
         }
         val state = rememberTextFieldState()
         ChatFooter(
@@ -249,4 +355,60 @@ fun ProjectScreen(
             },
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ModelMenu(
+    uiState: ProjectUiState.ModelState,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        var expanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally),
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+        ) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                for (model in uiState.models) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(text = model.modelName)
+
+                        },
+                        onClick = {
+                            expanded = false
+                            model.listener.onClick()
+                        },
+                    )
+                }
+            }
+            OutlinedButton(
+                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    .padding(8.dp),
+                onClick = { },
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(uiState.selectedModel)
+                    Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+                }
+            }
+        }
+    }
+
 }

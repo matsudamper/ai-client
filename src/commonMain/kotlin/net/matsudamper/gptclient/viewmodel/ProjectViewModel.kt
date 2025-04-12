@@ -4,11 +4,14 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.gpt.ChatGptClient
@@ -46,6 +49,41 @@ class ProjectViewModel(
     private val listener = object : ProjectUiState.Listener {
         override fun recordVoice() {
 
+        }
+
+        override fun changeName(text: String) {
+            when (val info = viewModelStateFlow.value.systemInfo) {
+                is ViewModelState.SystemInfoType.BuiltinInfo,
+                null,
+                    -> return
+
+                is ViewModelState.SystemInfoType.Project -> {
+                    viewModelScope.launch {
+                        appDatabase.projectDao().update(
+                            info.project.copy(
+                                name = text,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+
+        override fun delete() {
+            when (val systemInfo = viewModelStateFlow.value.systemInfo) {
+                is ViewModelState.SystemInfoType.BuiltinInfo,
+                null,
+                    -> return
+
+                is ViewModelState.SystemInfoType.Project -> {
+                    viewModelScope.launch {
+                        withContext(Dispatchers.IO) {
+                            appDatabase.projectDao().delete(systemInfo.project)
+                        }
+                        navControllerProvider().popBackStack()
+                    }
+                }
+            }
         }
 
         override fun selectMedia() {
@@ -144,12 +182,19 @@ class ProjectViewModel(
         viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiStateFlow.update { uiState ->
-                    val editable = when(viewModelState.systemInfo) {
+                    val editable = when (viewModelState.systemInfo) {
                         null,
-                        is ViewModelState.SystemInfoType.BuiltinInfo -> false
+                        is ViewModelState.SystemInfoType.BuiltinInfo,
+                            -> false
+
                         is ViewModelState.SystemInfoType.Project -> true
                     }
                     uiState.copy(
+                        projectName = when(viewModelState.systemInfo) {
+                            is ViewModelState.SystemInfoType.Project -> viewModelState.systemInfo.project.name
+                            is ViewModelState.SystemInfoType.BuiltinInfo,
+                            null -> navigator.title
+                        },
                         systemMessage = ProjectUiState.SystemMessage(
                             text = viewModelState.systemInfo?.getInfo()?.systemMessage.orEmpty(),
                             editable = editable,
@@ -200,13 +245,16 @@ class ProjectViewModel(
                 }
 
                 is Navigator.Project.ProjectType.Project -> {
-                    appDatabase.projectDao().get(projectId = navigator.type.projectId.id).collectLatest { project ->
-                        viewModelStateFlow.update { viewModelState ->
-                            viewModelState.copy(
-                                systemInfo = ViewModelState.SystemInfoType.Project(project),
-                            )
+                    appDatabase.projectDao().get(projectId = navigator.type.projectId.id)
+                        .filterNotNull()
+                        .collectLatest { project ->
+                            println("project -> $project")
+                            viewModelStateFlow.update { viewModelState ->
+                                viewModelState.copy(
+                                    systemInfo = ViewModelState.SystemInfoType.Project(project),
+                                )
+                            }
                         }
-                    }
                 }
             }
         }
@@ -235,13 +283,15 @@ class ProjectViewModel(
                         override fun onClick() {
                             when (val info = viewModelStateFlow.value.systemInfo) {
                                 is ViewModelState.SystemInfoType.BuiltinInfo,
-                                null -> Unit
+                                null,
+                                    -> Unit
+
                                 is ViewModelState.SystemInfoType.Project -> {
                                     viewModelScope.launch {
                                         appDatabase.projectDao().update(
                                             info.project.copy(
                                                 modelName = model.modelName,
-                                            )
+                                            ),
                                         )
                                     }
                                 }
