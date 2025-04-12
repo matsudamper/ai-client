@@ -60,13 +60,13 @@ class NewChatViewModel(
             },
         ),
         NewChatUiState.Project(
-            name = "絵文字追加",
+            name = "絵文字",
             icon = NewChatUiState.Project.Icon.Emoji,
             listener = object : NewChatUiState.Project.Listener {
                 override fun onClick() {
                     navControllerProvider().navigate(
                         Navigator.Project(
-                            title = "家計簿追加",
+                            title = "絵文字",
                             type = Navigator.Project.ProjectType.Builtin(
                                 BuiltinProjectId.Emoji,
                             ),
