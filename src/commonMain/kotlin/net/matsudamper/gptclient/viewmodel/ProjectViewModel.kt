@@ -109,7 +109,7 @@ class ProjectViewModel(
             val chatType = when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
                     Navigator.Chat.ChatType.BuiltinProject(
-                        navigator.type.builtinProjectId,
+                        builtinProjectId = navigator.type.builtinProjectId,
                     )
                 }
 
@@ -125,7 +125,7 @@ class ProjectViewModel(
                         initialMessage = text,
                         uriList = viewModelStateFlow.value.uriList,
                         chatType = chatType,
-                        model = systemInfo.getInfo().model,
+                        model = viewModelStateFlow.value.overwriteModel ?: systemInfo.getInfo().model,
                     ),
                 ),
             )
@@ -190,10 +190,11 @@ class ProjectViewModel(
                         is ViewModelState.SystemInfoType.Project -> true
                     }
                     uiState.copy(
-                        projectName = when(viewModelState.systemInfo) {
+                        projectName = when (viewModelState.systemInfo) {
                             is ViewModelState.SystemInfoType.Project -> viewModelState.systemInfo.project.name
                             is ViewModelState.SystemInfoType.BuiltinInfo,
-                            null -> navigator.title
+                            null,
+                                -> navigator.title
                         },
                         systemMessage = ProjectUiState.SystemMessage(
                             text = viewModelState.systemInfo?.getInfo()?.systemMessage.orEmpty(),
@@ -285,12 +286,12 @@ class ProjectViewModel(
                                 is ViewModelState.SystemInfoType.BuiltinInfo,
                                 null,
                                     -> {
-                                        viewModelStateFlow.update {
-                                            it.copy(
-                                                overwriteModel = model,
-                                            )
-                                        }
+                                    viewModelStateFlow.update {
+                                        it.copy(
+                                            overwriteModel = model,
+                                        )
                                     }
+                                }
 
                                 is ViewModelState.SystemInfoType.Project -> {
                                     viewModelScope.launch {
