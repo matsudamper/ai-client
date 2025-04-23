@@ -31,7 +31,7 @@ data class GptRequest(
     @SerialName("frequency_penalty") val frequencyPenalty: Double,
     /**
      * 新しいトピックや単語の導入を促進するためのペナルティ
-     * -2.0(導入を曽於区心) ~ 2.0(導入を抑制)
+     * -2.0(導入を促進) ~ 2.0(導入を抑制)
      */
     @SerialName("presence_penalty") val presencePenalty: Double
 ) {
