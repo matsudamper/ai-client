@@ -3,7 +3,6 @@ package net.matsudamper.gptclient.gpt
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.timeout
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -13,7 +12,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.entity.ChatGptModel
@@ -87,6 +85,7 @@ class ChatGptClient(
             temperature = when (model) {
                 ChatGptModel.O1mini,
                 ChatGptModel.O1Preview,
+                ChatGptModel.O4Mini,
                     -> 1.0
 
                 else -> 0.3
