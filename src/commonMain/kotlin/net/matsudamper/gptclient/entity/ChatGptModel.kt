@@ -14,7 +14,7 @@ enum class ChatGptModel {
     O4Mini {
         override val modelName: String = "o4-mini"
         override val enableImage: Boolean = true
-        override val defaultToken = 10000
+        override val defaultToken = 5000
     },
     O1Preview {
         override val modelName: String = "o1-preview"
