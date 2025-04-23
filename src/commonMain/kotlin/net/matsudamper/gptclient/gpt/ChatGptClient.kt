@@ -84,8 +84,8 @@ class ChatGptClient(
             topP = 1.0,
             temperature = model.requireTemperature ?: 0.3,
             maxCompletionTokens = model.defaultToken,
-            frequencyPenalty = 2.0,
-            presencePenalty = 2.0,
+            frequencyPenalty = 0.0,
+            presencePenalty = 0.0,
         )
         val jsonString = Json.encodeToString(
             GptRequest.serializer(),
