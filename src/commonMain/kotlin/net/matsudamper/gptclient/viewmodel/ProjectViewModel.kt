@@ -284,7 +284,13 @@ class ProjectViewModel(
                             when (val info = viewModelStateFlow.value.systemInfo) {
                                 is ViewModelState.SystemInfoType.BuiltinInfo,
                                 null,
-                                    -> Unit
+                                    -> {
+                                        viewModelStateFlow.update {
+                                            it.copy(
+                                                overwriteModel = model,
+                                            )
+                                        }
+                                    }
 
                                 is ViewModelState.SystemInfoType.Project -> {
                                     viewModelScope.launch {
