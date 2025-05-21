@@ -59,6 +59,12 @@ fun ImageCropDialog(
             var imagePosition by remember { mutableStateOf(Offset.Zero) }
             // Edge detection constants
             val edgeDetectionThreshold = 40f // Threshold for detecting edges
+            // Track which edges are being dragged
+            var isDraggingLeft by remember { mutableStateOf(false) }
+            var isDraggingRight by remember { mutableStateOf(false) }
+            var isDraggingTop by remember { mutableStateOf(false) }
+            var isDraggingBottom by remember { mutableStateOf(false) }
+            var isDraggingEntire by remember { mutableStateOf(false) }
 
             Box(
                 modifier = Modifier.weight(1f)
@@ -117,37 +123,63 @@ fun ImageCropDialog(
                         .pointerInput(Unit) {
                             detectDragGestures(
                                 onDragStart = { offset ->
-                                    // No action needed on drag start
+                                    // Determine which edge is being dragged at the start
+                                    cropRect?.let { rect ->
+                                        // Check if we're near the edges
+                                        isDraggingLeft = abs(offset.x - rect.left) < edgeDetectionThreshold
+                                        isDraggingRight = abs(offset.x - rect.right) < edgeDetectionThreshold
+                                        isDraggingTop = abs(offset.y - rect.top) < edgeDetectionThreshold
+                                        isDraggingBottom = abs(offset.y - rect.bottom) < edgeDetectionThreshold
+
+                                        // If not dragging any edge, check if we're inside the rectangle
+                                        if (!isDraggingLeft && !isDraggingRight && !isDraggingTop && !isDraggingBottom) {
+                                            isDraggingEntire = offset.x > rect.left && offset.x < rect.right && 
+                                                              offset.y > rect.top && offset.y < rect.bottom
+                                        }
+                                    }
+                                },
+                                onDragEnd = {
+                                    // Reset dragging state
+                                    isDraggingLeft = false
+                                    isDraggingRight = false
+                                    isDraggingTop = false
+                                    isDraggingBottom = false
+                                    isDraggingEntire = false
                                 }
                             ) { change, dragAmount ->
                                 change.consume()
                                 cropRect?.let { rect ->
-                                    // Determine which edge is being dragged
-                                    val position = change.position
-
-                                    // Check if we're near the edges
-                                    val nearLeft = abs(position.x - rect.left) < edgeDetectionThreshold
-                                    val nearRight = abs(position.x - rect.right) < edgeDetectionThreshold
-                                    val nearTop = abs(position.y - rect.top) < edgeDetectionThreshold
-                                    val nearBottom = abs(position.y - rect.bottom) < edgeDetectionThreshold
-
                                     // Calculate new rectangle dimensions based on which edge is being dragged
                                     var newLeft = rect.left
                                     var newTop = rect.top
                                     var newRight = rect.right
                                     var newBottom = rect.bottom
 
-                                    if (nearLeft) {
-                                        newLeft = (rect.left + dragAmount.x).coerceIn(0f, rect.right - edgeDetectionThreshold)
-                                    }
-                                    if (nearRight) {
-                                        newRight = (rect.right + dragAmount.x).coerceIn(rect.left + edgeDetectionThreshold, imageSize.width.toFloat())
-                                    }
-                                    if (nearTop) {
-                                        newTop = (rect.top + dragAmount.y).coerceIn(0f, rect.bottom - edgeDetectionThreshold)
-                                    }
-                                    if (nearBottom) {
-                                        newBottom = (rect.bottom + dragAmount.y).coerceIn(rect.top + edgeDetectionThreshold, imageSize.height.toFloat())
+                                    if (isDraggingEntire) {
+                                        // Move the entire rectangle
+                                        val rectWidth = rect.width
+                                        val rectHeight = rect.height
+
+                                        // Calculate new positions while keeping the rectangle within bounds
+                                        newLeft = (rect.left + dragAmount.x).coerceIn(0f, imageSize.width - rectWidth)
+                                        newRight = newLeft + rectWidth
+
+                                        newTop = (rect.top + dragAmount.y).coerceIn(0f, imageSize.height - rectHeight)
+                                        newBottom = newTop + rectHeight
+                                    } else {
+                                        // Handle edge dragging
+                                        if (isDraggingLeft) {
+                                            newLeft = (rect.left + dragAmount.x).coerceIn(0f, rect.right - edgeDetectionThreshold)
+                                        }
+                                        if (isDraggingRight) {
+                                            newRight = (rect.right + dragAmount.x).coerceIn(rect.left + edgeDetectionThreshold, imageSize.width.toFloat())
+                                        }
+                                        if (isDraggingTop) {
+                                            newTop = (rect.top + dragAmount.y).coerceIn(0f, rect.bottom - edgeDetectionThreshold)
+                                        }
+                                        if (isDraggingBottom) {
+                                            newBottom = (rect.bottom + dragAmount.y).coerceIn(rect.top + edgeDetectionThreshold, imageSize.height.toFloat())
+                                        }
                                     }
 
                                     // Update crop rectangle
