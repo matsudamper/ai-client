@@ -1,6 +1,5 @@
 package net.matsudamper.gptclient.ui.component
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -9,10 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,13 +27,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import coil3.compose.AsyncImage
 import kotlin.math.abs
+import coil3.compose.AsyncImage
 
 @Composable
 fun ImageCropDialog(
@@ -56,7 +52,6 @@ fun ImageCropDialog(
         ) {
             var imageSize by remember { mutableStateOf(IntSize.Zero) }
             var cropRect by remember { mutableStateOf<Rect?>(null) }
-            var imagePosition by remember { mutableStateOf(Offset.Zero) }
             // Edge detection constants
             val edgeDetectionThreshold = 40f // Threshold for detecting edges
             // Track which edges are being dragged
@@ -75,7 +70,6 @@ fun ImageCropDialog(
                     modifier = Modifier.fillMaxSize()
                         .onGloballyPositioned { coordinates ->
                             imageSize = coordinates.size
-                            imagePosition = coordinates.positionInWindow()
 
                             // Initialize crop rect to center 80% of the image
                             if (cropRect == null && imageSize.width > 0 && imageSize.height > 0) {
