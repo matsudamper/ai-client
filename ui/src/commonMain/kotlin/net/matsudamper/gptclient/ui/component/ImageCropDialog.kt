@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import kotlin.math.abs
 
 @Composable
 fun ImageCropDialog(
@@ -56,17 +57,20 @@ fun ImageCropDialog(
             var imageSize by remember { mutableStateOf(IntSize.Zero) }
             var cropRect by remember { mutableStateOf<Rect?>(null) }
             var imagePosition by remember { mutableStateOf(Offset.Zero) }
-            
+            // Edge detection constants
+            val edgeDetectionThreshold = 40f // Threshold for detecting edges
+
             Box(
                 modifier = Modifier.weight(1f)
                     .fillMaxWidth()
+                    .padding(top = 16.dp) // Add padding to prevent overlap with NavigationBack
             ) {
                 AsyncImage(
                     modifier = Modifier.fillMaxSize()
                         .onGloballyPositioned { coordinates ->
                             imageSize = coordinates.size
                             imagePosition = coordinates.positionInWindow()
-                            
+
                             // Initialize crop rect to center 80% of the image
                             if (cropRect == null && imageSize.width > 0 && imageSize.height > 0) {
                                 val width = imageSize.width * 0.8f
@@ -78,9 +82,9 @@ fun ImageCropDialog(
                         }
                         .drawWithContent {
                             drawContent()
-                            
+
                             val rect = cropRect ?: return@drawWithContent
-                            
+
                             // Draw semi-transparent overlay outside crop area
                             drawRect(
                                 color = Color.Black.copy(alpha = 0.5f),
@@ -101,7 +105,7 @@ fun ImageCropDialog(
                                 topLeft = Offset(rect.left, rect.bottom),
                                 size = Size(rect.width, size.height - rect.bottom)
                             )
-                            
+
                             // Draw crop rectangle border
                             drawRect(
                                 color = Color.White,
@@ -111,17 +115,47 @@ fun ImageCropDialog(
                             )
                         }
                         .pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    // No action needed on drag start
+                                }
+                            ) { change, dragAmount ->
                                 change.consume()
                                 cropRect?.let { rect ->
-                                    // Update crop rectangle position
-                                    val newLeft = (rect.left + dragAmount.x).coerceIn(0f, imageSize.width - rect.width)
-                                    val newTop = (rect.top + dragAmount.y).coerceIn(0f, imageSize.height - rect.height)
+                                    // Determine which edge is being dragged
+                                    val position = change.position
+
+                                    // Check if we're near the edges
+                                    val nearLeft = abs(position.x - rect.left) < edgeDetectionThreshold
+                                    val nearRight = abs(position.x - rect.right) < edgeDetectionThreshold
+                                    val nearTop = abs(position.y - rect.top) < edgeDetectionThreshold
+                                    val nearBottom = abs(position.y - rect.bottom) < edgeDetectionThreshold
+
+                                    // Calculate new rectangle dimensions based on which edge is being dragged
+                                    var newLeft = rect.left
+                                    var newTop = rect.top
+                                    var newRight = rect.right
+                                    var newBottom = rect.bottom
+
+                                    if (nearLeft) {
+                                        newLeft = (rect.left + dragAmount.x).coerceIn(0f, rect.right - edgeDetectionThreshold)
+                                    }
+                                    if (nearRight) {
+                                        newRight = (rect.right + dragAmount.x).coerceIn(rect.left + edgeDetectionThreshold, imageSize.width.toFloat())
+                                    }
+                                    if (nearTop) {
+                                        newTop = (rect.top + dragAmount.y).coerceIn(0f, rect.bottom - edgeDetectionThreshold)
+                                    }
+                                    if (nearBottom) {
+                                        newBottom = (rect.bottom + dragAmount.y).coerceIn(rect.top + edgeDetectionThreshold, imageSize.height.toFloat())
+                                    }
+
+                                    // Update crop rectangle
                                     cropRect = Rect(
                                         left = newLeft,
                                         top = newTop,
-                                        right = newLeft + rect.width,
-                                        bottom = newTop + rect.height
+                                        right = newRight,
+                                        bottom = newBottom
                                     )
                                 }
                             }
@@ -131,7 +165,7 @@ fun ImageCropDialog(
                     contentDescription = null,
                 )
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth()
                     .padding(16.dp),
@@ -143,9 +177,9 @@ fun ImageCropDialog(
                 ) {
                     Text("Cancel")
                 }
-                
+
                 Spacer(modifier = Modifier.weight(1f))
-                
+
                 Button(
                     onClick = {
                         cropRect?.let { rect ->
