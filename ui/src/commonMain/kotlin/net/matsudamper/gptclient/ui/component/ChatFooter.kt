@@ -25,11 +25,14 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -39,6 +42,7 @@ import compose.icons.feathericons.ArrowUp
 import compose.icons.feathericons.Image
 import compose.icons.feathericons.Mic
 import compose.icons.feathericons.Upload
+import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -50,9 +54,12 @@ internal fun ChatFooter(
     onClickImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
+    onImageCrop: (imageUri: String, cropRect: Rect, imageSize: IntSize) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     var showImageUri by remember { mutableStateOf<String?>(null) }
+    var showCropImageUri by remember { mutableStateOf<String?>(null) }
+
     if (showImageUri != null) {
         Dialog(
             onDismissRequest = { showImageUri = null },
@@ -69,6 +76,17 @@ internal fun ChatFooter(
             )
         }
     }
+
+    if (showCropImageUri != null) {
+        ImageCropDialog(
+            imageUri = showCropImageUri!!,
+            onDismissRequest = { showCropImageUri = null },
+            onCropComplete = { cropRect, imageSize ->
+                onImageCrop(showCropImageUri!!, cropRect, imageSize)
+                showCropImageUri = null
+            }
+        )
+    }
     Column(
         modifier = modifier,
     ) {
@@ -76,14 +94,37 @@ internal fun ChatFooter(
             .padding(12.dp)
         LazyRow {
             items(selectedMedia) { media ->
-                AsyncImage(
-                    modifier = Modifier.clickable {
-                        showImageUri = media
-                    }.then(imageModifier),
-                    model = media,
-                    contentScale = ContentScale.Crop,
-                    contentDescription = null,
-                )
+                var showMenu by remember { mutableStateOf(false) }
+                Box {
+                    AsyncImage(
+                        modifier = Modifier.clickable {
+                            showMenu = true
+                        }.then(imageModifier),
+                        model = media,
+                        contentScale = ContentScale.Crop,
+                        contentDescription = null,
+                    )
+
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { androidx.compose.material3.Text("View") },
+                            onClick = {
+                                showImageUri = media
+                                showMenu = false
+                            }
+                        )
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { androidx.compose.material3.Text("Crop") },
+                            onClick = {
+                                showCropImageUri = media
+                                showMenu = false
+                            }
+                        )
+                    }
+                }
             }
             if (visibleMediaLoading) {
                 item {

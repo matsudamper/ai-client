@@ -81,6 +81,7 @@ data class ChatListUiState(
         fun onClickImage()
         fun onClickVoice()
         fun onClickSend(text: String)
+        fun onImageCrop(imageUri: String, cropRect: androidx.compose.ui.geometry.Rect, imageSize: androidx.compose.ui.unit.IntSize) {}
     }
 }
 
@@ -196,6 +197,9 @@ public fun ChatList(
                 onClickSend = {
                     uiState.listener.onClickSend(state.text.toString())
                     state.clearText()
+                },
+                onImageCrop = { imageUri, cropRect, imageSize ->
+                    uiState.listener.onImageCrop(imageUri, cropRect, imageSize)
                 },
             )
         }

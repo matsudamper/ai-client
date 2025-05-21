@@ -69,6 +69,45 @@ class ChatViewModel(
                 it.copy(selectedMedia = listOf())
             }
         }
+
+        override fun onImageCrop(imageUri: String, cropRect: androidx.compose.ui.geometry.Rect, imageSize: androidx.compose.ui.unit.IntSize) {
+            viewModelScope.launch {
+                try {
+                    viewModelStateFlow.update {
+                        it.copy(isMediaLoading = true)
+                    }
+
+                    // Convert Compose Rect to PlatformRequest.CropRect
+                    val platformCropRect = PlatformRequest.CropRect(
+                        left = cropRect.left,
+                        top = cropRect.top,
+                        right = cropRect.right,
+                        bottom = cropRect.bottom
+                    )
+
+                    // Crop the image
+                    val croppedImageUri = platformRequest.cropImage(
+                        uri = imageUri,
+                        cropRect = platformCropRect,
+                        viewWidth = imageSize.width,
+                        viewHeight = imageSize.height
+                    )
+
+                    // Add the cropped image to the selected media
+                    if (croppedImageUri != null) {
+                        viewModelStateFlow.update {
+                            it.copy(
+                                selectedMedia = it.selectedMedia + croppedImageUri
+                            )
+                        }
+                    }
+                } finally {
+                    viewModelStateFlow.update {
+                        it.copy(isMediaLoading = false)
+                    }
+                }
+            }
+        }
     }
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
         ChatListUiState(
