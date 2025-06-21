@@ -8,8 +8,31 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.androidxRoom) apply false
+    alias(libs.plugins.ktlingGradle) apply false
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+allprojects {
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
+    configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+        verbose.set(true)
+        version.set(
+            provider {
+                libs.versions.ktlint.get()
+            },
+        )
+        filter {
+            val excludePathList = listOf(
+                "generated",
+                "build",
+            ).map { "${File.separator}$it${File.separator}" }
+            exclude {
+                excludePathList.any { path -> it.file.path.contains(path) }
+            }
+        }
+    }
 }
 
 group = "net.matsudamper.gptclient"
