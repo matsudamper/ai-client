@@ -112,7 +112,5 @@ class MainScreenViewModel(
         }
     }
 
-    private data class ViewModelState(
-        val rooms: List<ChatRoomWithSummary>? = null,
-    )
+    private data class ViewModelState(val rooms: List<ChatRoomWithSummary>? = null)
 }

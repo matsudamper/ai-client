@@ -52,28 +52,19 @@ import androidx.navigation.toRoute
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.navigation.Navigator
-import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
+import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.SettingsScreen
 import net.matsudamper.gptclient.ui.platform.BackHandler
 
-data class MainScreenUiState(
-    val history: History,
-    val listener: Listener,
-) {
+data class MainScreenUiState(val history: History, val listener: Listener) {
     sealed interface History {
         data object Loading : History
-        data class Loaded(
-            val items: List<HistoryItem>,
-        ) : History
+        data class Loaded(val items: List<HistoryItem>) : History
     }
 
-    data class HistoryItem(
-        val text: String,
-        val projectName: String?,
-        val listener: HistoryItemListener,
-    )
+    data class HistoryItem(val text: String, val projectName: String?, val listener: HistoryItemListener)
 
     @Immutable
     interface HistoryItemListener {
@@ -105,7 +96,7 @@ public fun MainScreen(
             }
     }
     Surface(
-        modifier = modifier
+        modifier = modifier,
     ) {
         BoxWithConstraints {
             val maxWidth = maxWidth
@@ -113,7 +104,7 @@ public fun MainScreen(
                 val panelWidth = 320.dp
                 val offset by animateDpAsState(
                     targetValue = if (isVisibleSidePanel) panelWidth else 0.dp,
-                    animationSpec = tween(durationMillis = 250)
+                    animationSpec = tween(durationMillis = 250),
                 )
                 SidePanel(
                     modifier = Modifier.fillMaxHeight()
@@ -122,7 +113,7 @@ public fun MainScreen(
                                 constraints.copy(
                                     minWidth = panelWidth.roundToPx(),
                                     maxWidth = panelWidth.roundToPx(),
-                                )
+                                ),
                             )
                             layout(placeable.width, placeable.height) {
                                 placeable.place((-panelWidth + offset).roundToPx(), 0)
@@ -141,15 +132,15 @@ public fun MainScreen(
                                 constraints.copy(
                                     minWidth = maxWidth.roundToPx(),
                                     maxWidth = maxWidth.roundToPx(),
-                                )
+                                ),
                             )
                             layout(placeable.width, placeable.height) {
                                 placeable.place(offset.roundToPx(), 0)
                             }
-                        }
+                        },
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxHeight()
+                        modifier = Modifier.fillMaxHeight(),
                     ) {
                         Navigation(
                             enableNavigationBack = isVisibleSidePanel.not(),
@@ -166,7 +157,7 @@ public fun MainScreen(
                                 .background(Color.Black.copy(alpha = alpha))
                                 .clickable(
                                     interactionSource = null,
-                                    indication = null
+                                    indication = null,
                                 ) { isVisibleSidePanel = false },
                         )
                     }
@@ -213,11 +204,11 @@ private fun Navigation(
             SettingsScreen(
                 modifier = Modifier.fillMaxSize(),
                 uiState = uiState,
-                onClickMenu = { onClickMenu() }
+                onClickMenu = { onClickMenu() },
             )
         }
         composable<Navigator.Project>(
-            typeMap = Navigator.Project.typeMap
+            typeMap = Navigator.Project.typeMap,
         ) {
             val navigatorItem = it.toRoute<Navigator.Project>()
             val uiState = uiStateProvider.provideProjectUiState(entry = it, navigator = navigatorItem)
@@ -264,7 +255,7 @@ private fun SidePanel(
         )
     }
     Column(
-        modifier = modifier.statusBarsPadding()
+        modifier = modifier.statusBarsPadding(),
     ) {
         Text(
             modifier = Modifier
@@ -339,11 +330,10 @@ private fun SidePanel(
                     }
                 }
             }
-
         }
         Row(
             modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer)
-                .navigationBarsPadding()
+                .navigationBarsPadding(),
         ) {
             TextButton(onClick = { onClickUsage() }) {
                 Text("Usage")

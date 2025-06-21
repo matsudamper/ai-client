@@ -20,11 +20,7 @@ import net.matsudamper.gptclient.room.entity.Project
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.NewChatUiState
 
-class NewChatViewModel(
-    private val platformRequest: PlatformRequest,
-    private val appDatabase: AppDatabase,
-    navControllerProvider: () -> NavHostController,
-) : ViewModel() {
+class NewChatViewModel(private val platformRequest: PlatformRequest, private val appDatabase: AppDatabase, navControllerProvider: () -> NavHostController) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val builtinProjects = listOf(
         NewChatUiState.Project(
@@ -164,7 +160,6 @@ class NewChatViewModel(
                 }
 
                 override fun onClickVoice() {
-
                 }
             },
         ),
@@ -188,7 +183,7 @@ class NewChatViewModel(
                             viewModelState.projects.orEmpty().map {
                                 NewChatUiState.Project(
                                     name = it.name,
-                                    icon =  NewChatUiState.Project.Icon.Favorite,
+                                    icon = NewChatUiState.Project.Icon.Favorite,
                                     listener = object : NewChatUiState.Project.Listener {
                                         override fun onClick() {
                                             navControllerProvider().navigate(
@@ -200,10 +195,10 @@ class NewChatViewModel(
                                                 ),
                                             )
                                         }
-                                    }
+                                    },
                                 )
-                            }
-                        )
+                            },
+                        ),
                     )
                 }
             }

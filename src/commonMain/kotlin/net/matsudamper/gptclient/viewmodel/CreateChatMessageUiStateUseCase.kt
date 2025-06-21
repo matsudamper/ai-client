@@ -8,7 +8,7 @@ import net.matsudamper.gptclient.ui.chat.ImageMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.LoadingMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 
-class CreateChatMessageUiStateUseCase() {
+class CreateChatMessageUiStateUseCase {
     fun create(
         chats: List<Chat>,
         agentTransformer: (String) -> ChatMessageComposableInterface = { TextMessageComposableInterface(AnnotatedString(it)) },
@@ -28,7 +28,7 @@ class CreateChatMessageUiStateUseCase() {
 
                             Chat.Role.User,
                             Chat.Role.Unknown,
-                                -> {
+                            -> {
                                 ChatListUiState.Message.User(
                                     uiSet = TextMessageComposableInterface(AnnotatedString(message)),
                                 )
@@ -54,7 +54,7 @@ class CreateChatMessageUiStateUseCase() {
 
                             Chat.Role.User,
                             Chat.Role.Unknown,
-                                -> {
+                            -> {
                                 ChatListUiState.Message.User(
                                     uiSet = ImageMessageComposableInterface(ImageMessageComposableInterface.UiState(uri)),
                                 )

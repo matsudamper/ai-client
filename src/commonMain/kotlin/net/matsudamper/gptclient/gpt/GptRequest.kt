@@ -33,19 +33,17 @@ data class GptRequest(
      * 新しいトピックや単語の導入を促進するためのペナルティ
      * -2.0(導入を促進) ~ 2.0(導入を抑制)
      */
-    @SerialName("presence_penalty") val presencePenalty: Double
+    @SerialName("presence_penalty") val presencePenalty: Double,
 ) {
     @Serializable
-    data class Message(
-        @SerialName("role") val role: Role?,
-        @SerialName("content") val content: List<Content>
-    )
+    data class Message(@SerialName("role") val role: Role?, @SerialName("content") val content: List<Content>)
 
     @Serializable(Role.Companion.Serializer::class)
     enum class Role(override val label: String) : StringEnum {
         System("system"),
         User("user"),
-        Assistant("assistant");
+        Assistant("assistant"),
+        ;
 
         companion object {
             internal object Serializer : StringEnum.Companion.Serializer<Role>(Role::class)
@@ -53,19 +51,11 @@ data class GptRequest(
     }
 
     @Serializable
-    data class Content(
-        @SerialName("type") val type: String,
-        @SerialName("text") val text: String? = null,
-        @SerialName("image_url") val imageUrl: ImageUrl? = null
-    )
+    data class Content(@SerialName("type") val type: String, @SerialName("text") val text: String? = null, @SerialName("image_url") val imageUrl: ImageUrl? = null)
 
     @Serializable
-    data class ImageUrl(
-        @SerialName("url") val url: String
-    )
+    data class ImageUrl(@SerialName("url") val url: String)
 
     @Serializable
-    data class ResponseFormat(
-        @SerialName("type") val type: String
-    )
+    data class ResponseFormat(@SerialName("type") val type: String)
 }

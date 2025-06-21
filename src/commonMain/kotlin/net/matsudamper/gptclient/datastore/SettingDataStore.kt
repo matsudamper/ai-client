@@ -10,7 +10,7 @@ import okio.Path.Companion.toPath
 
 class SettingDataStore(private val filename: String) {
     private val store: DataStore<Preferences> = PreferenceDataStoreFactory.createWithPath(
-        produceFile = { "$filename.preferences_pb".toPath() }
+        produceFile = { "$filename.preferences_pb".toPath() },
     )
 
     suspend fun setSecretKey(key: String) {
@@ -21,9 +21,7 @@ class SettingDataStore(private val filename: String) {
         }
     }
 
-    suspend fun getSecretKey(): String {
-        return store.data.first()[keySecretKey].orEmpty()
-    }
+    suspend fun getSecretKey(): String = store.data.first()[keySecretKey].orEmpty()
 
     companion object {
         private val keySecretKey = stringPreferencesKey("secret_key")

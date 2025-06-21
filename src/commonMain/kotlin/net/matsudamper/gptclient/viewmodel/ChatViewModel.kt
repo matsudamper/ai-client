@@ -57,7 +57,6 @@ class ChatViewModel(
         }
 
         override fun onClickVoice() {
-
         }
 
         override fun onClickSend(text: String) {
@@ -82,7 +81,7 @@ class ChatViewModel(
                         left = cropRect.left,
                         top = cropRect.top,
                         right = cropRect.right,
-                        bottom = cropRect.bottom
+                        bottom = cropRect.bottom,
                     )
 
                     // Crop the image
@@ -90,14 +89,14 @@ class ChatViewModel(
                         uri = imageUri,
                         cropRect = platformCropRect,
                         viewWidth = imageSize.width,
-                        viewHeight = imageSize.height
+                        viewHeight = imageSize.height,
                     )
 
                     // Add the cropped image to the selected media
                     if (croppedImageUri != null) {
                         viewModelStateFlow.update {
                             it.copy(
-                                selectedMedia = it.selectedMedia + croppedImageUri
+                                selectedMedia = it.selectedMedia + croppedImageUri,
                             )
                         }
                     }
@@ -187,8 +186,7 @@ class ChatViewModel(
                                     is ViewModelState.RoomInfo.Project,
                                     is ViewModelState.RoomInfo.Normal,
                                     null,
-                                        -> TextMessageComposableInterface(AnnotatedString(it))
-
+                                    -> TextMessageComposableInterface(AnnotatedString(it))
                                 }
                             },
                         ),
@@ -225,7 +223,7 @@ class ChatViewModel(
                             is Navigator.Chat.ChatType.Project -> chatType.projectId
                             is Navigator.Chat.ChatType.BuiltinProject,
                             is Navigator.Chat.ChatType.Normal,
-                                -> null
+                            -> null
                         },
                         model = openContext.model,
                     )
@@ -295,18 +293,16 @@ class ChatViewModel(
         builtinProjectId: BuiltinProjectId?,
         projectId: ProjectId?,
         model: ChatGptModel,
-    ): ChatRoom {
-        return withContext(Dispatchers.IO) {
-            val room = ChatRoom(
-                modelName = model.modelName,
-                builtInProjectId = builtinProjectId,
-                projectId = projectId,
-                summary = null,
-            )
-            room.copy(
-                id = ChatRoomId(appDatabase.chatRoomDao().insert(room)),
-            )
-        }
+    ): ChatRoom = withContext(Dispatchers.IO) {
+        val room = ChatRoom(
+            modelName = model.modelName,
+            builtInProjectId = builtinProjectId,
+            projectId = projectId,
+            summary = null,
+        )
+        room.copy(
+            id = ChatRoomId(appDatabase.chatRoomDao().insert(room)),
+        )
     }
 
     private fun addRequest(message: String, uris: List<String> = listOf()) {
@@ -332,7 +328,7 @@ class ChatViewModel(
                         is ViewModelState.RoomInfo.BuiltinProject -> roomInfo.builtinProjectInfo.format
                         is ViewModelState.RoomInfo.Normal,
                         is ViewModelState.RoomInfo.Project,
-                            -> ChatGptClient.Format.Text
+                        -> ChatGptClient.Format.Text
                     },
                     model = roomInfo.room.modelName,
                     summaryProvider = {
@@ -343,7 +339,7 @@ class ChatViewModel(
 
                             is ViewModelState.RoomInfo.Normal,
                             is ViewModelState.RoomInfo.Project,
-                                -> null
+                            -> null
                         }
                     },
                 )
@@ -388,17 +384,9 @@ class ChatViewModel(
             val room: ChatRoom
 
             data class Normal(override val room: ChatRoom) : RoomInfo
-            data class BuiltinProject(
-                override val room: ChatRoom,
-                val builtinProjectId: BuiltinProjectId,
-                val builtinProjectInfo: GetBuiltinProjectInfoUseCase.Info,
-            ) : RoomInfo
+            data class BuiltinProject(override val room: ChatRoom, val builtinProjectId: BuiltinProjectId, val builtinProjectInfo: GetBuiltinProjectInfoUseCase.Info) : RoomInfo
 
-            data class Project(
-                override val room: ChatRoom,
-                val projectId: ProjectId,
-                val project: net.matsudamper.gptclient.room.entity.Project,
-            ) : RoomInfo
+            data class Project(override val room: ChatRoom, val projectId: ProjectId, val project: net.matsudamper.gptclient.room.entity.Project) : RoomInfo
 
             fun copyOnlyRoom(room: ChatRoom): RoomInfo = when (this) {
                 is BuiltinProject -> copy(room = room)

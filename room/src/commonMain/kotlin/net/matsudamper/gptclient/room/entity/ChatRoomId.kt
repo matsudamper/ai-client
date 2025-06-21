@@ -9,6 +9,7 @@ value class ChatRoomId(val value: Long) {
     object Converter {
         @TypeConverter
         fun fromInt(value: Long): ChatRoomId = ChatRoomId(value)
+
         @TypeConverter
         fun toInt(value: ChatRoomId): Long = value.value
     }

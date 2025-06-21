@@ -43,7 +43,6 @@ import androidx.compose.ui.window.DialogProperties
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooter
 
-
 data class ChatListUiState(
     val items: List<Message>,
     val title: String,

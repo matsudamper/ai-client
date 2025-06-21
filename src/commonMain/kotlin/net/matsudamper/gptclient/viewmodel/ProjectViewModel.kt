@@ -48,14 +48,13 @@ class ProjectViewModel(
     }
     private val listener = object : ProjectUiState.Listener {
         override fun recordVoice() {
-
         }
 
         override fun changeName(text: String) {
             when (val info = viewModelStateFlow.value.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo,
                 null,
-                    -> return
+                -> return
 
                 is ViewModelState.SystemInfoType.Project -> {
                     viewModelScope.launch {
@@ -73,7 +72,7 @@ class ProjectViewModel(
             when (val systemInfo = viewModelStateFlow.value.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo,
                 null,
-                    -> return
+                -> return
 
                 is ViewModelState.SystemInfoType.Project -> {
                     viewModelScope.launch {
@@ -185,7 +184,7 @@ class ProjectViewModel(
                     val editable = when (viewModelState.systemInfo) {
                         null,
                         is ViewModelState.SystemInfoType.BuiltinInfo,
-                            -> false
+                        -> false
 
                         is ViewModelState.SystemInfoType.Project -> true
                     }
@@ -194,7 +193,7 @@ class ProjectViewModel(
                             is ViewModelState.SystemInfoType.Project -> viewModelState.systemInfo.project.name
                             is ViewModelState.SystemInfoType.BuiltinInfo,
                             null,
-                                -> navigator.title
+                            -> navigator.title
                         },
                         systemMessage = ProjectUiState.SystemMessage(
                             text = viewModelState.systemInfo?.getInfo()?.systemMessage.orEmpty(),
@@ -273,42 +272,40 @@ class ProjectViewModel(
         }
     }
 
-    private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState {
-        return ProjectUiState.ModelState(
-            selectedModel = selectedModel.modelName,
-            models = ChatGptModel.entries.map { model ->
-                ProjectUiState.ModelState.Item(
-                    modelName = model.modelName,
-                    selected = model == selectedModel,
-                    listener = object : ProjectUiState.ModelState.ItemListener {
-                        override fun onClick() {
-                            when (val info = viewModelStateFlow.value.systemInfo) {
-                                is ViewModelState.SystemInfoType.BuiltinInfo,
-                                null,
-                                    -> {
-                                    viewModelStateFlow.update {
-                                        it.copy(
-                                            overwriteModel = model,
-                                        )
-                                    }
+    private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState = ProjectUiState.ModelState(
+        selectedModel = selectedModel.modelName,
+        models = ChatGptModel.entries.map { model ->
+            ProjectUiState.ModelState.Item(
+                modelName = model.modelName,
+                selected = model == selectedModel,
+                listener = object : ProjectUiState.ModelState.ItemListener {
+                    override fun onClick() {
+                        when (val info = viewModelStateFlow.value.systemInfo) {
+                            is ViewModelState.SystemInfoType.BuiltinInfo,
+                            null,
+                            -> {
+                                viewModelStateFlow.update {
+                                    it.copy(
+                                        overwriteModel = model,
+                                    )
                                 }
+                            }
 
-                                is ViewModelState.SystemInfoType.Project -> {
-                                    viewModelScope.launch {
-                                        appDatabase.projectDao().update(
-                                            info.project.copy(
-                                                modelName = model.modelName,
-                                            ),
-                                        )
-                                    }
+                            is ViewModelState.SystemInfoType.Project -> {
+                                viewModelScope.launch {
+                                    appDatabase.projectDao().update(
+                                        info.project.copy(
+                                            modelName = model.modelName,
+                                        ),
+                                    )
                                 }
                             }
                         }
-                    },
-                )
-            },
-        )
-    }
+                    }
+                },
+            )
+        },
+    )
 
     private data class ViewModelState(
         val uriList: List<String> = listOf(),
@@ -319,36 +316,27 @@ class ProjectViewModel(
     ) {
         sealed interface SystemInfoType {
             data class BuiltinInfo(val info: GetBuiltinProjectInfoUseCase.Info) : SystemInfoType {
-                override fun getInfo(): Info {
-                    return Info(
-                        systemMessage = info.systemMessage,
-                        format = info.format,
-                        responseTransformer = info.responseTransformer,
-                        model = info.model,
-                    )
-                }
+                override fun getInfo(): Info = Info(
+                    systemMessage = info.systemMessage,
+                    format = info.format,
+                    responseTransformer = info.responseTransformer,
+                    model = info.model,
+                )
             }
 
             data class Project(val project: net.matsudamper.gptclient.room.entity.Project) : SystemInfoType {
-                override fun getInfo(): Info {
-                    return Info(
-                        systemMessage = project.systemMessage,
-                        format = ChatGptClient.Format.Text,
-                        responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
-                        model = ChatGptModel.entries.firstOrNull { it.modelName == project.modelName }
-                            ?: ChatGptModel.Gpt4oMini,
-                    )
-                }
+                override fun getInfo(): Info = Info(
+                    systemMessage = project.systemMessage,
+                    format = ChatGptClient.Format.Text,
+                    responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
+                    model = ChatGptModel.entries.firstOrNull { it.modelName == project.modelName }
+                        ?: ChatGptModel.Gpt4oMini,
+                )
             }
 
             fun getInfo(): Info
         }
 
-        data class Info(
-            val systemMessage: String,
-            val format: ChatGptClient.Format,
-            val responseTransformer: (String) -> ChatMessageComposableInterface,
-            val model: ChatGptModel,
-        )
+        data class Info(val systemMessage: String, val format: ChatGptClient.Format, val responseTransformer: (String) -> ChatMessageComposableInterface, val model: ChatGptModel)
     }
 }

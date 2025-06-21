@@ -7,16 +7,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.withContext
 
-class AndroidPlatformRequest(
-    private val activity: ComponentActivity,
-) : PlatformRequest {
+class AndroidPlatformRequest(private val activity: ComponentActivity) : PlatformRequest {
     private val mediaLauncher = object {
         private val resultFlow = Channel<List<String>>(Channel.RENDEZVOUS)
         private val launcher = activity.registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
@@ -56,7 +54,7 @@ class AndroidPlatformRequest(
             val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
             val bitmap = try {
                 ImageDecoder.decodeBitmap(source)
-            }catch (_ : FileNotFoundException) {
+            } catch (_: FileNotFoundException) {
                 return@withContext null
             }
 
@@ -71,17 +69,15 @@ class AndroidPlatformRequest(
         activity.startActivity(
             android.content.Intent(
                 android.content.Intent.ACTION_VIEW,
-                url.toUri()
-            )
+                url.toUri(),
+            ),
         )
     }
 
-    override suspend fun deleteFile(uri: String): Boolean {
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                activity.contentResolver.delete(uri.toUri(), null, null) > 0
-            }.getOrNull() == true
-        }
+    override suspend fun deleteFile(uri: String): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            activity.contentResolver.delete(uri.toUri(), null, null) > 0
+        }.getOrNull() == true
     }
 
     override fun showToast(text: String) {
@@ -98,7 +94,7 @@ class AndroidPlatformRequest(
         uri: String,
         cropRect: PlatformRequest.CropRect,
         viewWidth: Int,
-        viewHeight: Int
+        viewHeight: Int,
     ): String? {
         return withContext(Dispatchers.IO) {
             try {
@@ -118,7 +114,7 @@ class AndroidPlatformRequest(
                     cropRect.left * scaleX,
                     cropRect.top * scaleY,
                     cropRect.right * scaleX,
-                    cropRect.bottom * scaleY
+                    cropRect.bottom * scaleY,
                 )
 
                 // Ensure the crop rect is within the bitmap bounds
@@ -133,7 +129,7 @@ class AndroidPlatformRequest(
                     validLeft.toInt(),
                     validTop.toInt(),
                     (validRight - validLeft).toInt(),
-                    (validBottom - validTop).toInt()
+                    (validBottom - validTop).toInt(),
                 )
 
                 // Save the cropped bitmap to a file

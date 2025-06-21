@@ -7,7 +7,7 @@ object RoomPlatformBuilder {
     fun create(): AppDatabase {
         return Room
             .databaseBuilder<AppDatabase>(
-                "app-database"
+                "app-database",
             )
             .setDriver(BundledSQLiteDriver())
             .build()

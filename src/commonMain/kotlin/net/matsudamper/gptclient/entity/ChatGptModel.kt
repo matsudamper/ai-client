@@ -30,8 +30,7 @@ enum class ChatGptModel {
         override val enableImage: Boolean = false
         override val defaultToken = 2000
         override val requireTemperature = 1.0
-    }
-    ;
+    }, ;
 
     abstract val modelName: String
     abstract val enableImage: Boolean

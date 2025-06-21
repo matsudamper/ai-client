@@ -5,10 +5,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 
-class DeleteChatRoomUseCase(
-    private val appDatabase: AppDatabase,
-    private val platformRequest: PlatformRequest,
-) {
+class DeleteChatRoomUseCase(private val appDatabase: AppDatabase, private val platformRequest: PlatformRequest) {
     suspend fun deleteChatRoom(chatRoomId: ChatRoomId) {
         val chatDao = appDatabase.chatDao()
         val allChat = chatDao.get(chatRoomId = chatRoomId.value)
@@ -16,7 +13,7 @@ class DeleteChatRoomUseCase(
 
         val useImageUri = chatDao.getOtherChatroomUseImageUri(
             chatRoomId = chatRoomId.value,
-            imageUriList = allImageUri
+            imageUriList = allImageUri,
         ).mapNotNull { it.imageUri }
 
         useImageUri.forEach { imageUri ->
@@ -24,7 +21,7 @@ class DeleteChatRoomUseCase(
         }
 
         appDatabase.chatDao().deleteByChatRoomId(
-            chatRoomId = chatRoomId.value
+            chatRoomId = chatRoomId.value,
         )
         appDatabase.chatRoomDao().delete(chatRoomId = chatRoomId.value)
     }

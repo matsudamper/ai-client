@@ -48,17 +48,17 @@ fun ImageCropDialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
-        )
+        ),
     ) {
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.9f))
+                .background(Color.Black.copy(alpha = 0.9f)),
         ) {
             var containerSize by remember { mutableStateOf(IntSize.Zero) }
             var intrinsicImageSize by remember { mutableStateOf(IntSize.Zero) }
             var cropRect by remember { mutableStateOf<Rect?>(null) }
-            
+
             var isDraggingLeft by remember { mutableStateOf(false) }
             var isDraggingRight by remember { mutableStateOf(false) }
             var isDraggingTop by remember { mutableStateOf(false) }
@@ -68,7 +68,7 @@ fun ImageCropDialog(
             Box(
                 modifier = Modifier.weight(1f)
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp),
             ) {
                 AsyncImage(
                     modifier = Modifier.fillMaxSize()
@@ -83,29 +83,29 @@ fun ImageCropDialog(
                             val overlayColor = Color.Black.copy(alpha = 0.5f)
                             drawRect(
                                 color = overlayColor,
-                                size = Size(rect.left, size.height)
+                                size = Size(rect.left, size.height),
                             )
                             drawRect(
                                 color = overlayColor,
                                 topLeft = Offset(rect.right, 0f),
-                                size = Size(size.width - rect.right, size.height)
+                                size = Size(size.width - rect.right, size.height),
                             )
                             drawRect(
                                 color = overlayColor,
                                 topLeft = Offset(rect.left, 0f),
-                                size = Size(rect.width, rect.top)
+                                size = Size(rect.width, rect.top),
                             )
                             drawRect(
                                 color = overlayColor,
                                 topLeft = Offset(rect.left, rect.bottom),
-                                size = Size(rect.width, size.height - rect.bottom)
+                                size = Size(rect.width, size.height - rect.bottom),
                             )
 
                             drawRect(
                                 color = Color.White,
                                 topLeft = Offset(rect.left, rect.top),
                                 size = Size(rect.width, rect.height),
-                                style = Stroke(width = 2f)
+                                style = Stroke(width = 2f),
                             )
                         }
                         .pointerInput(Unit) {
@@ -119,8 +119,10 @@ fun ImageCropDialog(
                                         isDraggingBottom = abs(offset.y - rect.bottom) < EDGE_DETECTION_THRESHOLD
 
                                         if (!isDraggingLeft && !isDraggingRight && !isDraggingTop && !isDraggingBottom) {
-                                            isDraggingEntire = offset.x > rect.left && offset.x < rect.right && 
-                                                              offset.y > rect.top && offset.y < rect.bottom
+                                            isDraggingEntire = offset.x > rect.left &&
+                                                offset.x < rect.right &&
+                                                offset.y > rect.top &&
+                                                offset.y < rect.bottom
                                         }
                                     }
                                 },
@@ -130,12 +132,12 @@ fun ImageCropDialog(
                                     isDraggingTop = false
                                     isDraggingBottom = false
                                     isDraggingEntire = false
-                                }
+                                },
                             ) { change, dragAmount ->
                                 change.consume()
                                 val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize)
                                 if (actualImageRect == null) return@detectDragGestures
-                                
+
                                 val rect = cropRect
                                 if (rect != null) {
                                     var newLeft = rect.left
@@ -148,39 +150,39 @@ fun ImageCropDialog(
                                         val rectHeight = rect.height
 
                                         newLeft = (rect.left + dragAmount.x).coerceIn(
-                                            actualImageRect.left, 
-                                            actualImageRect.right - rectWidth
+                                            actualImageRect.left,
+                                            actualImageRect.right - rectWidth,
                                         )
                                         newRight = newLeft + rectWidth
 
                                         newTop = (rect.top + dragAmount.y).coerceIn(
-                                            actualImageRect.top, 
-                                            actualImageRect.bottom - rectHeight
+                                            actualImageRect.top,
+                                            actualImageRect.bottom - rectHeight,
                                         )
                                         newBottom = newTop + rectHeight
                                     } else {
                                         if (isDraggingLeft) {
                                             newLeft = (rect.left + dragAmount.x).coerceIn(
-                                                actualImageRect.left, 
-                                                rect.right - EDGE_DETECTION_THRESHOLD
+                                                actualImageRect.left,
+                                                rect.right - EDGE_DETECTION_THRESHOLD,
                                             )
                                         }
                                         if (isDraggingRight) {
                                             newRight = (rect.right + dragAmount.x).coerceIn(
-                                                rect.left + EDGE_DETECTION_THRESHOLD, 
-                                                actualImageRect.right
+                                                rect.left + EDGE_DETECTION_THRESHOLD,
+                                                actualImageRect.right,
                                             )
                                         }
                                         if (isDraggingTop) {
                                             newTop = (rect.top + dragAmount.y).coerceIn(
-                                                actualImageRect.top, 
-                                                rect.bottom - EDGE_DETECTION_THRESHOLD
+                                                actualImageRect.top,
+                                                rect.bottom - EDGE_DETECTION_THRESHOLD,
                                             )
                                         }
                                         if (isDraggingBottom) {
                                             newBottom = (rect.bottom + dragAmount.y).coerceIn(
-                                                rect.top + EDGE_DETECTION_THRESHOLD, 
-                                                actualImageRect.bottom
+                                                rect.top + EDGE_DETECTION_THRESHOLD,
+                                                actualImageRect.bottom,
                                             )
                                         }
                                     }
@@ -189,7 +191,7 @@ fun ImageCropDialog(
                                         left = newLeft,
                                         top = newTop,
                                         right = newRight,
-                                        bottom = newBottom
+                                        bottom = newBottom,
                                     )
                                 }
                             }
@@ -200,9 +202,9 @@ fun ImageCropDialog(
                     onSuccess = { state ->
                         intrinsicImageSize = IntSize(
                             state.painter.intrinsicSize.width.toInt(),
-                            state.painter.intrinsicSize.height.toInt()
+                            state.painter.intrinsicSize.height.toInt(),
                         )
-                        
+
                         // 画像読み込み完了後にクロップ矩形を初期化
                         val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize)
                         if (cropRect == null && actualImageRect != null) {
@@ -212,18 +214,18 @@ fun ImageCropDialog(
                             val top = actualImageRect.top + (actualImageRect.height - height) / 2
                             cropRect = Rect(left, top, left + width, top + height)
                         }
-                    }
+                    },
                 )
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth()
                     .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Button(
                     onClick = onDismissRequest,
-                    modifier = Modifier.padding(end = 8.dp)
+                    modifier = Modifier.padding(end = 8.dp),
                 ) {
                     Text("Cancel")
                 }
@@ -241,22 +243,22 @@ fun ImageCropDialog(
                                     left = (rect.left - actualImageRect.left) / actualImageRect.width,
                                     top = (rect.top - actualImageRect.top) / actualImageRect.height,
                                     right = (rect.right - actualImageRect.left) / actualImageRect.width,
-                                    bottom = (rect.bottom - actualImageRect.top) / actualImageRect.height
+                                    bottom = (rect.bottom - actualImageRect.top) / actualImageRect.height,
                                 )
-                                
+
                                 // 実画像のピクセル座標に変換
                                 val pixelCropRect = Rect(
                                     left = imageRelativeCropRect.left * intrinsicImageSize.width,
                                     top = imageRelativeCropRect.top * intrinsicImageSize.height,
                                     right = imageRelativeCropRect.right * intrinsicImageSize.width,
-                                    bottom = imageRelativeCropRect.bottom * intrinsicImageSize.height
+                                    bottom = imageRelativeCropRect.bottom * intrinsicImageSize.height,
                                 )
-                                
+
                                 onCropComplete(pixelCropRect, intrinsicImageSize)
                             }
                         }
                         onDismissRequest()
-                    }
+                    },
                 ) {
                     Text("Complete")
                 }
@@ -269,8 +271,11 @@ private fun getActualImageRect(
     containerSize: IntSize,
     intrinsicImageSize: IntSize,
 ): Rect? {
-    if (containerSize.width == 0 || containerSize.height == 0 || 
-        intrinsicImageSize.width == 0 || intrinsicImageSize.height == 0) {
+    if (containerSize.width == 0 ||
+        containerSize.height == 0 ||
+        intrinsicImageSize.width == 0 ||
+        intrinsicImageSize.height == 0
+    ) {
         return null
     }
 
@@ -285,7 +290,7 @@ private fun getActualImageRect(
             left = 0f,
             top = offsetY,
             right = containerSize.width.toFloat(),
-            bottom = offsetY + displayHeight
+            bottom = offsetY + displayHeight,
         )
     } else {
         // 縦長画像は高さに合わせる
@@ -295,7 +300,7 @@ private fun getActualImageRect(
             left = offsetX,
             top = 0f,
             right = offsetX + displayWidth,
-            bottom = containerSize.height.toFloat()
+            bottom = containerSize.height.toFloat(),
         )
     }
 }

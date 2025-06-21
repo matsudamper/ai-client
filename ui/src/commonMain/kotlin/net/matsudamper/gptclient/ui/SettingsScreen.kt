@@ -25,10 +25,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
@@ -66,7 +66,7 @@ public fun SettingsScreen(
                 is SettingsScreenUiState.Loading -> {
                     Loading(
                         modifier = Modifier.fillMaxWidth()
-                            .weight(1f)
+                            .weight(1f),
                     )
                 }
 
@@ -74,7 +74,7 @@ public fun SettingsScreen(
                     Loaded(
                         uiState = uiState,
                         modifier = Modifier.fillMaxWidth()
-                            .weight(1f)
+                            .weight(1f),
                     )
                 }
             }
@@ -84,11 +84,11 @@ public fun SettingsScreen(
 
 @Composable
 private fun Loading(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier,
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -101,7 +101,7 @@ private fun Loaded(
 ) {
     Column(
         modifier = modifier
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(rememberScrollState()),
     ) {
         SettingItem(
             modifier = Modifier.fillMaxWidth(),
@@ -126,9 +126,9 @@ private fun Loaded(
                         ) {
                             it()
                         }
-                    }
+                    },
                 )
-            }
+            },
         )
     }
 }
@@ -143,7 +143,7 @@ private fun SettingItem(
         modifier = modifier.padding(
             horizontal = 12.dp,
             vertical = 8.dp,
-        )
+        ),
     ) {
         title()
         Spacer(modifier = Modifier.height(4.dp))

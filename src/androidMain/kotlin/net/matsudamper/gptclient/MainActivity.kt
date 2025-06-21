@@ -18,9 +18,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         WindowCompat.getInsetsController(window, window.decorView)
             .isAppearanceLightStatusBars = true
-        getKoin().loadModules(listOf(module {
-            factory<PlatformRequest> { platformRequest }
-        }))
+        getKoin().loadModules(
+            listOf(
+                module {
+                    factory<PlatformRequest> { platformRequest }
+                },
+            ),
+        )
         setContent {
             App()
         }

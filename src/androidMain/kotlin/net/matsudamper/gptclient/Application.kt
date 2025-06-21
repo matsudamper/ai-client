@@ -21,7 +21,7 @@ class Application : Application() {
                     single<SettingDataStore> {
                         SettingDataStore(filesDir.resolve("setting").absolutePath)
                     }
-                }
+                },
             )
         }
     }

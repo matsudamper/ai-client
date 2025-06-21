@@ -45,16 +45,17 @@ class AddRequestUseCase(
                 chatRoomId = chatRoomId,
             )
 
-            val response = when (val response = gptClientProvider(settingDataStore.getSecretKey())
-                .request(
-                    messages = createMessage(
-                        systemMessage = systemMessage,
-                        chatRoomId = chatRoomId,
-                    ),
-                    format = format,
-                    model = ChatGptModel.entries.firstOrNull() { it.modelName == model }
-                        ?: return@async Result.ModelNotFoundError,
-                )
+            val response = when (
+                val response = gptClientProvider(settingDataStore.getSecretKey())
+                    .request(
+                        messages = createMessage(
+                            systemMessage = systemMessage,
+                            chatRoomId = chatRoomId,
+                        ),
+                        format = format,
+                        model = ChatGptModel.entries.firstOrNull { it.modelName == model }
+                            ?: return@async Result.ModelNotFoundError,
+                    )
             ) {
                 is ChatGptClient.GptResult.Error -> return@async Result.GptResultError(response)
                 is ChatGptClient.GptResult.Success -> response.response

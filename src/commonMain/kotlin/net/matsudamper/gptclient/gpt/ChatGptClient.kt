@@ -1,5 +1,9 @@
 package net.matsudamper.gptclient.gpt
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -10,15 +14,9 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.entity.ChatGptModel
 
-class ChatGptClient(
-    private val secretKey: String,
-) {
+class ChatGptClient(private val secretKey: String) {
     suspend fun request(
         messages: List<GptMessage>,
         format: Format,
@@ -31,7 +29,7 @@ class ChatGptClient(
                     when (model) {
                         ChatGptModel.O1Preview,
                         ChatGptModel.O1mini,
-                            -> GptRequest.Role.User
+                        -> GptRequest.Role.User
 
                         else -> GptRequest.Role.System
                     }
@@ -106,7 +104,7 @@ class ChatGptClient(
             }
         }
         val responseJson = response.bodyAsText()
-        println("Response->${responseJson}")
+        println("Response->$responseJson")
         return try {
             GptResult.Success(Json.decodeFromString(GptResponse.serializer(), responseJson))
         } catch (e: SerializationException) {
@@ -122,18 +120,13 @@ class ChatGptClient(
         sealed interface ErrorReason {
             val message: String
 
-            data class ImageNotSupported(
-                override val message: String = "画像をサポートしていないモデルです",
-            ) : ErrorReason
+            data class ImageNotSupported(override val message: String = "画像をサポートしていないモデルです") : ErrorReason
 
             data class Unknown(override val message: String) : ErrorReason
         }
     }
 
-    data class GptMessage(
-        val role: Role,
-        val contents: List<Content>,
-    ) {
+    data class GptMessage(val role: Role, val contents: List<Content>) {
         enum class Role {
             User,
             Assistant,

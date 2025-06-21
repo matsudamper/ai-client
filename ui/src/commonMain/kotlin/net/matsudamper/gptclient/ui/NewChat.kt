@@ -50,12 +50,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlin.math.ceil
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Calendar
 import compose.icons.feathericons.CreditCard
 import compose.icons.feathericons.Menu
 import net.matsudamper.gptclient.ui.component.ChatFooter
-import kotlin.math.ceil
 
 public data class NewChatUiState(
     val projects: List<Project>,
@@ -285,7 +285,6 @@ public fun NewChat(
                         DropdownMenuItem(
                             text = {
                                 Text(text = model.name)
-
                             },
                             onClick = {
                                 expanded = false

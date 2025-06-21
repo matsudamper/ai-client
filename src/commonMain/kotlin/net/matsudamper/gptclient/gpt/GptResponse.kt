@@ -20,20 +20,16 @@ data class GptResponse(
         @SerialName("index") val index: Int,
         @SerialName("message") val message: Message,
         @SerialName("logprobs") val logprobs: String? = null,
-        @SerialName("finish_reason") val finishReason: String
+        @SerialName("finish_reason") val finishReason: String,
     ) {
         @Serializable
-        data class Message(
-            @SerialName("role") val role: Role?,
-            @SerialName("content") val content: String,
-            @SerialName("refusal") val refusal: String? = null
-        )
+        data class Message(@SerialName("role") val role: Role?, @SerialName("content") val content: String, @SerialName("refusal") val refusal: String? = null)
 
         @Serializable(Role.Companion.Serializer::class)
         enum class Role(override val label: String) : StringEnum {
             System("system"),
             User("user"),
-            Assistant("assistant")
+            Assistant("assistant"),
             ;
 
             companion object {
@@ -48,7 +44,7 @@ data class GptResponse(
         @SerialName("completion_tokens") val completionTokens: Int,
         @SerialName("total_tokens") val totalTokens: Int,
         @SerialName("prompt_tokens_details") val promptTokensDetails: TokenDetails,
-        @SerialName("completion_tokens_details") val completionTokensDetails: TokenDetails
+        @SerialName("completion_tokens_details") val completionTokensDetails: TokenDetails,
     ) {
         @Serializable
         data class TokenDetails(

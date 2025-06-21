@@ -15,7 +15,7 @@ interface ChatDao {
     fun loadAllByIds(userIds: IntArray): Flow<List<Chat>>
 
     @Query(
-        "SELECT * FROM chat WHERE id = :id"
+        "SELECT * FROM chat WHERE id = :id",
     )
     fun findById(id: String): Flow<Chat>
 

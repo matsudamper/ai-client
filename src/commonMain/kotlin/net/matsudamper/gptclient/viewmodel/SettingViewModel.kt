@@ -6,12 +6,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.ui.SettingsScreenUiState
 
-class SettingViewModel(
-    private val settingDataStore: SettingDataStore
-) : ViewModel() {
+class SettingViewModel(private val settingDataStore: SettingDataStore) : ViewModel() {
     private val loadedListener = object : SettingsScreenUiState.Loaded.Listener {
         override fun updateSecretKey(text: String) {
             saveSecretKey(text)
@@ -19,7 +17,7 @@ class SettingViewModel(
     }
 
     val uiStateFlow: StateFlow<SettingsScreenUiState> = MutableStateFlow<SettingsScreenUiState>(
-        SettingsScreenUiState.Loading
+        SettingsScreenUiState.Loading,
     ).also { uiState ->
         viewModelScope.launch {
             uiState.update {

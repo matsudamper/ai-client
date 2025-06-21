@@ -4,8 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import net.matsudamper.gptclient.room.converter.InstantConverter
 import java.time.Instant
+import net.matsudamper.gptclient.room.converter.InstantConverter
 
 @Entity("chat_room")
 @TypeConverters(

@@ -12,16 +12,16 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.rememberNavController
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.navigation.Navigator
-import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
+import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.usecase.DeleteChatRoomUseCase
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
-import net.matsudamper.gptclient.viewmodel.ProjectViewModel
 import net.matsudamper.gptclient.viewmodel.ChatViewModel
 import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
 import net.matsudamper.gptclient.viewmodel.NewChatViewModel
+import net.matsudamper.gptclient.viewmodel.ProjectViewModel
 import net.matsudamper.gptclient.viewmodel.SettingViewModel
 import org.koin.java.KoinJavaComponent.getKoin
 
@@ -87,7 +87,7 @@ internal fun App() {
                                 deleteChatRoomUseCase = DeleteChatRoomUseCase(
                                     appDatabase = getKoin().get(),
                                     platformRequest = getKoin().get(),
-                                )
+                                ),
                             )
                         }
 
@@ -124,7 +124,7 @@ internal fun App() {
                         )
                     }
                 }
-            }
+            },
         )
     }
 }

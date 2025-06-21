@@ -5,16 +5,16 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import java.time.Instant
 import net.matsudamper.gptclient.room.converter.InstantConverter
 import net.matsudamper.gptclient.room.entity.Chat.Role
-import java.time.Instant
 
 @Entity("chat")
 @TypeConverters(
     InstantConverter::class,
     Role.Converter::class,
     ChatId.Converter::class,
-    ChatRoomId.Converter::class
+    ChatRoomId.Converter::class,
 )
 data class Chat(
     @ColumnInfo(name = "id") @PrimaryKey(autoGenerate = true) val id: ChatId = ChatId(0),
@@ -29,7 +29,7 @@ data class Chat(
         System("system"),
         User("user"),
         Assistant("assistant"),
-        Unknown("unknown")
+        Unknown("unknown"),
         ;
 
         object Converter {
