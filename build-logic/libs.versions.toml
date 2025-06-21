@@ -1,17 +1,17 @@
 [versions]
-kotlin = "2.1.0"
+kotlin = "2.1.21"
 agp = "8.7.3"
-compose = "1.7.1"
-activity = "1.10.0"
-lifecycle = "2.8.7"
-room = "2.7.0-alpha13"
-ksp = "2.1.0-1.0.29"
+compose = "1.8.2"
+activity = "1.10.1"
+lifecycle = "2.9.1"
+room = "2.7.2"
+ksp = "2.1.21-2.0.2"
 coroutine = "1.10.1"
-koin = "3.2.0"
-kotlinSerialization = "1.6.0"
+koin = "4.1.0"
+kotlinSerialization = "1.8.1"
 coil = "3.0.4"
 zoomable = "2.0.0"
-ktlintGradle = "12.1.1"
+ktlintGradle = "12.3.0"
 ktlint = "1.6.0"
 
 [plugins]
@@ -29,7 +29,7 @@ ktlingGradle = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGrad
 # Android
 androidActivityActivityCompose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 androidActivityKtx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
-androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.15.0" }
+androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.16.0" }
 androidxLifecycleViewModelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidxLifecycleViewModelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidxLifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
@@ -37,9 +37,9 @@ googleMaterial = { module = "com.google.android.material:material", version.requ
 androidxNavigationCompose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.require = "2.8.0-alpha10" }
 
 # ktor
-ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "2.3.4" }
-ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "2.3.4" }
-ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "2.3.4" }
+ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.2.0" }
+ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "3.2.0" }
+ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "3.2.0" }
 
 # Coil
 coil3Compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
@@ -51,13 +51,13 @@ kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serializati
 kotlinxCoroutineSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutine" }
 
 # DataStore
-androidxDatastoreCore = { module = "androidx.datastore:datastore-core", version.require = "1.1.2" }
-androidxDatastorePreferences = { module = "androidx.datastore:datastore-preferences ", version.require = "1.1.2" }
+androidxDatastoreCore = { module = "androidx.datastore:datastore-core", version.require = "1.1.7" }
+androidxDatastorePreferences = { module = "androidx.datastore:datastore-preferences ", version.require = "1.1.7" }
 
 # Room
 androidxRoomRuntime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidxRoomCompiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-androidxSqliteBundled = { module = "androidx.sqlite:sqlite-bundled", version.require = "2.5.0-alpha13" }
+androidxSqliteBundled = { module = "androidx.sqlite:sqlite-bundled", version.require = "2.5.2" }
 
 # Koin
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
