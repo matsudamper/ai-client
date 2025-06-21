@@ -69,7 +69,11 @@ class ChatViewModel(
             }
         }
 
-        override fun onImageCrop(imageUri: String, cropRect: androidx.compose.ui.geometry.Rect, imageSize: androidx.compose.ui.unit.IntSize) {
+        override fun onImageCrop(
+            imageUri: String,
+            cropRect: androidx.compose.ui.geometry.Rect,
+            imageSize: androidx.compose.ui.unit.IntSize,
+        ) {
             viewModelScope.launch {
                 try {
                     viewModelStateFlow.update {
