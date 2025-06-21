@@ -1,13 +1,13 @@
 package net.matsudamper.gptclient.entity
 
 enum class ChatGptModel {
-    Gpt3_5 {
+    GPT_3_5 {
         override val modelName: String = "gpt-3.5-turbo"
         override val enableImage: Boolean = false
         override val defaultToken = 500
         override val requireTemperature = null
     },
-    Gpt4oMini {
+    GPT_4O_MINI {
         override val modelName: String = "gpt-4o-mini"
         override val enableImage: Boolean = true
         override val defaultToken = 500
@@ -19,13 +19,13 @@ enum class ChatGptModel {
         override val defaultToken = 5000
         override val requireTemperature = 1.0
     },
-    O1Preview {
+    O1_PREVIEW {
         override val modelName: String = "o1-preview"
         override val enableImage: Boolean = false
         override val defaultToken = 2000
         override val requireTemperature = 1.0
     },
-    O1mini {
+    O1_MINI {
         override val modelName: String = "o1-mini"
         override val enableImage: Boolean = false
         override val defaultToken = 2000

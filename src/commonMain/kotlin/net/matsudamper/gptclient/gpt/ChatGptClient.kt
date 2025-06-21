@@ -27,8 +27,8 @@ class ChatGptClient(private val secretKey: String) {
                 GptMessage.Role.Assistant -> GptRequest.Role.Assistant
                 GptMessage.Role.System -> {
                     when (model) {
-                        ChatGptModel.O1Preview,
-                        ChatGptModel.O1mini,
+                        ChatGptModel.O1_PREVIEW,
+                        ChatGptModel.O1_MINI,
                         -> GptRequest.Role.User
 
                         else -> GptRequest.Role.System
