@@ -58,14 +58,14 @@ internal fun ChatFooter(
     modifier: Modifier = Modifier,
 ) {
     var showImageUri by remember { mutableStateOf<String?>(null) }
-    var showCropImageUri by remember { mutableStateOf<String?>(null) }
+    val showCropImageUriState = remember { mutableStateOf<String?>(null) }
 
     if (showImageUri != null) {
         Dialog(
             onDismissRequest = { showImageUri = null },
             properties = DialogProperties(
                 usePlatformDefaultWidth = false,
-            )
+            ),
         ) {
             AsyncImage(
                 modifier = Modifier.fillMaxSize()
@@ -77,14 +77,15 @@ internal fun ChatFooter(
         }
     }
 
+    val showCropImageUri = showCropImageUriState.value
     if (showCropImageUri != null) {
         ImageCropDialog(
-            imageUri = showCropImageUri!!,
-            onDismissRequest = { showCropImageUri = null },
+            imageUri = showCropImageUri,
+            onDismissRequest = { showCropImageUriState.value = null },
             onCropComplete = { cropRect, imageSize ->
-                onImageCrop(showCropImageUri!!, cropRect, imageSize)
-                showCropImageUri = null
-            }
+                onImageCrop(showCropImageUri, cropRect, imageSize)
+                showCropImageUriState.value = null
+            },
         )
     }
     Column(
@@ -107,21 +108,21 @@ internal fun ChatFooter(
 
                     androidx.compose.material3.DropdownMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
+                        onDismissRequest = { showMenu = false },
                     ) {
                         androidx.compose.material3.DropdownMenuItem(
                             text = { androidx.compose.material3.Text("View") },
                             onClick = {
                                 showImageUri = media
                                 showMenu = false
-                            }
+                            },
                         )
                         androidx.compose.material3.DropdownMenuItem(
                             text = { androidx.compose.material3.Text("Crop") },
                             onClick = {
-                                showCropImageUri = media
+                                showCropImageUriState.value = media
                                 showMenu = false
-                            }
+                            },
                         )
                     }
                 }
@@ -134,7 +135,7 @@ internal fun ChatFooter(
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onSecondary
+                            color = MaterialTheme.colorScheme.onSecondary,
                         )
                     }
                 }
