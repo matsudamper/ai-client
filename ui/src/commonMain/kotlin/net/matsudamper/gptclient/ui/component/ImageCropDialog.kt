@@ -34,11 +34,15 @@ import androidx.compose.ui.window.DialogProperties
 import kotlin.math.abs
 import coil3.compose.AsyncImage
 
+private const val EDGE_DETECTION_THRESHOLD = 40f
+private const val INITIAL_CROP_SIZE_RATIO = 0.8f
+
 @Composable
 fun ImageCropDialog(
     imageUri: String,
     onDismissRequest: () -> Unit,
     onCropComplete: (cropRect: Rect, imageSize: IntSize) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -47,14 +51,14 @@ fun ImageCropDialog(
         )
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = modifier
+                .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.9f))
         ) {
-            var imageSize by remember { mutableStateOf(IntSize.Zero) }
+            var containerSize by remember { mutableStateOf(IntSize.Zero) }
+            var intrinsicImageSize by remember { mutableStateOf(IntSize.Zero) }
             var cropRect by remember { mutableStateOf<Rect?>(null) }
-            // Edge detection constants
-            val edgeDetectionThreshold = 40f // Threshold for detecting edges
-            // Track which edges are being dragged
+            
             var isDraggingLeft by remember { mutableStateOf(false) }
             var isDraggingRight by remember { mutableStateOf(false) }
             var isDraggingTop by remember { mutableStateOf(false) }
@@ -64,49 +68,39 @@ fun ImageCropDialog(
             Box(
                 modifier = Modifier.weight(1f)
                     .fillMaxWidth()
-                    .padding(top = 16.dp) // Add padding to prevent overlap with NavigationBack
+                    .padding(top = 16.dp)
             ) {
                 AsyncImage(
                     modifier = Modifier.fillMaxSize()
                         .onGloballyPositioned { coordinates ->
-                            imageSize = coordinates.size
-
-                            // Initialize crop rect to center 80% of the image
-                            if (cropRect == null && imageSize.width > 0 && imageSize.height > 0) {
-                                val width = imageSize.width * 0.8f
-                                val height = imageSize.height * 0.8f
-                                val left = (imageSize.width - width) / 2
-                                val top = (imageSize.height - height) / 2
-                                cropRect = Rect(left, top, left + width, top + height)
-                            }
+                            containerSize = coordinates.size
                         }
                         .drawWithContent {
                             drawContent()
 
                             val rect = cropRect ?: return@drawWithContent
-
-                            // Draw semi-transparent overlay outside crop area
+                            val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize) ?: return@drawWithContent
+                            val overlayColor = Color.Black.copy(alpha = 0.5f)
                             drawRect(
-                                color = Color.Black.copy(alpha = 0.5f),
+                                color = overlayColor,
                                 size = Size(rect.left, size.height)
                             )
                             drawRect(
-                                color = Color.Black.copy(alpha = 0.5f),
+                                color = overlayColor,
                                 topLeft = Offset(rect.right, 0f),
                                 size = Size(size.width - rect.right, size.height)
                             )
                             drawRect(
-                                color = Color.Black.copy(alpha = 0.5f),
+                                color = overlayColor,
                                 topLeft = Offset(rect.left, 0f),
                                 size = Size(rect.width, rect.top)
                             )
                             drawRect(
-                                color = Color.Black.copy(alpha = 0.5f),
+                                color = overlayColor,
                                 topLeft = Offset(rect.left, rect.bottom),
                                 size = Size(rect.width, size.height - rect.bottom)
                             )
 
-                            // Draw crop rectangle border
                             drawRect(
                                 color = Color.White,
                                 topLeft = Offset(rect.left, rect.top),
@@ -117,15 +111,13 @@ fun ImageCropDialog(
                         .pointerInput(Unit) {
                             detectDragGestures(
                                 onDragStart = { offset ->
-                                    // Determine which edge is being dragged at the start
-                                    cropRect?.let { rect ->
-                                        // Check if we're near the edges
-                                        isDraggingLeft = abs(offset.x - rect.left) < edgeDetectionThreshold
-                                        isDraggingRight = abs(offset.x - rect.right) < edgeDetectionThreshold
-                                        isDraggingTop = abs(offset.y - rect.top) < edgeDetectionThreshold
-                                        isDraggingBottom = abs(offset.y - rect.bottom) < edgeDetectionThreshold
+                                    val rect = cropRect
+                                    if (rect != null) {
+                                        isDraggingLeft = abs(offset.x - rect.left) < EDGE_DETECTION_THRESHOLD
+                                        isDraggingRight = abs(offset.x - rect.right) < EDGE_DETECTION_THRESHOLD
+                                        isDraggingTop = abs(offset.y - rect.top) < EDGE_DETECTION_THRESHOLD
+                                        isDraggingBottom = abs(offset.y - rect.bottom) < EDGE_DETECTION_THRESHOLD
 
-                                        // If not dragging any edge, check if we're inside the rectangle
                                         if (!isDraggingLeft && !isDraggingRight && !isDraggingTop && !isDraggingBottom) {
                                             isDraggingEntire = offset.x > rect.left && offset.x < rect.right && 
                                                               offset.y > rect.top && offset.y < rect.bottom
@@ -133,7 +125,6 @@ fun ImageCropDialog(
                                     }
                                 },
                                 onDragEnd = {
-                                    // Reset dragging state
                                     isDraggingLeft = false
                                     isDraggingRight = false
                                     isDraggingTop = false
@@ -142,41 +133,58 @@ fun ImageCropDialog(
                                 }
                             ) { change, dragAmount ->
                                 change.consume()
-                                cropRect?.let { rect ->
-                                    // Calculate new rectangle dimensions based on which edge is being dragged
+                                val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize)
+                                if (actualImageRect == null) return@detectDragGestures
+                                
+                                val rect = cropRect
+                                if (rect != null) {
                                     var newLeft = rect.left
                                     var newTop = rect.top
                                     var newRight = rect.right
                                     var newBottom = rect.bottom
 
                                     if (isDraggingEntire) {
-                                        // Move the entire rectangle
                                         val rectWidth = rect.width
                                         val rectHeight = rect.height
 
-                                        // Calculate new positions while keeping the rectangle within bounds
-                                        newLeft = (rect.left + dragAmount.x).coerceIn(0f, imageSize.width - rectWidth)
+                                        newLeft = (rect.left + dragAmount.x).coerceIn(
+                                            actualImageRect.left, 
+                                            actualImageRect.right - rectWidth
+                                        )
                                         newRight = newLeft + rectWidth
 
-                                        newTop = (rect.top + dragAmount.y).coerceIn(0f, imageSize.height - rectHeight)
+                                        newTop = (rect.top + dragAmount.y).coerceIn(
+                                            actualImageRect.top, 
+                                            actualImageRect.bottom - rectHeight
+                                        )
                                         newBottom = newTop + rectHeight
                                     } else {
-                                        // Handle edge dragging
                                         if (isDraggingLeft) {
-                                            newLeft = (rect.left + dragAmount.x).coerceIn(0f, rect.right - edgeDetectionThreshold)
+                                            newLeft = (rect.left + dragAmount.x).coerceIn(
+                                                actualImageRect.left, 
+                                                rect.right - EDGE_DETECTION_THRESHOLD
+                                            )
                                         }
                                         if (isDraggingRight) {
-                                            newRight = (rect.right + dragAmount.x).coerceIn(rect.left + edgeDetectionThreshold, imageSize.width.toFloat())
+                                            newRight = (rect.right + dragAmount.x).coerceIn(
+                                                rect.left + EDGE_DETECTION_THRESHOLD, 
+                                                actualImageRect.right
+                                            )
                                         }
                                         if (isDraggingTop) {
-                                            newTop = (rect.top + dragAmount.y).coerceIn(0f, rect.bottom - edgeDetectionThreshold)
+                                            newTop = (rect.top + dragAmount.y).coerceIn(
+                                                actualImageRect.top, 
+                                                rect.bottom - EDGE_DETECTION_THRESHOLD
+                                            )
                                         }
                                         if (isDraggingBottom) {
-                                            newBottom = (rect.bottom + dragAmount.y).coerceIn(rect.top + edgeDetectionThreshold, imageSize.height.toFloat())
+                                            newBottom = (rect.bottom + dragAmount.y).coerceIn(
+                                                rect.top + EDGE_DETECTION_THRESHOLD, 
+                                                actualImageRect.bottom
+                                            )
                                         }
                                     }
 
-                                    // Update crop rectangle
                                     cropRect = Rect(
                                         left = newLeft,
                                         top = newTop,
@@ -189,6 +197,22 @@ fun ImageCropDialog(
                     model = imageUri,
                     contentScale = ContentScale.Fit,
                     contentDescription = null,
+                    onSuccess = { state ->
+                        intrinsicImageSize = IntSize(
+                            state.painter.intrinsicSize.width.toInt(),
+                            state.painter.intrinsicSize.height.toInt()
+                        )
+                        
+                        // 画像読み込み完了後にクロップ矩形を初期化
+                        val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize)
+                        if (cropRect == null && actualImageRect != null) {
+                            val width = actualImageRect.width * INITIAL_CROP_SIZE_RATIO
+                            val height = actualImageRect.height * INITIAL_CROP_SIZE_RATIO
+                            val left = actualImageRect.left + (actualImageRect.width - width) / 2
+                            val top = actualImageRect.top + (actualImageRect.height - height) / 2
+                            cropRect = Rect(left, top, left + width, top + height)
+                        }
+                    }
                 )
             }
 
@@ -208,8 +232,28 @@ fun ImageCropDialog(
 
                 Button(
                     onClick = {
-                        cropRect?.let { rect ->
-                            onCropComplete(rect, imageSize)
+                        val rect = cropRect
+                        if (rect != null) {
+                            val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize)
+                            if (actualImageRect != null) {
+                                // 表示座標から実画像座標への変換
+                                val imageRelativeCropRect = Rect(
+                                    left = (rect.left - actualImageRect.left) / actualImageRect.width,
+                                    top = (rect.top - actualImageRect.top) / actualImageRect.height,
+                                    right = (rect.right - actualImageRect.left) / actualImageRect.width,
+                                    bottom = (rect.bottom - actualImageRect.top) / actualImageRect.height
+                                )
+                                
+                                // 実画像のピクセル座標に変換
+                                val pixelCropRect = Rect(
+                                    left = imageRelativeCropRect.left * intrinsicImageSize.width,
+                                    top = imageRelativeCropRect.top * intrinsicImageSize.height,
+                                    right = imageRelativeCropRect.right * intrinsicImageSize.width,
+                                    bottom = imageRelativeCropRect.bottom * intrinsicImageSize.height
+                                )
+                                
+                                onCropComplete(pixelCropRect, intrinsicImageSize)
+                            }
                         }
                         onDismissRequest()
                     }
@@ -218,5 +262,40 @@ fun ImageCropDialog(
                 }
             }
         }
+    }
+}
+
+private fun getActualImageRect(
+    containerSize: IntSize,
+    intrinsicImageSize: IntSize,
+): Rect? {
+    if (containerSize.width == 0 || containerSize.height == 0 || 
+        intrinsicImageSize.width == 0 || intrinsicImageSize.height == 0) {
+        return null
+    }
+
+    val containerAspectRatio = containerSize.width.toFloat() / containerSize.height.toFloat()
+    val imageAspectRatio = intrinsicImageSize.width.toFloat() / intrinsicImageSize.height.toFloat()
+
+    return if (imageAspectRatio > containerAspectRatio) {
+        // 横長画像は幅に合わせる
+        val displayHeight = containerSize.width / imageAspectRatio
+        val offsetY = (containerSize.height - displayHeight) / 2
+        Rect(
+            left = 0f,
+            top = offsetY,
+            right = containerSize.width.toFloat(),
+            bottom = offsetY + displayHeight
+        )
+    } else {
+        // 縦長画像は高さに合わせる
+        val displayWidth = containerSize.height * imageAspectRatio
+        val offsetX = (containerSize.width - displayWidth) / 2
+        Rect(
+            left = offsetX,
+            top = 0f,
+            right = offsetX + displayWidth,
+            bottom = containerSize.height.toFloat()
+        )
     }
 }
