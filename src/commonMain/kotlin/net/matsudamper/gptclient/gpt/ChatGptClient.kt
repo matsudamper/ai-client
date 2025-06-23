@@ -16,16 +16,16 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import net.matsudamper.gptclient.entity.ChatGptModel
 
-class ChatGptClient(private val secretKey: String) {
-    suspend fun request(
-        messages: List<GptMessage>,
-        format: Format,
+class ChatGptClient(private val secretKey: String) : ChatGptClientInterface {
+    override suspend fun request(
+        messages: List<ChatGptClientInterface.GptMessage>,
+        format: ChatGptClientInterface.Format,
         model: ChatGptModel,
-    ): GptResult {
+    ): ChatGptClientInterface.GptResult {
         val requestMessages = messages.map { message ->
             val role = when (message.role) {
-                GptMessage.Role.Assistant -> GptRequest.Role.Assistant
-                GptMessage.Role.System -> {
+                ChatGptClientInterface.GptMessage.Role.Assistant -> GptRequest.Role.Assistant
+                ChatGptClientInterface.GptMessage.Role.System -> {
                     when (model) {
                         ChatGptModel.O1_PREVIEW,
                         ChatGptModel.O1_MINI,
@@ -35,20 +35,20 @@ class ChatGptClient(private val secretKey: String) {
                     }
                 }
 
-                GptMessage.Role.User -> GptRequest.Role.User
+                ChatGptClientInterface.GptMessage.Role.User -> GptRequest.Role.User
             }
             val contents = message.contents.map { content ->
                 when (content) {
-                    is GptMessage.Content.Base64Image -> {
+                    is ChatGptClientInterface.GptMessage.Content.Base64Image -> {
                         GptRequest.Content(
                             type = "image_url",
                             imageUrl = GptRequest.ImageUrl("data:image/png;base64,${content.base64}"),
                         )
                     }
 
-                    is GptMessage.Content.ImageUrl -> {
+                    is ChatGptClientInterface.GptMessage.Content.ImageUrl -> {
                         if (model.enableImage.not()) {
-                            return GptResult.Error(GptResult.ErrorReason.ImageNotSupported())
+                            return ChatGptClientInterface.GptResult.Error(ChatGptClientInterface.GptResult.ErrorReason.ImageNotSupported())
                         }
                         GptRequest.Content(
                             type = "image_url",
@@ -56,7 +56,7 @@ class ChatGptClient(private val secretKey: String) {
                         )
                     }
 
-                    is GptMessage.Content.Text -> {
+                    is ChatGptClientInterface.GptMessage.Content.Text -> {
                         GptRequest.Content(
                             type = "text",
                             text = content.text,
@@ -75,8 +75,8 @@ class ChatGptClient(private val secretKey: String) {
             messages = requestMessages,
             responseFormat = GptRequest.ResponseFormat(
                 type = when (format) {
-                    Format.Text -> "text"
-                    Format.Json -> "json_object"
+                    ChatGptClientInterface.Format.Text -> "text"
+                    ChatGptClientInterface.Format.Json -> "json_object"
                 },
             ),
             topP = 1.0,
@@ -106,43 +106,11 @@ class ChatGptClient(private val secretKey: String) {
         val responseJson = response.bodyAsText()
         println("Response->$responseJson")
         return try {
-            GptResult.Success(Json.decodeFromString(GptResponse.serializer(), responseJson))
+            ChatGptClientInterface.GptResult.Success(Json.decodeFromString(GptResponse.serializer(), responseJson))
         } catch (e: SerializationException) {
             e.printStackTrace()
-            GptResult.Error(GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
+            ChatGptClientInterface.GptResult.Error(ChatGptClientInterface.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
         }
-    }
-
-    sealed interface GptResult {
-        data class Success(val response: GptResponse) : GptResult
-        data class Error(val reason: ErrorReason) : GptResult
-
-        sealed interface ErrorReason {
-            val message: String
-
-            data class ImageNotSupported(override val message: String = "画像をサポートしていないモデルです") : ErrorReason
-
-            data class Unknown(override val message: String) : ErrorReason
-        }
-    }
-
-    data class GptMessage(val role: Role, val contents: List<Content>) {
-        enum class Role {
-            User,
-            Assistant,
-            System,
-        }
-
-        sealed interface Content {
-            data class Text(val text: String) : Content
-            data class ImageUrl(val imageUrl: String) : Content
-            data class Base64Image(val base64: String) : Content
-        }
-    }
-
-    enum class Format {
-        Text,
-        Json,
     }
 
     companion object {

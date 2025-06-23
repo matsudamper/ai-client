@@ -11,6 +11,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.gpt.ChatGptClient
+import net.matsudamper.gptclient.gpt.ChatGptClientInterface
 import net.matsudamper.gptclient.gpt.GptResponse
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
@@ -37,7 +38,7 @@ class ChatRequestWorker(
 
         val (format, systemMessage, model) = when (val builtinProjectId = room.builtInProjectId) {
             null -> Triple(
-                ChatGptClient.Format.Text,
+                ChatGptClientInterface.Format.Text,
                 null,
                 room.modelName,
             )
@@ -64,7 +65,7 @@ class ChatRequestWorker(
             )
             val newChatIndex = lastItem?.index?.plus(1) ?: 0
 
-            val gptClientProvider: (String) -> ChatGptClient = { secretKey ->
+            val gptClientProvider: (String) -> ChatGptClientInterface = { secretKey ->
                 ChatGptClient(secretKey)
             }
 
@@ -80,8 +81,8 @@ class ChatRequestWorker(
                             ?: return Result.failure(),
                     )
             ) {
-                is ChatGptClient.GptResult.Error -> return Result.failure()
-                is ChatGptClient.GptResult.Success -> response.response
+                is ChatGptClientInterface.GptResult.Error -> return Result.failure()
+                is ChatGptClientInterface.GptResult.Success -> response.response
             }
 
             val roomChats = response.choices.mapIndexed { index, choice ->
@@ -161,29 +162,29 @@ class ChatRequestWorker(
     private suspend fun createMessage(
         systemMessage: String?,
         chatRoomId: ChatRoomId,
-    ): List<ChatGptClient.GptMessage> {
+    ): List<ChatGptClientInterface.GptMessage> {
         val chatDao = appDatabase.chatDao()
         val chats = chatDao.get(chatRoomId = chatRoomId.value)
             .first()
 
         val systemMessage = run {
             systemMessage ?: return@run null
-            ChatGptClient.GptMessage(
-                role = ChatGptClient.GptMessage.Role.System,
-                contents = listOf(ChatGptClient.GptMessage.Content.Text(systemMessage)),
+            ChatGptClientInterface.GptMessage(
+                role = ChatGptClientInterface.GptMessage.Role.System,
+                contents = listOf(ChatGptClientInterface.GptMessage.Content.Text(systemMessage)),
             )
         }
         val messages = chats.map {
             val role = when (it.role) {
-                Chat.Role.System -> ChatGptClient.GptMessage.Role.System
-                Chat.Role.User -> ChatGptClient.GptMessage.Role.User
-                Chat.Role.Assistant -> ChatGptClient.GptMessage.Role.Assistant
-                Chat.Role.Unknown -> ChatGptClient.GptMessage.Role.User
+                Chat.Role.System -> ChatGptClientInterface.GptMessage.Role.System
+                Chat.Role.User -> ChatGptClientInterface.GptMessage.Role.User
+                Chat.Role.Assistant -> ChatGptClientInterface.GptMessage.Role.Assistant
+                Chat.Role.Unknown -> ChatGptClientInterface.GptMessage.Role.User
             }
             val contents = buildList {
                 val textMessage = it.textMessage
                 if (textMessage != null) {
-                    add(ChatGptClient.GptMessage.Content.Text(textMessage))
+                    add(ChatGptClientInterface.GptMessage.Content.Text(textMessage))
                 }
                 val imageMessage = it.imageUri
                 if (imageMessage != null) {
@@ -192,7 +193,7 @@ class ChatRequestWorker(
                         return listOf()
                     }
                     add(
-                        ChatGptClient.GptMessage.Content.Base64Image(
+                        ChatGptClientInterface.GptMessage.Content.Base64Image(
                             @OptIn(ExperimentalEncodingApi::class)
                             Base64.encode(byteArray),
                         ),
@@ -200,7 +201,7 @@ class ChatRequestWorker(
                 }
             }
 
-            ChatGptClient.GptMessage(
+            ChatGptClientInterface.GptMessage(
                 role = role,
                 contents = contents,
             )

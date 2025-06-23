@@ -7,7 +7,7 @@ import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
-import net.matsudamper.gptclient.gpt.ChatGptClient
+import net.matsudamper.gptclient.gpt.ChatGptClientInterface
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
@@ -48,7 +48,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = ChatGptClient.Format.Json,
+                    format = ChatGptClientInterface.Format.Json,
                     responseTransformer = {
                         TextMessageComposableInterface(CalendarResponseParser().toAnnotatedString(it))
                     },
@@ -86,7 +86,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = ChatGptClient.Format.Json,
+                    format = ChatGptClientInterface.Format.Json,
                     responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
                     model = ChatGptModel.GPT_4O_MINI,
                     summaryProvider = { MoneyResponseParser().parse(it)?.results?.firstOrNull()?.title },
@@ -104,7 +104,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = ChatGptClient.Format.Json,
+                    format = ChatGptClientInterface.Format.Json,
                     responseTransformer = {
                         EmojiResponseParser().getEmojiList(it) { emoji ->
                             platformRequest.copyToClipboard(emoji)
@@ -121,7 +121,7 @@ class GetBuiltinProjectInfoUseCase {
 
     data class Info(
         val systemMessage: String,
-        val format: ChatGptClient.Format,
+        val format: ChatGptClientInterface.Format,
         val responseTransformer: (String) -> ChatMessageComposableInterface,
         val summaryProvider: (String) -> String?,
         val model: ChatGptModel,
