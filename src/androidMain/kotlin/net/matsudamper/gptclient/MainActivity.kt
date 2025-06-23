@@ -72,6 +72,6 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val KEY_CHATROOM_ID = "chatRoomId"
+        const val KEY_CHATROOM_ID = "chatRoomId"
     }
 }

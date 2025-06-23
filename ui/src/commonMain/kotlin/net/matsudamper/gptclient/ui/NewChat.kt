@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlin.math.ceil
@@ -56,6 +57,21 @@ import compose.icons.feathericons.Calendar
 import compose.icons.feathericons.CreditCard
 import compose.icons.feathericons.Menu
 import net.matsudamper.gptclient.ui.component.ChatFooter
+
+sealed interface NewChatTestTag {
+    object Root : NewChatTestTag
+    object AddProjectButton : NewChatTestTag
+
+    data class ProjectButton(val index: Int) : NewChatTestTag {
+        override fun testTag(): String {
+            return super.testTag() + "$$index"
+        }
+    }
+
+    fun testTag(): String {
+        return this::class.qualifiedName!!
+    }
+}
 
 public data class NewChatUiState(
     val projects: List<Project>,
@@ -156,7 +172,7 @@ public fun NewChat(
         }
     }
     BoxWithConstraints(
-        modifier = modifier
+        modifier = modifier.testTag(NewChatTestTag.Root.testTag())
             .imePadding(),
     ) {
         val maxWidth = maxWidth
@@ -207,9 +223,11 @@ public fun NewChat(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
-                items(uiState.projects) { project ->
+                itemsIndexed(uiState.projects) { index, project ->
                     ProjectScreen(
-                        modifier = projectModifier,
+                        modifier = projectModifier.testTag(
+                            NewChatTestTag.ProjectButton(index).testTag(),
+                        ),
                         content = {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
@@ -252,7 +270,7 @@ public fun NewChat(
                 }
                 item {
                     ProjectScreen(
-                        modifier = projectModifier,
+                        modifier = projectModifier.testTag(NewChatTestTag.AddProjectButton.testTag()),
                         content = {
                             Column(
                                 modifier = Modifier.fillMaxSize(),

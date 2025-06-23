@@ -57,6 +57,14 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.ui.component.ChatFooter
 
+sealed interface ProjectScreenTestTag {
+    object Root : ProjectScreenTestTag
+
+    fun testTag(): String {
+        return this::class.qualifiedName!!
+    }
+}
+
 data class ProjectUiState(
     val projectName: String,
     val selectedMedia: List<String>,

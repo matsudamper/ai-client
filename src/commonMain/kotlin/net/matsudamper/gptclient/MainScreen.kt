@@ -58,6 +58,14 @@ import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.SettingsScreen
 import net.matsudamper.gptclient.ui.platform.BackHandler
 
+object MainScreenTestTag {
+    val navigationMenu = "navigation_menu"
+    val settingsButton = "settings_button"
+    val homeButton = "home_button"
+    val clearHistoryButton = "clear_history_button"
+    fun historyItem(index: Int) = "history_item_$index"
+}
+
 data class MainScreenUiState(val history: History, val listener: Listener) {
     sealed interface History {
         data object Loading : History

@@ -48,10 +48,24 @@ android {
     defaultConfig {
         minSdk = 34
         targetSdk = 35
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    @Suppress("UnstableApiUsage")
+    testOptions {
+        managedDevices {
+            devices {
+                maybeCreate<com.android.build.api.dsl.ManagedVirtualDevice>("pixel9api35").apply {
+                    device = "Pixel 9"
+                    apiLevel = 35
+                    systemImageSource = "aosp"
+                }
+            }
+        }
     }
 }
 
@@ -104,6 +118,17 @@ kotlin {
                 implementation(libs.koinAndroid)
                 implementation(libs.koinCore)
                 implementation(libs.androidxWorkRuntime)
+            }
+        }
+        val androidInstrumentedTest by getting {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.androidxTestCore)
+                implementation(libs.androidxTestRunner)
+                implementation(libs.androidxTestRules)
+                implementation(libs.espressoCore)
+                implementation(libs.androidxComposeTestJunit)
+                implementation(libs.kotlinxCoroutinesTest)
             }
         }
     }
