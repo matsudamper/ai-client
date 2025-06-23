@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             LaunchedEffect(intent) {
-                val chatRoomId = intent?.getStringExtra("chatRoomId")
+                val chatRoomId = intent?.getStringExtra(KEY_CHATROOM_ID)
                 if (chatRoomId != null) {
                     platformRequest.handleNotificationLaunch(chatRoomId)
                 }
@@ -65,9 +65,13 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
 
-        val chatRoomId = intent.getStringExtra("chatRoomId")
+        val chatRoomId = intent.getStringExtra(KEY_CHATROOM_ID)
         if (chatRoomId != null) {
             platformRequest.handleNotificationLaunch(chatRoomId)
         }
+    }
+
+    companion object {
+        private const val KEY_CHATROOM_ID = "chatRoomId"
     }
 }

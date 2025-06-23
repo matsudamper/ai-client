@@ -180,7 +180,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         val intent = Intent(activity, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             if (chatRoomId != null) {
-                putExtra("chatRoomId", chatRoomId)
+                putExtra(MainActivity.KEY_CHATROOM_ID, chatRoomId)
             }
         }
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
