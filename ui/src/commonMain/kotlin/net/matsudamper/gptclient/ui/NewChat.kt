@@ -175,7 +175,7 @@ public fun NewChat(
         modifier = modifier.testTag(NewChatTestTag.Root.testTag())
             .imePadding(),
     ) {
-        val maxWidth = maxWidth
+        val maxWidth = this.maxWidth
         Column {
             val projectModifier = Modifier.fillMaxWidth()
                 .height(150.dp)
