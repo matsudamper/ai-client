@@ -1,4 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -71,7 +73,14 @@ android {
 
 kotlin {
     jvm()
-    androidTarget()
+    androidTarget {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
+        dependencies {
+            debugImplementation(libs.androidxTestManifest)
+            debugImplementation(libs.androidxTestCoreKtx)
+        }
+    }
 
     sourceSets {
         val commonMain by getting {
@@ -120,15 +129,14 @@ kotlin {
                 implementation(libs.androidxWorkRuntime)
             }
         }
+
         val androidInstrumentedTest by getting {
             dependencies {
-                implementation(libs.junit)
-                implementation(libs.androidxTestCore)
-                implementation(libs.androidxTestRunner)
-                implementation(libs.androidxTestRules)
-                implementation(libs.espressoCore)
-                implementation(libs.androidxComposeTestJunit)
+                implementation(libs.androidxTestCoreKtx)
                 implementation(libs.kotlinxCoroutinesTest)
+                implementation(libs.androidxTestManifest)
+                implementation(libs.androidxComposeTestJunitAndroid)
+                implementation(libs.androidxTestRules)
             }
         }
     }

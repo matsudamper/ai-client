@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
@@ -209,6 +210,7 @@ fun ProjectScreen(
     }
     Column(
         modifier = modifier
+            .testTag(ProjectScreenTestTag.Root.testTag())
             .imePadding(),
     ) {
         TopAppBar(

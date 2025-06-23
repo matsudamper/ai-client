@@ -14,11 +14,7 @@ zoomable = "2.0.0"
 ktlintGradle = "12.3.0"
 ktlint = "1.6.0"
 workManager = "2.10.2"
-junit = "4.13.2"
-androidxTestCore = "1.6.1"
-androidxTestRunner = "1.6.2"
 androidxTestRules = "1.6.1"
-espresso = "3.6.1"
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -77,11 +73,8 @@ composeIcons = { module = "br.com.devsrsouza.compose.icons:feather", version.req
 zoomable = { module = "net.engawapg.lib:zoomable", version.ref = "zoomable" }
 
 # Test
-junit = { module = "junit:junit", version.ref = "junit" }
-androidxTestCore = { module = "androidx.test:core", version.ref = "androidxTestCore" }
-androidxTestRunner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+androidxTestCoreKtx = { module = "androidx.test:core-ktx", version.require = "1.6.1" }
 androidxTestRules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
-espressoCore = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
-androidxComposeTestJunit = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose" }
-composeTestManifest = { module = "org.jetbrains.compose:compose-ui-test-manifest", version.ref = "compose" }
+androidxTestManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
+androidxComposeTestJunitAndroid = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "compose" }
 kotlinxCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine" }
