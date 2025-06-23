@@ -193,7 +193,7 @@ class ChatViewModel(
                                     is ViewModelState.RoomInfo.Project,
                                     is ViewModelState.RoomInfo.Normal,
                                     null,
-                                        -> TextMessageComposableInterface(AnnotatedString(it))
+                                    -> TextMessageComposableInterface(AnnotatedString(it))
                                 }
                             },
                         ),
@@ -232,7 +232,7 @@ class ChatViewModel(
                             is Navigator.Chat.ChatType.Project -> chatType.projectId
                             is Navigator.Chat.ChatType.BuiltinProject,
                             is Navigator.Chat.ChatType.Normal,
-                                -> null
+                            -> null
                         },
                         model = openContext.model,
                     )
@@ -313,7 +313,7 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.Success,
                     is AddRequestUseCase.Result.WorkInProgress,
                     is AddRequestUseCase.Result.IsLastUserChat,
-                        -> Unit
+                    -> Unit
 
                     is AddRequestUseCase.Result.GptResultError -> {
                         platformRequest.showToast(result.gptError.reason.message)
@@ -368,17 +368,16 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.Success,
                     is AddRequestUseCase.Result.IsLastUserChat,
                     is AddRequestUseCase.Result.WorkInProgress,
-                        -> Unit
+                    -> Unit
 
                     is AddRequestUseCase.Result.GptResultError,
-                        -> {
+                    -> {
                         platformRequest.showToast("エラーが発生しました")
                     }
 
                     AddRequestUseCase.Result.ModelNotFoundError -> {
                         platformRequest.showToast("モデル: ${roomInfo.room.modelName}がありません")
                     }
-
                 }
             } finally {
                 viewModelStateFlow.update {

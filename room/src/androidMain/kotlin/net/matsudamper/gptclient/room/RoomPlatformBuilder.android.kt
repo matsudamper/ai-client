@@ -19,5 +19,5 @@ object RoomPlatformBuilder {
             }
         },
 
-        ).build()
+    ).build()
 }

@@ -16,8 +16,6 @@ import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.viewmodel.GetBuiltinProjectInfoUseCase
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.koin.core.context.GlobalContext
 
 class ChatRequestWorker(
