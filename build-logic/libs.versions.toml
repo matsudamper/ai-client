@@ -37,6 +37,7 @@ androidxLifecycleViewModelCompose = { module = "androidx.lifecycle:lifecycle-vie
 androidxLifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 googleMaterial = { module = "com.google.android.material:material", version.require = "1.12.0" }
 androidxNavigationCompose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.require = "2.8.0-alpha10" }
+ktlint = { module = "com.pinterest:ktlint", version.ref = "ktlint" }
 
 # WorkManager
 androidxWorkRuntime = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
