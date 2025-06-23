@@ -17,7 +17,6 @@ import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.getName
-import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -67,6 +66,10 @@ class ChatViewModel(
             viewModelStateFlow.update {
                 it.copy(selectedMedia = listOf())
             }
+        }
+
+        override fun onClickRetry() {
+            retryRequest()
         }
 
         override fun onImageCrop(
@@ -180,7 +183,7 @@ class ChatViewModel(
                         visibleMediaLoading = viewModelState.isMediaLoading,
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
-                            isChatLoading = viewModelState.isChatLoading,
+                            isChatLoading = viewModelState.isWorkInProgress,
                             agentTransformer = {
                                 when (val info = viewModelState.roomInfo) {
                                     is ViewModelState.RoomInfo.BuiltinProject -> {
@@ -190,7 +193,7 @@ class ChatViewModel(
                                     is ViewModelState.RoomInfo.Project,
                                     is ViewModelState.RoomInfo.Normal,
                                     null,
-                                    -> TextMessageComposableInterface(AnnotatedString(it))
+                                        -> TextMessageComposableInterface(AnnotatedString(it))
                                 }
                             },
                         ),
@@ -207,9 +210,11 @@ class ChatViewModel(
                 viewModelState.roomInfo?.room?.id
             }.filterNotNull().stateIn(this).collectLatest { roomId ->
                 appDatabase.chatRoomDao().get(chatRoomId = roomId.value).collectLatest { room ->
+                    val isWorkInProgress = insertDataAndAddRequestUseCase.isWorkInProgress(roomId)
                     viewModelStateFlow.update {
                         it.copy(
                             roomInfo = it.roomInfo?.copyOnlyRoom(room),
+                            isWorkInProgress = isWorkInProgress,
                         )
                     }
                 }
@@ -227,7 +232,7 @@ class ChatViewModel(
                             is Navigator.Chat.ChatType.Project -> chatType.projectId
                             is Navigator.Chat.ChatType.BuiltinProject,
                             is Navigator.Chat.ChatType.Normal,
-                            -> null
+                                -> null
                         },
                         model = openContext.model,
                     )
@@ -293,6 +298,41 @@ class ChatViewModel(
         }
     }
 
+    private fun retryRequest() {
+        val roomInfo = viewModelStateFlow.value.roomInfo ?: return
+        val chatRoomId = roomInfo.room.id
+
+        viewModelScope.launch {
+            try {
+                viewModelStateFlow.update {
+                    it.copy(isWorkInProgress = true)
+                }
+
+                val result = insertDataAndAddRequestUseCase.retryRequest(chatRoomId)
+                when (result) {
+                    is AddRequestUseCase.Result.Success,
+                    is AddRequestUseCase.Result.WorkInProgress,
+                    is AddRequestUseCase.Result.IsLastUserChat,
+                        -> Unit
+
+                    is AddRequestUseCase.Result.GptResultError -> {
+                        platformRequest.showToast(result.gptError.reason.message)
+                    }
+
+                    is AddRequestUseCase.Result.ModelNotFoundError -> {
+                        platformRequest.showToast("モデルが見つかりません")
+                    }
+                }
+            } catch (_: Throwable) {
+                platformRequest.showToast("エラー")
+            } finally {
+                viewModelStateFlow.update {
+                    it.copy(isWorkInProgress = false)
+                }
+            }
+        }
+    }
+
     private suspend fun createRoom(
         builtinProjectId: BuiltinProjectId?,
         projectId: ProjectId?,
@@ -319,54 +359,26 @@ class ChatViewModel(
                 viewModelStateFlow.update {
                     it.copy(isChatLoading = true)
                 }
-                val result = insertDataAndAddRequestUseCase.add(
+                val result = insertDataAndAddRequestUseCase.addRequest(
                     chatRoomId = chatRoomId,
                     message = message,
                     uris = uris,
-                    systemMessage = when (roomInfo) {
-                        is ViewModelState.RoomInfo.BuiltinProject -> roomInfo.builtinProjectInfo.systemMessage
-                        is ViewModelState.RoomInfo.Normal -> null
-                        is ViewModelState.RoomInfo.Project -> roomInfo.project.systemMessage
-                    },
-                    format = when (roomInfo) {
-                        is ViewModelState.RoomInfo.BuiltinProject -> roomInfo.builtinProjectInfo.format
-                        is ViewModelState.RoomInfo.Normal,
-                        is ViewModelState.RoomInfo.Project,
-                        -> ChatGptClient.Format.Text
-                    },
-                    model = roomInfo.room.modelName,
-                    summaryProvider = {
-                        when (roomInfo) {
-                            is ViewModelState.RoomInfo.BuiltinProject -> {
-                                roomInfo.builtinProjectInfo.summaryProvider(it)
-                            }
-
-                            is ViewModelState.RoomInfo.Normal,
-                            is ViewModelState.RoomInfo.Project,
-                            -> null
-                        }
-                    },
                 )
                 when (result) {
-                    is AddRequestUseCase.Result.Success -> Unit
-                    is AddRequestUseCase.Result.InputError -> throw IllegalArgumentException()
-                    is AddRequestUseCase.Result.GptResultError -> when (result.gptError.reason) {
-                        is ChatGptClient.GptResult.ErrorReason.ImageNotSupported -> {
-                            platformRequest.showToast(result.gptError.reason.message)
-                        }
+                    is AddRequestUseCase.Result.Success,
+                    is AddRequestUseCase.Result.IsLastUserChat,
+                    is AddRequestUseCase.Result.WorkInProgress,
+                        -> Unit
 
-                        is ChatGptClient.GptResult.ErrorReason.Unknown -> {
-                            viewModelStateFlow.update {
-                                it.copy(
-                                    errorDialogMessage = result.gptError.reason.message,
-                                )
-                            }
-                        }
+                    is AddRequestUseCase.Result.GptResultError,
+                        -> {
+                        platformRequest.showToast("エラーが発生しました")
                     }
 
                     AddRequestUseCase.Result.ModelNotFoundError -> {
                         platformRequest.showToast("モデル: ${roomInfo.room.modelName}がありません")
                     }
+
                 }
             } finally {
                 viewModelStateFlow.update {
@@ -382,6 +394,7 @@ class ChatViewModel(
         val selectedMedia: List<String> = listOf(),
         val isMediaLoading: Boolean = false,
         val isChatLoading: Boolean = false,
+        val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
     ) {
         sealed interface RoomInfo {

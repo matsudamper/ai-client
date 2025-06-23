@@ -343,6 +343,7 @@ fun ProjectScreen(
             onClickVoice = { uiState.listener.recordVoice() },
             selectedMedia = uiState.selectedMedia,
             visibleMediaLoading = uiState.visibleMediaLoading,
+            onClickRetry = null,
             onClickSend = {
                 uiState.listener.send(state.text.toString())
                 state.clearText()

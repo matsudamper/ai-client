@@ -15,7 +15,7 @@ import net.matsudamper.gptclient.room.entity.Project
         ChatRoom::class,
         Project::class,
     ],
-    version = 1,
+    version = 2,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao

@@ -103,6 +103,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(libs.koinAndroid)
                 implementation(libs.koinCore)
+                implementation(libs.androidxWorkRuntime)
             }
         }
     }

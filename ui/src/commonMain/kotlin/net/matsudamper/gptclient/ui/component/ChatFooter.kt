@@ -39,6 +39,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowUp
 import compose.icons.feathericons.Image
 import compose.icons.feathericons.Mic
+import compose.icons.feathericons.RotateCcw
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -50,6 +51,7 @@ internal fun ChatFooter(
     onClickImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
+    onClickRetry: (() -> Unit)?,
     onImageCrop: (imageUri: String, cropRect: Rect, imageSize: IntSize) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
 ) {
@@ -143,6 +145,7 @@ internal fun ChatFooter(
             textFieldState = textFieldState,
             onClickVoice = onClickVoice,
             onClickSend = onClickSend,
+            onClickRetry = onClickRetry,
         )
     }
 }
@@ -153,6 +156,7 @@ private fun FooterTextSection(
     onClickSelectImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
+    onClickRetry: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -193,6 +197,15 @@ private fun FooterTextSection(
                     modifier = Modifier.padding(4.dp),
                     imageVector = FeatherIcons.Mic,
                     contentDescription = "input voice",
+                )
+            }
+        }
+
+        if (onClickRetry != null) {
+            IconButton(onClick = { onClickRetry() }) {
+                Icon(
+                    imageVector = FeatherIcons.RotateCcw,
+                    contentDescription = "retry",
                 )
             }
         }

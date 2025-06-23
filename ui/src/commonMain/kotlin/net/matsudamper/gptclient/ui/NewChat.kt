@@ -318,6 +318,7 @@ public fun NewChat(
                 },
                 selectedMedia = uiState.selectedMedia,
                 visibleMediaLoading = uiState.visibleMediaLoading,
+                onClickRetry = null,
                 modifier = Modifier.fillMaxWidth()
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .navigationBarsPadding(),
