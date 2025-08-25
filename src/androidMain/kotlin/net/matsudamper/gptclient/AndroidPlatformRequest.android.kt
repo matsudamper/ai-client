@@ -154,11 +154,11 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         }
     }
 
-    fun createNotificationChannel() {
+    override fun createNotificationChannel(channelId: String) {
         val name = "GPT Client"
         val descriptionText = "GPT Client notifications"
         val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
+        val channel = NotificationChannel(channelId, name, importance).apply {
             description = descriptionText
         }
         val notificationManager: NotificationManager =
@@ -166,7 +166,12 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         notificationManager.createNotificationChannel(channel)
     }
 
-    override fun showNotification(title: String, message: String, chatRoomId: String?) {
+    override fun showNotification(
+        title: String,
+        message: String,
+        chatRoomId: String?,
+        channelId: String,
+    ) {
         val intent = Intent(activity, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             if (chatRoomId != null) {
@@ -180,7 +185,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val builder = NotificationCompat.Builder(activity, NOTIFICATION_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(activity, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
@@ -201,7 +206,6 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
     }
 
     companion object {
-        private const val NOTIFICATION_CHANNEL_ID = "gpt_client_notifications"
         private const val NOTIFICATION_ID = 1001
     }
 }

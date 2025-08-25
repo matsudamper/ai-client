@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
             ),
         )
 
-        platformRequest.createNotificationChannel()
+        platformRequest.createNotificationChannel(GPT_CLIENT_NOTIFICATION_ID)
 
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -53,5 +53,6 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val KEY_CHATROOM_ID = "chatRoomId"
+        const val GPT_CLIENT_NOTIFICATION_ID = "gpt_client_notifications"
     }
 }
