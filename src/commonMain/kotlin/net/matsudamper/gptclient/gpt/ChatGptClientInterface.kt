@@ -40,4 +40,4 @@ interface ChatGptClientInterface {
         Text,
         Json,
     }
-} 
+}

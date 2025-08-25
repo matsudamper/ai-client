@@ -1,11 +1,11 @@
 package net.matsudamper.gptclient.worker
 
 import android.app.PendingIntent
-import androidx.core.content.ContextCompat
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
@@ -255,7 +255,6 @@ class ChatRequestWorker(
         notificationId: Int,
         pendingIntent: PendingIntent,
     ) {
-
         val builder = createNotificationBuilder(
             title = title,
             message = message,
@@ -277,7 +276,6 @@ class ChatRequestWorker(
     private fun createPendingIntent(
         chatRoomId: String?,
     ): PendingIntent {
-
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             if (chatRoomId != null) {
