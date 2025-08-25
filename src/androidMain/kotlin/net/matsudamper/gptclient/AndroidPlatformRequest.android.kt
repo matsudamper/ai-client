@@ -21,11 +21,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 
 class AndroidPlatformRequest(private val activity: ComponentActivity) : PlatformRequest {
-    companion object {
-        private const val NOTIFICATION_CHANNEL_ID = "gpt_client_notifications"
-        private const val NOTIFICATION_ID = 1001
-    }
-
     private var notificationLaunchHandler: ((String) -> Unit)? = null
 
     private val mediaLauncher = object {
@@ -213,5 +208,10 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
 
     override fun handleNotificationLaunch(chatRoomId: String) {
         notificationLaunchHandler?.invoke(chatRoomId)
+    }
+
+    companion object {
+        private const val NOTIFICATION_CHANNEL_ID = "gpt_client_notifications"
+        private const val NOTIFICATION_ID = 1001
     }
 }
