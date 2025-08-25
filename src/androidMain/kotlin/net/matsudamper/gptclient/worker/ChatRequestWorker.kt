@@ -149,11 +149,15 @@ class ChatRequestWorker(
             )
 
             return Result.success()
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
             val chatRoomDao = appDatabase.chatRoomDao()
             chatRoomDao.update(room.copy(workerId = null))
-            clearForegroundNotification(
+            snowFinishNotification(
+                title = "処理失敗",
+                message = e.message.orEmpty(),
+                channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
                 notificationId = notificationId,
+                pendingIntent = pendingIntent,
             )
             return Result.failure()
         }
@@ -303,11 +307,6 @@ class ChatRequestWorker(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-    }
-
-    private fun clearForegroundNotification(notificationId: Int) {
-        val notificationManager = NotificationManagerCompat.from(applicationContext)
-        notificationManager.cancel(notificationId)
     }
 
     companion object {
