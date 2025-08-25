@@ -208,7 +208,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
     private data class ViewModelState(
         val mediaList: List<String> = listOf(),
         val mediaLoading: Boolean = false,
-        val selectedModel: ChatGptModel = ChatGptModel.GPT_4O_MINI,
+        val selectedModel: ChatGptModel = ChatGptModel.Gpt5Nano,
         val projectNameDialog: NewChatUiState.ProjectNameDialog? = null,
         val projects: List<Project>? = null,
     )

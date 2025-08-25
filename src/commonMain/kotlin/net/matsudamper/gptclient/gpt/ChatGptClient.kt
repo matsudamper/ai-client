@@ -25,16 +25,7 @@ class ChatGptClient(private val secretKey: String) : ChatGptClientInterface {
         val requestMessages = messages.map { message ->
             val role = when (message.role) {
                 ChatGptClientInterface.GptMessage.Role.Assistant -> GptRequest.Role.Assistant
-                ChatGptClientInterface.GptMessage.Role.System -> {
-                    when (model) {
-                        ChatGptModel.O1_PREVIEW,
-                        ChatGptModel.O1_MINI,
-                        -> GptRequest.Role.User
-
-                        else -> GptRequest.Role.System
-                    }
-                }
-
+                ChatGptClientInterface.GptMessage.Role.System -> GptRequest.Role.System
                 ChatGptClientInterface.GptMessage.Role.User -> GptRequest.Role.User
             }
             val contents = message.contents.map { content ->

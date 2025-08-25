@@ -53,7 +53,7 @@ class GetBuiltinProjectInfoUseCase {
                         TextMessageComposableInterface(CalendarResponseParser().toAnnotatedString(it))
                     },
                     summaryProvider = { CalendarResponseParser().parse(it)?.results?.firstOrNull()?.title },
-                    model = ChatGptModel.GPT_4O_MINI,
+                    model = ChatGptModel.Gpt5Nano,
                 )
             }
 
@@ -88,7 +88,7 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = ChatGptClientInterface.Format.Json,
                     responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
-                    model = ChatGptModel.GPT_4O_MINI,
+                    model = ChatGptModel.Gpt5Nano,
                     summaryProvider = { MoneyResponseParser().parse(it)?.results?.firstOrNull()?.title },
                 )
             }
@@ -110,7 +110,7 @@ class GetBuiltinProjectInfoUseCase {
                             platformRequest.copyToClipboard(emoji)
                         }
                     },
-                    model = ChatGptModel.GPT_4O_MINI,
+                    model = ChatGptModel.Gpt5Nano,
                     summaryProvider = { null },
                 )
             }

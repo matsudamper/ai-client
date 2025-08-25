@@ -145,7 +145,7 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            modelState = createModelState(ChatGptModel.GPT_4O_MINI),
+            modelState = createModelState(ChatGptModel.Gpt5Nano),
             listener = listener,
         ),
     ).also { uiStateFlow ->
@@ -220,7 +220,7 @@ class ProjectViewModel(
                         modelState = createModelState(
                             viewModelState.overwriteModel
                                 ?: viewModelState.systemInfo?.getInfo()?.model
-                                ?: ChatGptModel.GPT_4O_MINI,
+                                ?: ChatGptModel.Gpt5Nano,
                         ),
                     )
                 }
@@ -330,7 +330,7 @@ class ProjectViewModel(
                     format = ChatGptClientInterface.Format.Text,
                     responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
                     model = ChatGptModel.entries.firstOrNull { it.modelName == project.modelName }
-                        ?: ChatGptModel.GPT_4O_MINI,
+                        ?: ChatGptModel.Gpt5Nano,
                 )
             }
 
