@@ -33,17 +33,26 @@ class ChatRequestWorker(
         val message = inputData.getString(KEY_MESSAGE).orEmpty()
         val uris = inputData.getStringArray(KEY_URIS)?.toList().orEmpty()
 
-        val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+        val chatRoomDao = appDatabase.chatRoomDao()
+        val chatDao = appDatabase.chatDao()
+        val chatRoom = appDatabase.chatRoomDao()
+
+        val room = chatRoom.get(chatRoomId = chatRoomId.value).first()
         val roomTitle = room.summary ?: "チャット"
 
         val format: ChatGptClientInterface.Format
         val systemMessage: String?
         val model: String
         when (val builtinProjectId = room.builtInProjectId) {
-            null -> {
-                format = ChatGptClientInterface.Format.Text
-                systemMessage = null
-                model = room.modelName
+            null -> when(val projectId =  room.projectId) {
+                null -> throw IllegalStateException("Project Not Found.")
+                else -> {
+                    val projectDao = appDatabase.projectDao()
+                    val project = projectDao.get(projectId.id).first()
+                    format = ChatGptClientInterface.Format.Text
+                    systemMessage = project?.systemMessage
+                    model = room.modelName
+                }
             }
 
             else -> {
@@ -60,7 +69,6 @@ class ChatRequestWorker(
         try {
             if (message.isEmpty() && uris.isEmpty()) return Result.failure()
 
-            val chatDao = appDatabase.chatDao()
             val lastItem = chatDao.getChatRoomLastIndexItem(
                 chatRoomId = chatRoomId.value,
             )
@@ -101,11 +109,10 @@ class ChatRequestWorker(
                 )
             }
 
-            appDatabase.chatDao().insertAll(*roomChats.toTypedArray())
+            chatDao.insertAll(*roomChats.toTypedArray())
 
             writeSummary(chatRoomId = chatRoomId, response = response)
 
-            val chatRoomDao = appDatabase.chatRoomDao()
             chatRoomDao.update(room.copy(workerId = null))
 
             val updatedRoom = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
