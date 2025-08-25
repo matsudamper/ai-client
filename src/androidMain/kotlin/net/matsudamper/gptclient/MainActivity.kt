@@ -47,24 +47,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            LaunchedEffect(intent) {
-                val chatRoomId = intent?.getStringExtra(KEY_CHATROOM_ID)
-                if (chatRoomId != null) {
-                    platformRequest.handleNotificationLaunch(chatRoomId)
-                }
-            }
-
             App()
-        }
-    }
-
-    override fun onNewIntent(intent: android.content.Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-
-        val chatRoomId = intent.getStringExtra(KEY_CHATROOM_ID)
-        if (chatRoomId != null) {
-            platformRequest.handleNotificationLaunch(chatRoomId)
         }
     }
 

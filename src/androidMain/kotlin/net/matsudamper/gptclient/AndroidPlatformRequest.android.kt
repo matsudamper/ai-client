@@ -21,8 +21,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 
 class AndroidPlatformRequest(private val activity: ComponentActivity) : PlatformRequest {
-    private var notificationLaunchHandler: ((String) -> Unit)? = null
-
     private val mediaLauncher = object {
         private val resultFlow = Channel<List<String>>(Channel.RENDEZVOUS)
         private val launcher = activity.registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
@@ -200,14 +198,6 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 notify(NOTIFICATION_ID, builder.build())
             }
         }
-    }
-
-    override fun setNotificationLaunchHandler(handler: (String) -> Unit) {
-        notificationLaunchHandler = handler
-    }
-
-    override fun handleNotificationLaunch(chatRoomId: String) {
-        notificationLaunchHandler?.invoke(chatRoomId)
     }
 
     companion object {

@@ -3,7 +3,6 @@ package net.matsudamper.gptclient
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -32,29 +31,6 @@ internal fun App() {
         val navController = rememberNavController()
         val viewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
-        }
-        val platformRequest = remember {
-            val koin = getKoin()
-            koin.get<PlatformRequest>()
-        }
-
-        LaunchedEffect(platformRequest) {
-            platformRequest.setNotificationLaunchHandler { chatRoomId ->
-                try {
-                    val roomId = net.matsudamper.gptclient.room.entity.ChatRoomId(chatRoomId.toLong())
-                    navController.navigate(
-                        Navigator.Chat(
-                            Navigator.Chat.ChatOpenContext.OpenChat(roomId),
-                        ),
-                    ) {
-                        popUpTo(navController.graph.startDestinationRoute!!) {
-                            inclusive = false
-                        }
-                    }
-                } catch (e: Throwable) {
-                    throw e
-                }
-            }
         }
 
         MainScreen(

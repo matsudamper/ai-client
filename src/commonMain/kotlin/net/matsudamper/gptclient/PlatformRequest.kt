@@ -33,10 +33,6 @@ interface PlatformRequest {
 
     fun showNotification(title: String, message: String, chatRoomId: String?)
 
-    fun handleNotificationLaunch(chatRoomId: String)
-
-    fun setNotificationLaunchHandler(handler: (String) -> Unit)
-
     /**
      * Represents a rectangle for cropping an image.
      */
