@@ -31,8 +31,6 @@ interface PlatformRequest {
         viewHeight: Int,
     ): String?
 
-    fun showNotification(title: String, message: String, chatRoomId: String?, channelId: String)
-
     /**
      * Represents a rectangle for cropping an image.
      */
