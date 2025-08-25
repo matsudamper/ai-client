@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.PickVisualMediaRequest
@@ -81,8 +80,8 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
 
     override fun openLink(url: String) {
         activity.startActivity(
-            android.content.Intent(
-                android.content.Intent.ACTION_VIEW,
+            Intent(
+                Intent.ACTION_VIEW,
                 url.toUri(),
             ),
         )
@@ -163,17 +162,15 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
     }
 
     fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "GPT Client"
-            val descriptionText = "GPT Client notifications"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
-            val notificationManager: NotificationManager =
-                activity.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        val name = "GPT Client"
+        val descriptionText = "GPT Client notifications"
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
+            description = descriptionText
         }
+        val notificationManager: NotificationManager =
+            activity.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     override fun showNotification(title: String, message: String, chatRoomId: String?) {
