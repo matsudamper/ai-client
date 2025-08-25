@@ -36,23 +36,24 @@ class ChatRequestWorker(
         val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
         val roomTitle = room.summary ?: "チャット"
 
-        val (format, systemMessage, model) = when (val builtinProjectId = room.builtInProjectId) {
-            null -> Triple(
-                ChatGptClientInterface.Format.Text,
-                null,
-                room.modelName,
-            )
+        val format: ChatGptClientInterface.Format
+        val systemMessage: String?
+        val model: String
+        when (val builtinProjectId = room.builtInProjectId) {
+            null -> {
+                format = ChatGptClientInterface.Format.Text
+                systemMessage = null
+                model = room.modelName
+            }
 
             else -> {
                 val builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
                     builtinProjectId = builtinProjectId,
                     platformRequest = platformRequest,
                 )
-                Triple(
-                    builtinProjectInfo.format,
-                    builtinProjectInfo.systemMessage,
-                    builtinProjectInfo.model.modelName,
-                )
+                format = builtinProjectInfo.format
+                systemMessage = builtinProjectInfo.systemMessage
+                model = builtinProjectInfo.model.modelName
             }
         }
 
