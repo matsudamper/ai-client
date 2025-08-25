@@ -10,6 +10,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import android.content.pm.ServiceInfo
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.random.Random
@@ -59,6 +60,7 @@ class ChatRequestWorker(
                     channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
                     pendingIntent = pendingIntent,
                 ).build(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             ),
         )
 
