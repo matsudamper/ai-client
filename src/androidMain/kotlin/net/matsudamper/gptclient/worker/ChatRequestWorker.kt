@@ -44,7 +44,7 @@ class ChatRequestWorker(
         val systemMessage: String?
         val model: String
         when (val builtinProjectId = room.builtInProjectId) {
-            null -> when(val projectId =  room.projectId) {
+            null -> when (val projectId = room.projectId) {
                 null -> throw IllegalStateException("Project Not Found.")
                 else -> {
                     val projectDao = appDatabase.projectDao()
@@ -117,6 +117,7 @@ class ChatRequestWorker(
 
             val updatedRoom = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val notificationTitle = updatedRoom.summary ?: roomTitle
+
             platformRequest.showNotification(
                 title = "処理完了",
                 message = "${notificationTitle}の処理が完了しました",
