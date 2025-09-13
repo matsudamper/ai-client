@@ -79,38 +79,7 @@ fun ImageCropDialog(
                         .onGloballyPositioned { coordinates ->
                             containerSize = coordinates.size
                         }
-                        .drawWithContent {
-                            drawContent()
-
-                            val rect = cropRect ?: return@drawWithContent
-                            val overlayColor = Color.Black.copy(alpha = 0.5f)
-                            drawRect(
-                                color = overlayColor,
-                                size = Size(rect.left, size.height),
-                            )
-                            drawRect(
-                                color = overlayColor,
-                                topLeft = Offset(rect.right, 0f),
-                                size = Size(size.width - rect.right, size.height),
-                            )
-                            drawRect(
-                                color = overlayColor,
-                                topLeft = Offset(rect.left, 0f),
-                                size = Size(rect.width, rect.top),
-                            )
-                            drawRect(
-                                color = overlayColor,
-                                topLeft = Offset(rect.left, rect.bottom),
-                                size = Size(rect.width, size.height - rect.bottom),
-                            )
-
-                            drawRect(
-                                color = Color.White,
-                                topLeft = Offset(rect.left, rect.top),
-                                size = Size(rect.width, rect.height),
-                                style = Stroke(width = 2f),
-                            )
-                        }
+                        .drawRect(rect = cropRect)
                         .pointerInput(Unit) {
                             detectDragGestures(
                                 onDragStart = { offset ->
@@ -123,9 +92,9 @@ fun ImageCropDialog(
 
                                         if (!isDraggingLeft && !isDraggingRight && !isDraggingTop && !isDraggingBottom) {
                                             isDraggingEntire = offset.x > rect.left &&
-                                                offset.x < rect.right &&
-                                                offset.y > rect.top &&
-                                                offset.y < rect.bottom
+                                                    offset.x < rect.right &&
+                                                    offset.y > rect.top &&
+                                                    offset.y < rect.bottom
                                         }
                                     }
                                 },
@@ -267,6 +236,41 @@ fun ImageCropDialog(
                 }
             }
         }
+    }
+}
+
+private fun Modifier.drawRect(rect: Rect?): Modifier {
+    return drawWithContent {
+        drawContent()
+
+        rect ?: return@drawWithContent
+        val overlayColor = Color.Black.copy(alpha = 0.5f)
+        drawRect(
+            color = overlayColor,
+            size = Size(rect.left, size.height),
+        )
+        drawRect(
+            color = overlayColor,
+            topLeft = Offset(rect.right, 0f),
+            size = Size(size.width - rect.right, size.height),
+        )
+        drawRect(
+            color = overlayColor,
+            topLeft = Offset(rect.left, 0f),
+            size = Size(rect.width, rect.top),
+        )
+        drawRect(
+            color = overlayColor,
+            topLeft = Offset(rect.left, rect.bottom),
+            size = Size(rect.width, size.height - rect.bottom),
+        )
+
+        drawRect(
+            color = Color.White,
+            topLeft = Offset(rect.left, rect.top),
+            size = Size(rect.width, rect.height),
+            style = Stroke(width = 2f),
+        )
     }
 }
 
