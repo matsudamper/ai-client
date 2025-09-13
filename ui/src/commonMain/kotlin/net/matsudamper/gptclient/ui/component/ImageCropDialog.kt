@@ -208,7 +208,7 @@ fun ImageCropDialog(
                         if (rect != null) {
                             val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize)
                             if (actualImageRect != null) {
-                                // 表示座標から実画像座標への変換
+                                // UI表示座標から実画像座標への変換
                                 val imageRelativeCropRect = Rect(
                                     left = (rect.left - actualImageRect.left) / actualImageRect.width,
                                     top = (rect.top - actualImageRect.top) / actualImageRect.height,
