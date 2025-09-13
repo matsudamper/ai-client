@@ -58,7 +58,7 @@ class ChatRequestWorker(
                     message = "処理中...",
                     channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
                     pendingIntent = pendingIntent,
-                ).build(),
+                ).setProgress(1,1, true).build(),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             ),
         )
