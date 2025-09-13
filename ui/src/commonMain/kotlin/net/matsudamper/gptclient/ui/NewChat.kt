@@ -57,6 +57,7 @@ import compose.icons.feathericons.Calendar
 import compose.icons.feathericons.CreditCard
 import compose.icons.feathericons.Menu
 import net.matsudamper.gptclient.ui.component.ChatFooter
+import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
 sealed interface NewChatTestTag {
     object Root : NewChatTestTag
@@ -75,7 +76,7 @@ sealed interface NewChatTestTag {
 
 public data class NewChatUiState(
     val projects: List<Project>,
-    val selectedMedia: List<String>,
+    val selectedMedia: List<ChatFooterImage>,
     val visibleMediaLoading: Boolean,
     val models: List<Model>,
     val selectedModel: String,
@@ -328,7 +329,7 @@ public fun NewChat(
             val state = rememberTextFieldState()
             ChatFooter(
                 textFieldState = state,
-                onClickImage = { uiState.listener.onClickSelectMedia() },
+                onClickAddImage = { uiState.listener.onClickSelectMedia() },
                 onClickVoice = { uiState.listener.onClickVoice() },
                 onClickSend = {
                     uiState.listener.send(state.text.toString())

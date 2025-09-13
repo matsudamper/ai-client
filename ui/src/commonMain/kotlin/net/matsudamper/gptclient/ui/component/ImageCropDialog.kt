@@ -41,8 +41,9 @@ private const val INITIAL_CROP_SIZE_RATIO = 0.8f
 @Composable
 fun ImageCropDialog(
     imageUri: String,
+    rect: Rect?,
     onDismissRequest: () -> Unit,
-    onCropComplete: (cropRect: Rect, imageSize: IntSize) -> Unit,
+    onCropComplete: (cropRect: Rect) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Dialog(
@@ -58,7 +59,7 @@ fun ImageCropDialog(
         ) {
             var containerSize by remember { mutableStateOf(IntSize.Zero) }
             var intrinsicImageSize by remember { mutableStateOf(IntSize.Zero) }
-            var cropRect by remember { mutableStateOf<Rect?>(null) }
+            var cropRect: Rect? by remember(rect) { mutableStateOf(rect) }
 
             var isDraggingLeft by remember { mutableStateOf(false) }
             var isDraggingRight by remember { mutableStateOf(false) }
@@ -256,7 +257,7 @@ fun ImageCropDialog(
                                     bottom = imageRelativeCropRect.bottom * intrinsicImageSize.height,
                                 )
 
-                                onCropComplete(pixelCropRect, intrinsicImageSize)
+                                onCropComplete(pixelCropRect)
                             }
                         }
                         onDismissRequest()

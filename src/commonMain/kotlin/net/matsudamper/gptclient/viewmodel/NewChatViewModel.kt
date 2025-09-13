@@ -19,6 +19,7 @@ import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.room.entity.Project
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.NewChatUiState
+import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
 class NewChatViewModel(private val platformRequest: PlatformRequest, private val appDatabase: AppDatabase, navControllerProvider: () -> NavHostController) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
@@ -93,16 +94,29 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
             projectNameDialog = null,
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
-                    navControllerProvider().navigate(
-                        Navigator.Chat(
-                            Navigator.Chat.ChatOpenContext.NewMessage(
-                                initialMessage = text,
-                                uriList = viewModelStateFlow.value.mediaList,
-                                chatType = Navigator.Chat.ChatType.Normal,
-                                model = viewModelStateFlow.value.selectedModel,
+                    viewModelScope.launch {
+                        navControllerProvider().navigate(
+                            Navigator.Chat(
+                                Navigator.Chat.ChatOpenContext.NewMessage(
+                                    initialMessage = text,
+                                    uriList = viewModelStateFlow.value.mediaList.mapNotNull map@{
+                                        val rect = it.rect ?: return@map null
+                                        platformRequest.cropImage(
+                                            uri = it.imageUri,
+                                            cropRect = PlatformRequest.CropRect(
+                                                left = rect.left,
+                                                top = rect.top,
+                                                right = rect.right,
+                                                bottom = rect.bottom,
+                                            ),
+                                        )
+                                    },
+                                    chatType = Navigator.Chat.ChatType.Normal,
+                                    model = viewModelStateFlow.value.selectedModel,
+                                ),
                             ),
-                        ),
-                    )
+                        )
+                    }
                 }
 
                 override fun onClickSelectMedia() {
@@ -111,9 +125,17 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                             viewModelStateFlow.update {
                                 it.copy(mediaLoading = true)
                             }
-                            val media = platformRequest.getMedia()
+                            val imageUrlList = platformRequest.getMediaList()
                             viewModelStateFlow.update {
-                                it.copy(mediaList = media)
+                                it.copy(
+                                    mediaList = imageUrlList.map { imageUrl ->
+                                        ChatFooterImage(
+                                            imageUri = imageUrl,
+                                            rect = null,
+                                            listener = ChatFooterImageListener(imageUrl),
+                                        )
+                                    },
+                                )
                             }
                         } finally {
                             viewModelStateFlow.update {
@@ -205,8 +227,27 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
         }
     }
 
+    private inner class ChatFooterImageListener(private val imageUrl: String) : ChatFooterImage.Listener {
+        override fun crop(rect: ChatFooterImage.Rect) {
+            viewModelStateFlow.update { viewModelState ->
+                val newList = viewModelState.mediaList.map { viewModelStateImage ->
+                    if (viewModelStateImage.imageUri == imageUrl) {
+                        viewModelStateImage.copy(
+                            rect = rect,
+                        )
+                    } else {
+                        viewModelStateImage
+                    }
+                }
+                viewModelState.copy(
+                    mediaList = newList,
+                )
+            }
+        }
+    }
+
     private data class ViewModelState(
-        val mediaList: List<String> = listOf(),
+        val mediaList: List<ChatFooterImage> = listOf(),
         val mediaLoading: Boolean = false,
         val selectedModel: ChatGptModel = ChatGptModel.Gpt5Nano,
         val projectNameDialog: NewChatUiState.ProjectNameDialog? = null,

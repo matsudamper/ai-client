@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.ui.component.ChatFooter
+import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
 sealed interface ProjectScreenTestTag {
     object Root : ProjectScreenTestTag
@@ -68,7 +69,7 @@ sealed interface ProjectScreenTestTag {
 
 data class ProjectUiState(
     val projectName: String,
-    val selectedMedia: List<String>,
+    val selectedMedia: List<ChatFooterImage>,
     val systemMessage: SystemMessage,
     val visibleMediaLoading: Boolean,
     val chatRoomsState: ChatRoomsState,
@@ -349,7 +350,7 @@ fun ProjectScreen(
                 .background(MaterialTheme.colorScheme.secondaryContainer)
                 .navigationBarsPadding(),
             textFieldState = state,
-            onClickImage = { uiState.listener.selectMedia() },
+            onClickAddImage = { uiState.listener.selectMedia() },
             onClickVoice = { uiState.listener.recordVoice() },
             selectedMedia = uiState.selectedMedia,
             visibleMediaLoading = uiState.visibleMediaLoading,

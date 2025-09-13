@@ -30,7 +30,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         }
     }
 
-    override suspend fun getMedia(): List<String> {
+    override suspend fun getMediaList(): List<String> {
         val cacheDir = activity.cacheDir
         return mediaLauncher.launch().map { uriString ->
             withContext(Dispatchers.IO) {
@@ -96,31 +96,22 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
     override suspend fun cropImage(
         uri: String,
         cropRect: PlatformRequest.CropRect,
-        viewWidth: Int,
-        viewHeight: Int,
     ): String? {
         return withContext(Dispatchers.IO) {
             try {
                 val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
                 val bitmap = ImageDecoder.decodeBitmap(source)
 
-                // Calculate the actual image dimensions within the view
                 val imageWidth = bitmap.width
                 val imageHeight = bitmap.height
 
-                // Calculate scaling factors
-                val scaleX = imageWidth.toFloat() / viewWidth
-                val scaleY = imageHeight.toFloat() / viewHeight
-
-                // Convert view coordinates to bitmap coordinates
                 val bitmapCropRect = android.graphics.RectF(
-                    cropRect.left * scaleX,
-                    cropRect.top * scaleY,
-                    cropRect.right * scaleX,
-                    cropRect.bottom * scaleY,
+                    cropRect.left ,
+                    cropRect.top ,
+                    cropRect.right ,
+                    cropRect.bottom ,
                 )
 
-                // Ensure the crop rect is within the bitmap bounds
                 val validLeft = bitmapCropRect.left.coerceIn(0f, imageWidth.toFloat())
                 val validTop = bitmapCropRect.top.coerceIn(0f, imageHeight.toFloat())
                 val validRight = bitmapCropRect.right.coerceIn(0f, imageWidth.toFloat())

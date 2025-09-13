@@ -26,6 +26,7 @@ import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
+import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
 class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
@@ -41,10 +42,16 @@ class ChatViewModel(
                     viewModelStateFlow.update {
                         it.copy(isMediaLoading = true)
                     }
-                    val media = platformRequest.getMedia()
-                    viewModelStateFlow.update {
-                        it.copy(
-                            selectedMedia = media,
+                    val images = platformRequest.getMediaList()
+                    viewModelStateFlow.update { viewModelState ->
+                        viewModelState.copy(
+                            selectedMedia = images.map { image ->
+                                ChatFooterImage(
+                                    imageUri = image,
+                                    rect = null,
+                                    listener = ChatFooterImageListener(image),
+                                )
+                            },
                         )
                     }
                 } finally {
@@ -59,10 +66,25 @@ class ChatViewModel(
         }
 
         override fun onClickSend(text: String) {
-            addRequest(
-                message = text,
-                uris = viewModelStateFlow.value.selectedMedia,
-            )
+            viewModelScope.launch {
+                addRequest(
+                    message = text,
+                    uris = viewModelStateFlow.value.selectedMedia.mapNotNull map@{
+                        val rect = it.rect ?: return@map it.imageUri
+                        val platformCropRect = PlatformRequest.CropRect(
+                            left = rect.left,
+                            top = rect.top,
+                            right = rect.right,
+                            bottom = rect.bottom,
+                        )
+
+                        platformRequest.cropImage(
+                            uri = it.imageUri,
+                            cropRect = platformCropRect,
+                        )
+                    },
+                )
+            }
             viewModelStateFlow.update {
                 it.copy(selectedMedia = listOf())
             }
@@ -71,54 +93,11 @@ class ChatViewModel(
         override fun onClickRetry() {
             retryRequest()
         }
-
-        override fun onImageCrop(
-            imageUri: String,
-            cropRect: androidx.compose.ui.geometry.Rect,
-            imageSize: androidx.compose.ui.unit.IntSize,
-        ) {
-            viewModelScope.launch {
-                try {
-                    viewModelStateFlow.update {
-                        it.copy(isMediaLoading = true)
-                    }
-
-                    // Convert Compose Rect to PlatformRequest.CropRect
-                    val platformCropRect = PlatformRequest.CropRect(
-                        left = cropRect.left,
-                        top = cropRect.top,
-                        right = cropRect.right,
-                        bottom = cropRect.bottom,
-                    )
-
-                    // Crop the image
-                    val croppedImageUri = platformRequest.cropImage(
-                        uri = imageUri,
-                        cropRect = platformCropRect,
-                        viewWidth = imageSize.width,
-                        viewHeight = imageSize.height,
-                    )
-
-                    // Add the cropped image to the selected media
-                    if (croppedImageUri != null) {
-                        viewModelStateFlow.update {
-                            it.copy(
-                                selectedMedia = it.selectedMedia + croppedImageUri,
-                            )
-                        }
-                    }
-                } finally {
-                    viewModelStateFlow.update {
-                        it.copy(isMediaLoading = false)
-                    }
-                }
-            }
-        }
     }
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
         ChatListUiState(
             items = listOf(),
-            selectedMedia = listOf(),
+            selectedImage = listOf(),
             visibleMediaLoading = false,
             listener = listener,
             errorDialogMessage = null,
@@ -179,7 +158,7 @@ class ChatViewModel(
                                 },
                             )
                         },
-                        selectedMedia = viewModelState.selectedMedia,
+                        selectedImage = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
@@ -193,7 +172,7 @@ class ChatViewModel(
                                     is ViewModelState.RoomInfo.Project,
                                     is ViewModelState.RoomInfo.Normal,
                                     null,
-                                    -> TextMessageComposableInterface(AnnotatedString(it))
+                                        -> TextMessageComposableInterface(AnnotatedString(it))
                                 }
                             },
                         ),
@@ -232,7 +211,7 @@ class ChatViewModel(
                             is Navigator.Chat.ChatType.Project -> chatType.projectId
                             is Navigator.Chat.ChatType.BuiltinProject,
                             is Navigator.Chat.ChatType.Normal,
-                            -> null
+                                -> null
                         },
                         model = openContext.model,
                     )
@@ -313,7 +292,7 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.Success,
                     is AddRequestUseCase.Result.WorkInProgress,
                     is AddRequestUseCase.Result.IsLastUserChat,
-                    -> Unit
+                        -> Unit
 
                     is AddRequestUseCase.Result.GptResultError -> {
                         platformRequest.showToast(result.gptError.reason.message)
@@ -368,10 +347,10 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.Success,
                     is AddRequestUseCase.Result.IsLastUserChat,
                     is AddRequestUseCase.Result.WorkInProgress,
-                    -> Unit
+                        -> Unit
 
                     is AddRequestUseCase.Result.GptResultError,
-                    -> {
+                        -> {
                         platformRequest.showToast("エラーが発生しました")
                     }
 
@@ -387,10 +366,33 @@ class ChatViewModel(
         }
     }
 
+    private inner class ChatFooterImageListener(val imageUri: String) : ChatFooterImage.Listener {
+        override fun crop(rect: ChatFooterImage.Rect) {
+            viewModelStateFlow.update { state ->
+                state.copy(
+                    selectedMedia = state.selectedMedia.map { viewModelStateImage ->
+                        if (imageUri == viewModelStateImage.imageUri) {
+                            viewModelStateImage.copy(
+                                rect = ChatFooterImage.Rect(
+                                    left = rect.left,
+                                    top = rect.top,
+                                    right = rect.right,
+                                    bottom = rect.bottom,
+                                ),
+                            )
+                        } else {
+                            viewModelStateImage
+                        }
+                    },
+                )
+            }
+        }
+    }
+
     private data class ViewModelState(
         val roomInfo: RoomInfo? = null,
         val chats: List<Chat> = listOf(),
-        val selectedMedia: List<String> = listOf(),
+        val selectedMedia: List<ChatFooterImage> = listOf(),
         val isMediaLoading: Boolean = false,
         val isChatLoading: Boolean = false,
         val isWorkInProgress: Boolean = false,

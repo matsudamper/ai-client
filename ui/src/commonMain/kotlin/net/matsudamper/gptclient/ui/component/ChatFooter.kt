@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -43,24 +43,40 @@ import compose.icons.feathericons.RotateCcw
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
+data class ChatFooterImage(
+    val imageUri: String,
+    val rect: Rect?,
+    val listener: Listener,
+) {
+    data class Rect(
+        val left: Float,
+        val top: Float,
+        val right: Float,
+        val bottom: Float,
+    )
+    @Immutable
+    interface Listener {
+        fun crop(rect: Rect)
+    }
+}
+
 @Composable
 internal fun ChatFooter(
     textFieldState: TextFieldState,
-    selectedMedia: List<String>,
+    selectedMedia: List<ChatFooterImage>,
     visibleMediaLoading: Boolean,
-    onClickImage: () -> Unit,
+    onClickAddImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
     onClickRetry: (() -> Unit)?,
-    onImageCrop: (imageUri: String, cropRect: Rect, imageSize: IntSize) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
 ) {
-    var showImageUri by remember { mutableStateOf<String?>(null) }
-    val showCropImageUriState = remember { mutableStateOf<String?>(null) }
+    var showImage by remember { mutableStateOf<ChatFooterImage?>(null) }
+    val showCropImageState = remember { mutableStateOf<ChatFooterImage?>(null) }
 
-    if (showImageUri != null) {
+    if (showImage != null) {
         Dialog(
-            onDismissRequest = { showImageUri = null },
+            onDismissRequest = { showImage = null },
             properties = DialogProperties(
                 usePlatformDefaultWidth = false,
             ),
@@ -68,21 +84,37 @@ internal fun ChatFooter(
             AsyncImage(
                 modifier = Modifier.fillMaxSize()
                     .zoomable(rememberZoomState()),
-                model = showImageUri.orEmpty(),
+                model = showImage?.imageUri,
                 contentScale = ContentScale.Fit,
                 contentDescription = null,
             )
         }
     }
 
-    val showCropImageUri = showCropImageUriState.value
+    val showCropImageUri = showCropImageState.value
     if (showCropImageUri != null) {
         ImageCropDialog(
-            imageUri = showCropImageUri,
-            onDismissRequest = { showCropImageUriState.value = null },
-            onCropComplete = { cropRect, imageSize ->
-                onImageCrop(showCropImageUri, cropRect, imageSize)
-                showCropImageUriState.value = null
+            imageUri = showCropImageUri.imageUri,
+            rect = remember(showCropImageUri.rect) {
+                if (showCropImageUri.rect == null) return@remember null
+                Rect(
+                    left = showCropImageUri.rect.left,
+                    top = showCropImageUri.rect.top,
+                    right = showCropImageUri.rect.right,
+                    bottom = showCropImageUri.rect.bottom,
+                )
+            },
+            onDismissRequest = { showCropImageState.value = null },
+            onCropComplete = { cropRect ->
+                showCropImageUri.listener.crop(
+                    ChatFooterImage.Rect(
+                        left = cropRect.left,
+                        top = cropRect.top,
+                        right = cropRect.right,
+                        bottom = cropRect.bottom,
+                    ),
+                )
+                showCropImageState.value = null
             },
         )
     }
@@ -99,7 +131,7 @@ internal fun ChatFooter(
                         modifier = Modifier.clickable {
                             showMenu = true
                         }.then(imageModifier),
-                        model = media,
+                        model = media.imageUri,
                         contentScale = ContentScale.Crop,
                         contentDescription = null,
                     )
@@ -111,14 +143,14 @@ internal fun ChatFooter(
                         androidx.compose.material3.DropdownMenuItem(
                             text = { androidx.compose.material3.Text("View") },
                             onClick = {
-                                showImageUri = media
+                                showImage = media
                                 showMenu = false
                             },
                         )
                         androidx.compose.material3.DropdownMenuItem(
                             text = { androidx.compose.material3.Text("Crop") },
                             onClick = {
-                                showCropImageUriState.value = media
+                                showCropImageState.value = media
                                 showMenu = false
                             },
                         )
@@ -141,7 +173,7 @@ internal fun ChatFooter(
         }
         FooterTextSection(
             modifier = Modifier.fillMaxWidth(),
-            onClickSelectImage = onClickImage,
+            onClickSelectImage = onClickAddImage,
             textFieldState = textFieldState,
             onClickVoice = onClickVoice,
             onClickSend = onClickSend,

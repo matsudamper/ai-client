@@ -22,6 +22,7 @@ import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
 import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
+import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
 class ProjectViewModel(
     private val navigator: Navigator.Project,
@@ -54,7 +55,7 @@ class ProjectViewModel(
             when (val info = viewModelStateFlow.value.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo,
                 null,
-                -> return
+                    -> return
 
                 is ViewModelState.SystemInfoType.Project -> {
                     viewModelScope.launch {
@@ -72,7 +73,7 @@ class ProjectViewModel(
             when (val systemInfo = viewModelStateFlow.value.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo,
                 null,
-                -> return
+                    -> return
 
                 is ViewModelState.SystemInfoType.Project -> {
                     viewModelScope.launch {
@@ -91,9 +92,17 @@ class ProjectViewModel(
                     viewModelStateFlow.update {
                         it.copy(mediaLoading = true)
                     }
-                    val uriList = platformRequest.getMedia()
+                    val uriList = platformRequest.getMediaList()
                     viewModelStateFlow.update {
-                        it.copy(uriList = uriList)
+                        it.copy(
+                            uriList = uriList.map { imageUrl ->
+                                ChatFooterImage(
+                                    imageUri = imageUrl,
+                                    rect = null,
+                                    listener = ChatFooterImageListener(imageUrl),
+                                )
+                            },
+                        )
                     }
                 } finally {
                     viewModelStateFlow.update {
@@ -118,16 +127,30 @@ class ProjectViewModel(
                     )
                 }
             }
-            navControllerProvider().navigate(
-                Navigator.Chat(
-                    openContext = Navigator.Chat.ChatOpenContext.NewMessage(
-                        initialMessage = text,
-                        uriList = viewModelStateFlow.value.uriList,
-                        chatType = chatType,
-                        model = viewModelStateFlow.value.overwriteModel ?: systemInfo.getInfo().model,
+            viewModelScope.launch {
+                navControllerProvider().navigate(
+                    Navigator.Chat(
+                        openContext = Navigator.Chat.ChatOpenContext.NewMessage(
+                            initialMessage = text,
+                            uriList = viewModelStateFlow.value.uriList.mapNotNull map@{
+                                val rect = it.rect ?: return@map null
+
+                                platformRequest.cropImage(
+                                    it.imageUri,
+                                    PlatformRequest.CropRect(
+                                        left = rect.left,
+                                        top = rect.top,
+                                        right = rect.right,
+                                        bottom = rect.bottom,
+                                    ),
+                                )
+                            },
+                            chatType = chatType,
+                            model = viewModelStateFlow.value.overwriteModel ?: systemInfo.getInfo().model,
+                        ),
                     ),
-                ),
-            )
+                )
+            }
 
             viewModelStateFlow.update {
                 it.copy(uriList = listOf())
@@ -184,7 +207,7 @@ class ProjectViewModel(
                     val editable = when (viewModelState.systemInfo) {
                         null,
                         is ViewModelState.SystemInfoType.BuiltinInfo,
-                        -> false
+                            -> false
 
                         is ViewModelState.SystemInfoType.Project -> true
                     }
@@ -193,7 +216,7 @@ class ProjectViewModel(
                             is ViewModelState.SystemInfoType.Project -> viewModelState.systemInfo.project.name
                             is ViewModelState.SystemInfoType.BuiltinInfo,
                             null,
-                            -> navigator.title
+                                -> navigator.title
                         },
                         systemMessage = ProjectUiState.SystemMessage(
                             text = viewModelState.systemInfo?.getInfo()?.systemMessage.orEmpty(),
@@ -272,6 +295,24 @@ class ProjectViewModel(
         }
     }
 
+    private inner class ChatFooterImageListener(private val imageUrl: String) : ChatFooterImage.Listener {
+        override fun crop(rect: ChatFooterImage.Rect) {
+            viewModelStateFlow.update {
+                it.copy(
+                    uriList = it.uriList.map { image ->
+                        if (image.imageUri == imageUrl) {
+                            image.copy(
+                                rect = rect,
+                            )
+                        } else {
+                            image
+                        }
+                    },
+                )
+            }
+        }
+    }
+
     private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState = ProjectUiState.ModelState(
         selectedModel = selectedModel.modelName,
         models = ChatGptModel.entries.map { model ->
@@ -283,7 +324,7 @@ class ProjectViewModel(
                         when (val info = viewModelStateFlow.value.systemInfo) {
                             is ViewModelState.SystemInfoType.BuiltinInfo,
                             null,
-                            -> {
+                                -> {
                                 viewModelStateFlow.update {
                                     it.copy(
                                         overwriteModel = model,
@@ -308,7 +349,7 @@ class ProjectViewModel(
     )
 
     private data class ViewModelState(
-        val uriList: List<String> = listOf(),
+        val uriList: List<ChatFooterImage> = listOf(),
         val mediaLoading: Boolean = false,
         val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: SystemInfoType? = null,

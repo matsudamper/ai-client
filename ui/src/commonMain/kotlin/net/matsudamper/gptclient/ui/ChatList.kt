@@ -42,11 +42,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooter
+import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
 data class ChatListUiState(
     val items: List<Message>,
     val title: String,
-    val selectedMedia: List<String>,
+    val selectedImage: List<ChatFooterImage>,
     val visibleMediaLoading: Boolean,
     val errorDialogMessage: String?,
     val modelLoadingState: ModelLoadingState,
@@ -81,7 +82,6 @@ data class ChatListUiState(
         fun onClickVoice()
         fun onClickSend(text: String)
         fun onClickRetry()
-        fun onImageCrop(imageUri: String, cropRect: androidx.compose.ui.geometry.Rect, imageSize: androidx.compose.ui.unit.IntSize) {}
     }
 }
 
@@ -190,18 +190,15 @@ public fun ChatList(
             ChatFooter(
                 modifier = Modifier.fillMaxWidth(),
                 textFieldState = state,
-                onClickImage = { uiState.listener.onClickImage() },
+                onClickAddImage = { uiState.listener.onClickImage() },
                 onClickVoice = { uiState.listener.onClickVoice() },
-                selectedMedia = uiState.selectedMedia,
+                selectedMedia = uiState.selectedImage,
                 visibleMediaLoading = uiState.visibleMediaLoading,
                 onClickSend = {
                     uiState.listener.onClickSend(state.text.toString())
                     state.clearText()
                 },
                 onClickRetry = { uiState.listener.onClickRetry() },
-                onImageCrop = { imageUri, cropRect, imageSize ->
-                    uiState.listener.onImageCrop(imageUri, cropRect, imageSize)
-                },
             )
         }
     }

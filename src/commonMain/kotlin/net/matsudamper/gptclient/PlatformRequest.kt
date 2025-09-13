@@ -4,7 +4,7 @@ interface PlatformRequest {
     /**
      * @return URI
      */
-    suspend fun getMedia(): List<String>
+    suspend fun getMediaList(): List<String>
     suspend fun readPngByteArray(uri: String): ByteArray?
     fun openLink(url: String)
 
@@ -20,15 +20,11 @@ interface PlatformRequest {
      *
      * @param uri The URI of the image to crop
      * @param cropRect The rectangle to crop (in the coordinate space of the image view)
-     * @param viewWidth The width of the view containing the image
-     * @param viewHeight The height of the view containing the image
      * @return The URI of the cropped image, or null if cropping failed
      */
     suspend fun cropImage(
         uri: String,
         cropRect: CropRect,
-        viewWidth: Int,
-        viewHeight: Int,
     ): String?
 
     /**
