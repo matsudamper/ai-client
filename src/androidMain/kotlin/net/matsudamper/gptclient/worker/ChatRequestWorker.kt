@@ -46,8 +46,8 @@ class ChatRequestWorker(
         val chatDao = appDatabase.chatDao()
         val chatRoom = appDatabase.chatRoomDao()
 
-        val room = chatRoom.get(chatRoomId = chatRoomId.value).first()
-        val roomTitle = room.summary ?: "チャット"
+        val firstChatRoom = chatRoom.get(chatRoomId = chatRoomId.value).first()
+        val roomTitle = firstChatRoom.summary ?: "チャット"
 
         val pendingIntent = createPendingIntent(chatRoomId = chatRoomId.value.toString())
         setForeground(
@@ -68,15 +68,15 @@ class ChatRequestWorker(
         val format: ChatGptClientInterface.Format
         val systemMessage: String?
         val model: String
-        when (val builtinProjectId = room.builtInProjectId) {
-            null -> when (val projectId = room.projectId) {
+        when (val builtinProjectId = firstChatRoom.builtInProjectId) {
+            null -> when (val projectId = firstChatRoom.projectId) {
                 null -> throw IllegalStateException("Project Not Found.")
                 else -> {
                     val projectDao = appDatabase.projectDao()
                     val project = projectDao.get(projectId.id).first()
                     format = ChatGptClientInterface.Format.Text
                     systemMessage = project?.systemMessage
-                    model = room.modelName
+                    model = firstChatRoom.modelName
                 }
             }
 
@@ -138,7 +138,7 @@ class ChatRequestWorker(
 
             writeSummary(chatRoomId = chatRoomId, response = response)
 
-            chatRoomDao.update(room.copy(workerId = null))
+            chatRoomDao.update(chatRoom.get(chatRoomId = chatRoomId.value).first().copy(workerId = null))
 
             val updatedRoom = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val notificationTitle = updatedRoom.summary ?: roomTitle
@@ -154,7 +154,7 @@ class ChatRequestWorker(
             return Result.success()
         } catch (e: Throwable) {
             val chatRoomDao = appDatabase.chatRoomDao()
-            chatRoomDao.update(room.copy(workerId = null))
+            chatRoomDao.update(chatRoom.get(chatRoomId = chatRoomId.value).first().copy(workerId = null))
             snowFinishNotification(
                 title = "処理失敗",
                 message = e.message.orEmpty(),
