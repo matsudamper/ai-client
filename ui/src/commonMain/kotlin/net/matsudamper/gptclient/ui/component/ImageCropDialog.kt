@@ -307,6 +307,12 @@ private fun ImageContent(
                                     isDraggingTop = false
                                     isDraggingBottom = false
                                 },
+                                onDragCancel = {
+                                    isDraggingLeft = false
+                                    isDraggingRight = false
+                                    isDraggingTop = false
+                                    isDraggingBottom = false
+                                },
                                 onDrag = { change, dragAmount ->
                                     val rect = cropRect ?: return@detectDragGestures
 
