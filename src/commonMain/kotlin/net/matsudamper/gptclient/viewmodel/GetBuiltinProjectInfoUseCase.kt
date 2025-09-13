@@ -52,7 +52,10 @@ class GetBuiltinProjectInfoUseCase {
                     responseTransformer = {
                         TextMessageComposableInterface(CalendarResponseParser().toAnnotatedString(it))
                     },
-                    summaryProvider = { CalendarResponseParser().parse(it)?.results?.firstOrNull()?.title },
+                    summaryProvider = {
+                        val parsed = CalendarResponseParser().parse(it)
+                        parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
+                    },
                     model = ChatGptModel.Gpt5Nano,
                 )
             }
@@ -89,7 +92,10 @@ class GetBuiltinProjectInfoUseCase {
                     format = ChatGptClientInterface.Format.Json,
                     responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
                     model = ChatGptModel.Gpt5Nano,
-                    summaryProvider = { MoneyResponseParser().parse(it)?.results?.firstOrNull()?.title },
+                    summaryProvider = {
+                        val parsed = MoneyResponseParser().parse(it)
+                        parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
+                    },
                 )
             }
 
@@ -111,7 +117,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                     },
                     model = ChatGptModel.Gpt5Nano,
-                    summaryProvider = { null },
+                    summaryProvider = { it },
                 )
             }
 
