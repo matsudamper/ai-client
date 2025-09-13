@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlin.math.abs
 import coil3.compose.AsyncImage
+import net.matsudamper.gptclient.ui.systemGestureExclusion
 
 private const val EDGE_DETECTION_THRESHOLD = 40f
 private const val INITIAL_CROP_SIZE_RATIO = 0.8f
@@ -66,8 +67,10 @@ fun ImageCropDialog(
             var isDraggingEntire by remember { mutableStateOf(false) }
 
             Box(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
+                    .systemGestureExclusion()
                     .padding(top = 16.dp),
             ) {
                 AsyncImage(
