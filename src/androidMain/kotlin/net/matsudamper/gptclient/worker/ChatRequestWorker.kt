@@ -171,34 +171,31 @@ class ChatRequestWorker(
         response: GptResponse,
     ) {
         val chatRoomDao = appDatabase.chatRoomDao()
-        chatRoomDao.get(chatRoomId = chatRoomId.value).first().let { room ->
-            if (room.summary == null) {
-                val message = response.choices
-                    .firstOrNull { it.message.role == GptResponse.Choice.Role.Assistant }
-                    ?.message ?: return@let
+        val room = chatRoomDao.get(chatRoomId = chatRoomId.value).first()
+        val message = response.choices
+            .lastOrNull { it.message.role == GptResponse.Choice.Role.Assistant }
+            ?.message ?: return
 
-                val summary = when (val builtinProjectId = room.builtInProjectId) {
-                    null -> {
-                        message.content.take(50).takeIf { it.isNotBlank() }?.let { summary ->
-                            if (summary.length == 50 && message.content.length > 50) "$summary..." else summary
-                        }
-                    }
-
-                    else -> {
-                        val builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
-                            builtinProjectId = builtinProjectId,
-                            platformRequest = platformRequest,
-                        )
-                        builtinProjectInfo.summaryProvider(message.content)
-                    }
-                }
-
-                if (summary != null) {
-                    chatRoomDao.update(
-                        room.copy(summary = summary),
-                    )
+        val summary = when (val builtinProjectId = room.builtInProjectId) {
+            null -> {
+                message.content.take(50).takeIf { it.isNotBlank() }?.let { summary ->
+                    if (summary.length == 50 && message.content.length > 50) "$summary..." else summary
                 }
             }
+
+            else -> {
+                val builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
+                    builtinProjectId = builtinProjectId,
+                    platformRequest = platformRequest,
+                )
+                builtinProjectInfo.summaryProvider(message.content)
+            }
+        }
+
+        if (summary != null) {
+            chatRoomDao.update(
+                room.copy(summary = summary),
+            )
         }
     }
 
