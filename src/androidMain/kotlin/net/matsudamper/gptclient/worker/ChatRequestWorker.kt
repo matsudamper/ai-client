@@ -38,7 +38,6 @@ class ChatRequestWorker(
     private val settingDataStore: SettingDataStore = GlobalContext.get().get()
 
     override suspend fun doWork(): Result {
-        val notificationId = Random.nextInt()
         val chatRoomId = ChatRoomId(inputData.getLong(KEY_CHAT_ROOM_ID, 0))
         val message = inputData.getString(KEY_MESSAGE).orEmpty()
         val uris = inputData.getStringArray(KEY_URIS)?.toList().orEmpty()
@@ -53,7 +52,7 @@ class ChatRequestWorker(
         val pendingIntent = createPendingIntent(chatRoomId = chatRoomId.value.toString())
         setForeground(
             ForegroundInfo(
-                notificationId,
+                Random.nextInt(),
                 createNotificationBuilder(
                     title = roomTitle,
                     message = "処理中...",
@@ -146,7 +145,7 @@ class ChatRequestWorker(
                 title = "処理完了",
                 message = "${notificationTitle}の処理が完了しました",
                 channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
-                notificationId = notificationId,
+                notificationId = Random.nextInt(),
                 pendingIntent = pendingIntent,
             )
 
@@ -158,7 +157,7 @@ class ChatRequestWorker(
                 title = "処理失敗",
                 message = e.message.orEmpty(),
                 channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
-                notificationId = notificationId,
+                notificationId = Random.nextInt(),
                 pendingIntent = pendingIntent,
             )
             return Result.failure()
