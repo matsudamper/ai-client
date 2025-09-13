@@ -82,7 +82,6 @@ fun ImageCropDialog(
                             drawContent()
 
                             val rect = cropRect ?: return@drawWithContent
-                            val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize) ?: return@drawWithContent
                             val overlayColor = Color.Black.copy(alpha = 0.5f)
                             drawRect(
                                 color = overlayColor,
