@@ -13,6 +13,7 @@ import androidx.core.net.toUri
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
@@ -38,7 +39,9 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 val source = ImageDecoder.createSource(activity.contentResolver, uri)
                 val bitmap = ImageDecoder.decodeBitmap(source)
 
-                val hash = bitmap.hashCode().toString()
+                val hash = MessageDigest.getInstance("SHA-256")
+                    .digest(uriString.toByteArray())
+                    .joinToString("") { "%02x".format(it) }
                 val file = File(cacheDir, "$hash.png")
 
                 if (!file.exists()) {
