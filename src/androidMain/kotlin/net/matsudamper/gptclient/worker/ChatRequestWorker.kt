@@ -138,7 +138,11 @@ class ChatRequestWorker(
 
             writeSummary(chatRoomId = chatRoomId, response = response)
 
-            chatRoomDao.update(chatRoom.get(chatRoomId = chatRoomId.value).first().copy(workerId = null))
+            chatRoomDao.update(id = chatRoomId) {
+                it.copy(
+                    workerId = null,
+                )
+            }
 
             val updatedRoom = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val notificationTitle = updatedRoom.summary ?: roomTitle
@@ -154,7 +158,13 @@ class ChatRequestWorker(
             return Result.success()
         } catch (e: Throwable) {
             val chatRoomDao = appDatabase.chatRoomDao()
-            chatRoomDao.update(chatRoom.get(chatRoomId = chatRoomId.value).first().copy(workerId = null))
+
+            chatRoomDao.update(id = chatRoomId) {
+                it.copy(
+                    workerId = null,
+                )
+            }
+
             snowFinishNotification(
                 title = "処理失敗",
                 message = e.message.orEmpty(),

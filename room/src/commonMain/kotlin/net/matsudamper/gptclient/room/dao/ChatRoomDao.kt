@@ -5,7 +5,9 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import net.matsudamper.gptclient.room.entity.ChatRoom
+import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
 
 @Dao
@@ -69,4 +71,11 @@ interface ChatRoomDao {
 
     @Query("DELETE FROM chat_room where id = :chatRoomId")
     suspend fun delete(chatRoomId: Long)
+
+    suspend fun update(id: ChatRoomId, block: (ChatRoom) -> Unit) : ChatRoom {
+        val chatRoom = get(id.value).first()
+        val new = chatRoom.apply(block)
+        update(new)
+        return new
+    }
 }
