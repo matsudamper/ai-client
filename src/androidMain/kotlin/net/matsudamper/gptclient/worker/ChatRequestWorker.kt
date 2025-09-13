@@ -309,6 +309,7 @@ class ChatRequestWorker(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .setOngoing(true)
     }
 
     companion object {
