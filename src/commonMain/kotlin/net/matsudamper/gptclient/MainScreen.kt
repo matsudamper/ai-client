@@ -107,7 +107,7 @@ public fun MainScreen(
         modifier = modifier,
     ) {
         BoxWithConstraints {
-            val maxWidth = maxWidth
+            val maxWidth = this.maxWidth
             Box {
                 val panelWidth = 320.dp
                 val offset by animateDpAsState(
