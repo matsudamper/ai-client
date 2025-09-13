@@ -58,7 +58,9 @@ class ChatRequestWorker(
                     message = "処理中...",
                     channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
                     pendingIntent = pendingIntent,
-                ).setProgress(1,1, true).build(),
+                )
+                    .setOngoing(true)
+                    .setProgress(1, 1, true).build(),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             ),
         )
@@ -308,7 +310,6 @@ class ChatRequestWorker(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .setOngoing(true)
     }
 
     companion object {
