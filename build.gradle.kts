@@ -40,7 +40,7 @@ group = "net.matsudamper.gptclient"
 version = "1.0-SNAPSHOT"
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "net.matsudamper.gptclient"
 
     buildTypes {
