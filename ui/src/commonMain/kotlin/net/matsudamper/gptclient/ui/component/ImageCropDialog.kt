@@ -80,6 +80,7 @@ fun ImageCropDialog(
             ) {
                 ImageContent(
                     imageUri = imageUri,
+                    initialRect = initialRect,
                     imageRectProviderFlow = remember(imageRectProviderFlow) { imageRectProviderFlow.consumeAsFlow() },
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -123,6 +124,7 @@ fun ImageCropDialog(
 @Composable
 private fun ImageContent(
     imageUri: String,
+    initialRect: Rect?,
     imageRectProviderFlow: Flow<(Rect?) -> Unit>,
     modifier: Modifier = Modifier,
 ) {
@@ -214,13 +216,32 @@ private fun ImageContent(
                     )
 
                     cropRect = run {
-                        val paddingRatio = (1 - INITIAL_CROP_SIZE_RATIO) / 2
-                        Rect(
-                            left = imageSize.width * paddingRatio + offset.x,
-                            top = imageSize.height * paddingRatio + offset.y,
-                            right = imageSize.width * (1 - paddingRatio) + offset.x,
-                            bottom = imageSize.height * (1 - paddingRatio) + offset.y,
-                        )
+                        if (initialRect != null) {
+                            // 実画像のピクセル座標からUI表示座標への変換
+                            val imageIntrinsicSize = asyncImageState.painter.intrinsicSize
+                            val imageRelativeCropRect = Rect(
+                                left = initialRect.left / imageIntrinsicSize.width,
+                                top = initialRect.top / imageIntrinsicSize.height,
+                                right = initialRect.right / imageIntrinsicSize.width,
+                                bottom = initialRect.bottom / imageIntrinsicSize.height,
+                            )
+
+                            // UI表示座標に変換
+                            Rect(
+                                left = imageRelativeCropRect.left * imageSize.width + offset.x,
+                                top = imageRelativeCropRect.top * imageSize.height + offset.y,
+                                right = imageRelativeCropRect.right * imageSize.width + offset.x,
+                                bottom = imageRelativeCropRect.bottom * imageSize.height + offset.y,
+                            )
+                        } else {
+                            val paddingRatio = (1 - INITIAL_CROP_SIZE_RATIO) / 2
+                            Rect(
+                                left = imageSize.width * paddingRatio + offset.x,
+                                top = imageSize.height * paddingRatio + offset.y,
+                                right = imageSize.width * (1 - paddingRatio) + offset.x,
+                                bottom = imageSize.height * (1 - paddingRatio) + offset.y,
+                            )
+                        }
                     }
                 }
                 androidx.compose.foundation.Canvas(
