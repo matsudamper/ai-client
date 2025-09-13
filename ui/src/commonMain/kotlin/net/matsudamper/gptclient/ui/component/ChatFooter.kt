@@ -95,7 +95,7 @@ internal fun ChatFooter(
     if (showCropImageUri != null) {
         ImageCropDialog(
             imageUri = showCropImageUri.imageUri,
-            rect = remember(showCropImageUri.rect) {
+            initialRect = remember(showCropImageUri.rect) {
                 if (showCropImageUri.rect == null) return@remember null
                 Rect(
                     left = showCropImageUri.rect.left,
