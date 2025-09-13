@@ -109,63 +109,61 @@ fun ImageCropDialog(
                                 change.consume()
                                 val actualImageRect = getActualImageRect(containerSize, intrinsicImageSize)
                                 if (actualImageRect == null) return@detectDragGestures
+                                val rect = cropRect ?: return@detectDragGestures
 
-                                val rect = cropRect
-                                if (rect != null) {
-                                    var newLeft = rect.left
-                                    var newTop = rect.top
-                                    var newRight = rect.right
-                                    var newBottom = rect.bottom
+                                var newLeft = rect.left
+                                var newTop = rect.top
+                                var newRight = rect.right
+                                var newBottom = rect.bottom
 
-                                    if (isDraggingEntire) {
-                                        val rectWidth = rect.width
-                                        val rectHeight = rect.height
+                                if (isDraggingEntire) {
+                                    val rectWidth = rect.width
+                                    val rectHeight = rect.height
 
+                                    newLeft = (rect.left + dragAmount.x).coerceIn(
+                                        actualImageRect.left,
+                                        actualImageRect.right - rectWidth,
+                                    )
+                                    newRight = newLeft + rectWidth
+
+                                    newTop = (rect.top + dragAmount.y).coerceIn(
+                                        actualImageRect.top,
+                                        actualImageRect.bottom - rectHeight,
+                                    )
+                                    newBottom = newTop + rectHeight
+                                } else {
+                                    if (isDraggingLeft) {
                                         newLeft = (rect.left + dragAmount.x).coerceIn(
                                             actualImageRect.left,
-                                            actualImageRect.right - rectWidth,
+                                            rect.right - EDGE_DETECTION_THRESHOLD,
                                         )
-                                        newRight = newLeft + rectWidth
-
+                                    }
+                                    if (isDraggingRight) {
+                                        newRight = (rect.right + dragAmount.x).coerceIn(
+                                            rect.left + EDGE_DETECTION_THRESHOLD,
+                                            actualImageRect.right,
+                                        )
+                                    }
+                                    if (isDraggingTop) {
                                         newTop = (rect.top + dragAmount.y).coerceIn(
                                             actualImageRect.top,
-                                            actualImageRect.bottom - rectHeight,
+                                            rect.bottom - EDGE_DETECTION_THRESHOLD,
                                         )
-                                        newBottom = newTop + rectHeight
-                                    } else {
-                                        if (isDraggingLeft) {
-                                            newLeft = (rect.left + dragAmount.x).coerceIn(
-                                                actualImageRect.left,
-                                                rect.right - EDGE_DETECTION_THRESHOLD,
-                                            )
-                                        }
-                                        if (isDraggingRight) {
-                                            newRight = (rect.right + dragAmount.x).coerceIn(
-                                                rect.left + EDGE_DETECTION_THRESHOLD,
-                                                actualImageRect.right,
-                                            )
-                                        }
-                                        if (isDraggingTop) {
-                                            newTop = (rect.top + dragAmount.y).coerceIn(
-                                                actualImageRect.top,
-                                                rect.bottom - EDGE_DETECTION_THRESHOLD,
-                                            )
-                                        }
-                                        if (isDraggingBottom) {
-                                            newBottom = (rect.bottom + dragAmount.y).coerceIn(
-                                                rect.top + EDGE_DETECTION_THRESHOLD,
-                                                actualImageRect.bottom,
-                                            )
-                                        }
                                     }
-
-                                    cropRect = Rect(
-                                        left = newLeft,
-                                        top = newTop,
-                                        right = newRight,
-                                        bottom = newBottom,
-                                    )
+                                    if (isDraggingBottom) {
+                                        newBottom = (rect.bottom + dragAmount.y).coerceIn(
+                                            rect.top + EDGE_DETECTION_THRESHOLD,
+                                            actualImageRect.bottom,
+                                        )
+                                    }
                                 }
+
+                                cropRect = Rect(
+                                    left = newLeft,
+                                    top = newTop,
+                                    right = newRight,
+                                    bottom = newBottom,
+                                )
                             }
                         },
                     model = imageUri,
