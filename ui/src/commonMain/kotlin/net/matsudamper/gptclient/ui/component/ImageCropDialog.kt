@@ -2,9 +2,11 @@ package net.matsudamper.gptclient.ui.component
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -38,6 +42,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -161,6 +166,7 @@ private fun ImageContent(
                 var isDraggingRight by remember { mutableStateOf(false) }
                 var isDraggingTop by remember { mutableStateOf(false) }
                 var isDraggingBottom by remember { mutableStateOf(false) }
+
                 LaunchedEffect(imageRectProviderFlow) {
                     imageRectProviderFlow.collect {
                         val currentCropRect = cropRect
@@ -244,60 +250,107 @@ private fun ImageContent(
                         }
                     }
                 }
+                val topBarRect by remember {
+                    derivedStateOf {
+                        val cropRect = cropRect ?: Rect.Zero
+                        Rect(
+                            left = cropRect.left - EDGE_DETECTION_THRESHOLD,
+                            right = cropRect.right + EDGE_DETECTION_THRESHOLD,
+                            top = cropRect.top - EDGE_DETECTION_THRESHOLD,
+                            bottom = cropRect.top + EDGE_DETECTION_THRESHOLD,
+                        )
+                    }
+                }
+                val bottomBarRect by remember {
+                    derivedStateOf {
+                        val cropRect = cropRect ?: Rect.Zero
+                        Rect(
+                            left = cropRect.left - EDGE_DETECTION_THRESHOLD,
+                            right = cropRect.right + EDGE_DETECTION_THRESHOLD,
+                            top = cropRect.bottom - EDGE_DETECTION_THRESHOLD,
+                            bottom = cropRect.bottom + EDGE_DETECTION_THRESHOLD,
+                        )
+                    }
+                }
+                val leftBarRect by remember {
+                    derivedStateOf {
+                        val cropRect = cropRect ?: Rect.Zero
+                        Rect(
+                            left = cropRect.left - EDGE_DETECTION_THRESHOLD,
+                            right = cropRect.left + EDGE_DETECTION_THRESHOLD,
+                            top = cropRect.top - EDGE_DETECTION_THRESHOLD,
+                            bottom = cropRect.bottom + EDGE_DETECTION_THRESHOLD,
+                        )
+                    }
+                }
+                val rightBarRect by remember {
+                    derivedStateOf {
+                        val cropRect = cropRect ?: Rect.Zero
+                        Rect(
+                            left = cropRect.right - EDGE_DETECTION_THRESHOLD,
+                            right = cropRect.right + EDGE_DETECTION_THRESHOLD,
+                            top = cropRect.top - EDGE_DETECTION_THRESHOLD,
+                            bottom = cropRect.bottom + EDGE_DETECTION_THRESHOLD,
+                        )
+                    }
+                }
+
                 androidx.compose.foundation.Canvas(
                     modifier = Modifier.fillMaxSize()
-                        .transformable(
-                            state = rememberTransformableState { zoomChange, panChange, _ ->
-                                scale *= zoomChange
-                                offset += IntOffset(
-                                    x = panChange.x.toInt(),
-                                    y = panChange.y.toInt(),
-                                )
-                            },
-                        )
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown()
+                                if (down.isConsumed) return@awaitEachGesture
+                                val onRectBar = listOf(
+                                    topBarRect,
+                                    bottomBarRect,
+                                    rightBarRect,
+                                    leftBarRect,
+                                ).any { it.contains(down.position) }
+                                if (onRectBar) return@awaitEachGesture
+
+                                do {
+                                    val event = awaitPointerEvent()
+
+                                    scale *= event.calculateZoom()
+                                    offset += event.calculatePan().let { pan ->
+                                        IntOffset(
+                                            x = pan.x.toInt(),
+                                            y = pan.y.toInt(),
+                                        )
+                                    }
+                                } while (event.changes.fastAny { it.pressed })
+                            }
+                        }
                         .pointerInput(Unit) {
                             detectDragGestures(
-                                onDragStart = { offset ->
-                                    val cropRect = cropRect ?: return@detectDragGestures
+                                orientationLock = null,
+                                shouldAwaitTouchSlop = { true },
+                                onDragStart = { down, slopTriggerChange, _ ->
+                                    val offset = down.position
                                     when {
-                                        // top
-                                        Rect(
-                                            left = cropRect.left - EDGE_DETECTION_THRESHOLD,
-                                            right = cropRect.right + EDGE_DETECTION_THRESHOLD,
-                                            top = cropRect.top - EDGE_DETECTION_THRESHOLD,
-                                            bottom = cropRect.top + EDGE_DETECTION_THRESHOLD,
-                                        ).contains(offset) -> {
+                                        topBarRect.contains(offset) -> {
                                             isDraggingTop = true
+                                            down.consume()
+                                            slopTriggerChange.consume()
                                         }
 
-                                        // bottom
-                                        Rect(
-                                            left = cropRect.left - EDGE_DETECTION_THRESHOLD,
-                                            right = cropRect.right + EDGE_DETECTION_THRESHOLD,
-                                            top = cropRect.bottom - EDGE_DETECTION_THRESHOLD,
-                                            bottom = cropRect.bottom + EDGE_DETECTION_THRESHOLD,
-                                        ).contains(offset) -> {
+                                        bottomBarRect.contains(offset) -> {
                                             isDraggingBottom = true
+                                            down.consume()
+                                            slopTriggerChange.consume()
                                         }
 
-                                        // left
-                                        Rect(
-                                            left = cropRect.left - EDGE_DETECTION_THRESHOLD,
-                                            right = cropRect.left + EDGE_DETECTION_THRESHOLD,
-                                            top = cropRect.top - EDGE_DETECTION_THRESHOLD,
-                                            bottom = cropRect.bottom + EDGE_DETECTION_THRESHOLD,
-                                        ).contains(offset) -> {
+                                        leftBarRect.contains(offset) -> {
                                             isDraggingLeft = true
+                                            down.consume()
+                                            slopTriggerChange.consume()
                                         }
 
-                                        // right
-                                        Rect(
-                                            left = cropRect.right - EDGE_DETECTION_THRESHOLD,
-                                            right = cropRect.right + EDGE_DETECTION_THRESHOLD,
-                                            top = cropRect.top - EDGE_DETECTION_THRESHOLD,
-                                            bottom = cropRect.bottom + EDGE_DETECTION_THRESHOLD,
-                                        ).contains(offset) -> {
+                                        rightBarRect.contains(offset) -> {
                                             isDraggingRight = true
+                                            down.consume()
+                                            slopTriggerChange.consume()
                                         }
                                     }
                                 },
@@ -316,24 +369,28 @@ private fun ImageContent(
                                 onDrag = { change, dragAmount ->
                                     val rect = cropRect ?: return@detectDragGestures
 
-                                    cropRect = Rect(
-                                        left = when {
-                                            isDraggingLeft -> (rect.left + dragAmount.x).coerceAtMost(rect.right)
-                                            else -> rect.left
-                                        },
-                                        top = when {
-                                            isDraggingTop -> (rect.top + dragAmount.y).coerceAtMost(rect.bottom)
-                                            else -> rect.top
-                                        },
-                                        right = when {
-                                            isDraggingRight -> (rect.right + dragAmount.x).coerceAtLeast(rect.left)
-                                            else -> rect.right
-                                        },
-                                        bottom = when {
-                                            isDraggingBottom -> (rect.bottom + dragAmount.y).coerceAtLeast(rect.top)
-                                            else -> rect.bottom
-                                        },
-                                    )
+                                    if (isDraggingLeft || isDraggingRight || isDraggingTop || isDraggingBottom) {
+                                        cropRect = Rect(
+                                            left = when {
+                                                isDraggingLeft -> (rect.left + dragAmount.x).coerceAtMost(rect.right)
+                                                else -> rect.left
+                                            },
+                                            top = when {
+                                                isDraggingTop -> (rect.top + dragAmount.y).coerceAtMost(rect.bottom)
+                                                else -> rect.top
+                                            },
+                                            right = when {
+                                                isDraggingRight -> (rect.right + dragAmount.x).coerceAtLeast(rect.left)
+                                                else -> rect.right
+                                            },
+                                            bottom = when {
+                                                isDraggingBottom -> (rect.bottom + dragAmount.y).coerceAtLeast(rect.top)
+                                                else -> rect.bottom
+                                            },
+                                        )
+
+                                        change.consume()
+                                    }
                                 },
                             )
                         },
