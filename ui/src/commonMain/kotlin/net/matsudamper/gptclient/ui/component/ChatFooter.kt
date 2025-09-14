@@ -1,8 +1,10 @@
 package net.matsudamper.gptclient.ui.component
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -29,12 +31,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.compose.rememberAsyncImagePainter
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowUp
 import compose.icons.feathericons.Image
@@ -54,6 +67,7 @@ data class ChatFooterImage(
         val right: Float,
         val bottom: Float,
     )
+
     @Immutable
     interface Listener {
         fun crop(rect: Rect)
@@ -71,22 +85,22 @@ internal fun ChatFooter(
     onClickRetry: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    var showImage by remember { mutableStateOf<ChatFooterImage?>(null) }
+    val showImageState = remember { mutableStateOf<ChatFooterImage?>(null) }
     val showCropImageState = remember { mutableStateOf<ChatFooterImage?>(null) }
 
+    val showImage = showImageState.value
     if (showImage != null) {
         Dialog(
-            onDismissRequest = { showImage = null },
+            onDismissRequest = { showImageState.value = null },
             properties = DialogProperties(
                 usePlatformDefaultWidth = false,
             ),
         ) {
-            AsyncImage(
+            CroppedImageView(
+                imageUri = showImage.imageUri,
+                cropRect = showImage.rect,
                 modifier = Modifier.fillMaxSize()
                     .zoomable(rememberZoomState()),
-                model = showImage?.imageUri,
-                contentScale = ContentScale.Fit,
-                contentDescription = null,
             )
         }
     }
@@ -143,7 +157,7 @@ internal fun ChatFooter(
                         androidx.compose.material3.DropdownMenuItem(
                             text = { androidx.compose.material3.Text("View") },
                             onClick = {
-                                showImage = media
+                                showImageState.value = media
                                 showMenu = false
                             },
                         )
@@ -246,6 +260,98 @@ private fun FooterTextSection(
             Icon(
                 imageVector = FeatherIcons.ArrowUp,
                 contentDescription = "send",
+            )
+        }
+    }
+}
+
+@Composable
+private fun CroppedImageView(
+    imageUri: String,
+    cropRect: ChatFooterImage.Rect?,
+    modifier: Modifier = Modifier,
+) {
+    val asyncImagePainter = rememberAsyncImagePainter(imageUri)
+    val asyncImageState by asyncImagePainter.state.collectAsStateWithLifecycle()
+
+    when (val state = asyncImageState) {
+        is AsyncImagePainter.State.Success -> {
+            BoxWithConstraints(
+                modifier = modifier
+                    .fillMaxSize()
+                    .clipToBounds(),
+            ) {
+                val maxWidth = this.maxWidth
+                val maxHeight = this.maxHeight
+                val containerSize = with(LocalDensity.current) {
+                    Size(maxWidth.toPx(), maxHeight.toPx())
+                }
+
+                Canvas(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    val imageLeft = cropRect?.left ?: 0f
+                    val imageTop = cropRect?.top ?: 0f
+                    val imageRight = cropRect?.right ?: state.painter.intrinsicSize.width
+                    val imageBottom = cropRect?.bottom ?: state.painter.intrinsicSize.height
+
+                    val imageWidth = imageRight - imageLeft
+                    val imageHeight = imageBottom - imageTop
+
+                    val widthScale = containerSize.width / imageWidth
+                    val heightScale = containerSize.height / imageHeight
+                    val scale = if (widthScale > heightScale) {
+                        heightScale
+                    } else {
+                        widthScale
+                    }
+
+                    val imageSize = Size(imageWidth, imageHeight) * scale
+                    val offset = IntOffset(
+                        x = ((containerSize.width - imageSize.width) / 2).toInt(),
+                        y = ((containerSize.height - imageSize.height) / 2).toInt(),
+                    )
+
+                    translate(left = offset.x.toFloat(), top = offset.y.toFloat()) {
+                        scale(
+                            scale = scale,
+                            pivot = Offset.Zero,
+                        ) {
+                            translate(left = -imageLeft, top = -imageTop) {
+                                clipRect(
+                                    left = imageLeft,
+                                    top = imageTop,
+                                    right = imageRight,
+                                    bottom = imageBottom,
+                                ) {
+                                    with(state.painter) {
+                                        draw(
+                                            size = state.painter.intrinsicSize,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        is AsyncImagePainter.State.Loading -> {
+            Box(
+                modifier = modifier,
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
+        else -> {
+            AsyncImage(
+                modifier = modifier,
+                model = imageUri,
+                contentScale = ContentScale.Fit,
+                contentDescription = null,
             )
         }
     }
