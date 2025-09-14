@@ -454,7 +454,8 @@ private fun ImageContent(
                                     val rect = cropRect ?: return@detectDragGestures
 
                                     if (isDraggingLeft || isDraggingRight || isDraggingTop || isDraggingBottom ||
-                                        isDraggingTopLeft || isDraggingTopRight || isDraggingBottomLeft || isDraggingBottomRight) {
+                                        isDraggingTopLeft || isDraggingTopRight || isDraggingBottomLeft || isDraggingBottomRight
+                                    ) {
                                         cropRect = Rect(
                                             left = when {
                                                 isDraggingLeft -> (rect.left + dragAmount.x).coerceAtMost(rect.right)
