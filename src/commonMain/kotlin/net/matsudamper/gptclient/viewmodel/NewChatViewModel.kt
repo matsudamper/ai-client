@@ -100,7 +100,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                                 Navigator.Chat.ChatOpenContext.NewMessage(
                                     initialMessage = text,
                                     uriList = viewModelStateFlow.value.mediaList.mapNotNull map@{
-                                        val rect = it.rect ?: return@map null
+                                        val rect = it.rect ?: return@map it.imageUri
                                         platformRequest.cropImage(
                                             uri = it.imageUri,
                                             cropRect = PlatformRequest.CropRect(

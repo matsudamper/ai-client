@@ -133,7 +133,7 @@ class ProjectViewModel(
                         openContext = Navigator.Chat.ChatOpenContext.NewMessage(
                             initialMessage = text,
                             uriList = viewModelStateFlow.value.uriList.mapNotNull map@{
-                                val rect = it.rect ?: return@map null
+                                val rect = it.rect ?: return@map it.imageUri
 
                                 platformRequest.cropImage(
                                     it.imageUri,
