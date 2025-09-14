@@ -72,9 +72,9 @@ interface ChatRoomDao {
     @Query("DELETE FROM chat_room where id = :chatRoomId")
     suspend fun delete(chatRoomId: Long)
 
-    suspend fun update(id: ChatRoomId, block: (ChatRoom) -> Unit) : ChatRoom {
+    suspend fun update(id: ChatRoomId, block: (ChatRoom) -> ChatRoom) : ChatRoom {
         val chatRoom = get(id.value).first()
-        val new = chatRoom.apply(block)
+        val new = block(chatRoom)
         update(new)
         return new
     }
