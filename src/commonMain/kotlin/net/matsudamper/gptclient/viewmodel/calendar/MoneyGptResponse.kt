@@ -6,7 +6,10 @@ import kotlinx.serialization.Serializable
 import net.matsudamper.gptclient.serialization.ISO8601LocalDateTimeSerializer
 
 @Serializable
-data class MoneyGptResponse(@SerialName("error_message") val errorMessage: String?, @SerialName("results") val results: List<Result>) {
+data class MoneyGptResponse(
+    @SerialName("error_message") val errorMessage: String?,
+    @SerialName("results") val results: List<Result>,
+) {
     @Serializable
     data class Result(
         @Serializable(with = ISO8601LocalDateTimeSerializer::class)
