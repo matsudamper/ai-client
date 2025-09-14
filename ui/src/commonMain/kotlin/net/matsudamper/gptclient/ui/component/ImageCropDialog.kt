@@ -166,6 +166,10 @@ private fun ImageContent(
                 var isDraggingRight by remember { mutableStateOf(false) }
                 var isDraggingTop by remember { mutableStateOf(false) }
                 var isDraggingBottom by remember { mutableStateOf(false) }
+                var isDraggingTopLeft by remember { mutableStateOf(false) }
+                var isDraggingTopRight by remember { mutableStateOf(false) }
+                var isDraggingBottomLeft by remember { mutableStateOf(false) }
+                var isDraggingBottomRight by remember { mutableStateOf(false) }
 
                 LaunchedEffect(imageRectProviderFlow) {
                     imageRectProviderFlow.collect {
@@ -295,6 +299,51 @@ private fun ImageContent(
                     }
                 }
 
+                val topLeftCornerRect by remember {
+                    derivedStateOf {
+                        val cropRect = cropRect ?: Rect.Zero
+                        Rect(
+                            left = cropRect.left - EDGE_DETECTION_THRESHOLD,
+                            right = cropRect.left + EDGE_DETECTION_THRESHOLD,
+                            top = cropRect.top - EDGE_DETECTION_THRESHOLD,
+                            bottom = cropRect.top + EDGE_DETECTION_THRESHOLD,
+                        )
+                    }
+                }
+                val topRightCornerRect by remember {
+                    derivedStateOf {
+                        val cropRect = cropRect ?: Rect.Zero
+                        Rect(
+                            left = cropRect.right - EDGE_DETECTION_THRESHOLD,
+                            right = cropRect.right + EDGE_DETECTION_THRESHOLD,
+                            top = cropRect.top - EDGE_DETECTION_THRESHOLD,
+                            bottom = cropRect.top + EDGE_DETECTION_THRESHOLD,
+                        )
+                    }
+                }
+                val bottomLeftCornerRect by remember {
+                    derivedStateOf {
+                        val cropRect = cropRect ?: Rect.Zero
+                        Rect(
+                            left = cropRect.left - EDGE_DETECTION_THRESHOLD,
+                            right = cropRect.left + EDGE_DETECTION_THRESHOLD,
+                            top = cropRect.bottom - EDGE_DETECTION_THRESHOLD,
+                            bottom = cropRect.bottom + EDGE_DETECTION_THRESHOLD,
+                        )
+                    }
+                }
+                val bottomRightCornerRect by remember {
+                    derivedStateOf {
+                        val cropRect = cropRect ?: Rect.Zero
+                        Rect(
+                            left = cropRect.right - EDGE_DETECTION_THRESHOLD,
+                            right = cropRect.right + EDGE_DETECTION_THRESHOLD,
+                            top = cropRect.bottom - EDGE_DETECTION_THRESHOLD,
+                            bottom = cropRect.bottom + EDGE_DETECTION_THRESHOLD,
+                        )
+                    }
+                }
+
                 androidx.compose.foundation.Canvas(
                     modifier = Modifier.fillMaxSize()
                         .pointerInput(Unit) {
@@ -306,6 +355,10 @@ private fun ImageContent(
                                     bottomBarRect,
                                     rightBarRect,
                                     leftBarRect,
+                                    topLeftCornerRect,
+                                    topRightCornerRect,
+                                    bottomLeftCornerRect,
+                                    bottomRightCornerRect,
                                 ).any { it.contains(down.position) }
                                 if (onRectBar) return@awaitEachGesture
 
@@ -329,6 +382,30 @@ private fun ImageContent(
                                 onDragStart = { down, slopTriggerChange, _ ->
                                     val offset = down.position
                                     when {
+                                        topLeftCornerRect.contains(offset) -> {
+                                            isDraggingTopLeft = true
+                                            down.consume()
+                                            slopTriggerChange.consume()
+                                        }
+
+                                        topRightCornerRect.contains(offset) -> {
+                                            isDraggingTopRight = true
+                                            down.consume()
+                                            slopTriggerChange.consume()
+                                        }
+
+                                        bottomLeftCornerRect.contains(offset) -> {
+                                            isDraggingBottomLeft = true
+                                            down.consume()
+                                            slopTriggerChange.consume()
+                                        }
+
+                                        bottomRightCornerRect.contains(offset) -> {
+                                            isDraggingBottomRight = true
+                                            down.consume()
+                                            slopTriggerChange.consume()
+                                        }
+
                                         topBarRect.contains(offset) -> {
                                             isDraggingTop = true
                                             down.consume()
@@ -359,32 +436,49 @@ private fun ImageContent(
                                     isDraggingRight = false
                                     isDraggingTop = false
                                     isDraggingBottom = false
+                                    isDraggingTopLeft = false
+                                    isDraggingTopRight = false
+                                    isDraggingBottomLeft = false
+                                    isDraggingBottomRight = false
                                 },
                                 onDragCancel = {
                                     isDraggingLeft = false
                                     isDraggingRight = false
                                     isDraggingTop = false
                                     isDraggingBottom = false
+                                    isDraggingTopLeft = false
+                                    isDraggingTopRight = false
+                                    isDraggingBottomLeft = false
+                                    isDraggingBottomRight = false
                                 },
                                 onDrag = { change, dragAmount ->
                                     val rect = cropRect ?: return@detectDragGestures
 
-                                    if (isDraggingLeft || isDraggingRight || isDraggingTop || isDraggingBottom) {
+                                    if (isDraggingLeft || isDraggingRight || isDraggingTop || isDraggingBottom ||
+                                        isDraggingTopLeft || isDraggingTopRight || isDraggingBottomLeft || isDraggingBottomRight) {
                                         cropRect = Rect(
                                             left = when {
                                                 isDraggingLeft -> (rect.left + dragAmount.x).coerceAtMost(rect.right)
+                                                isDraggingTopLeft -> (rect.left + dragAmount.x).coerceAtMost(rect.right)
+                                                isDraggingBottomLeft -> (rect.left + dragAmount.x).coerceAtMost(rect.right)
                                                 else -> rect.left
                                             },
                                             top = when {
                                                 isDraggingTop -> (rect.top + dragAmount.y).coerceAtMost(rect.bottom)
+                                                isDraggingTopLeft -> (rect.top + dragAmount.y).coerceAtMost(rect.bottom)
+                                                isDraggingTopRight -> (rect.top + dragAmount.y).coerceAtMost(rect.bottom)
                                                 else -> rect.top
                                             },
                                             right = when {
                                                 isDraggingRight -> (rect.right + dragAmount.x).coerceAtLeast(rect.left)
+                                                isDraggingTopRight -> (rect.right + dragAmount.x).coerceAtLeast(rect.left)
+                                                isDraggingBottomRight -> (rect.right + dragAmount.x).coerceAtLeast(rect.left)
                                                 else -> rect.right
                                             },
                                             bottom = when {
                                                 isDraggingBottom -> (rect.bottom + dragAmount.y).coerceAtLeast(rect.top)
+                                                isDraggingBottomLeft -> (rect.bottom + dragAmount.y).coerceAtLeast(rect.top)
+                                                isDraggingBottomRight -> (rect.bottom + dragAmount.y).coerceAtLeast(rect.top)
                                                 else -> rect.bottom
                                             },
                                         )
