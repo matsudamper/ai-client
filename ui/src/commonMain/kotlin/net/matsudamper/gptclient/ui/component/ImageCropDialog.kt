@@ -503,7 +503,7 @@ private fun ImageContent(
                         null -> Unit
 
                         else -> {
-                            drawRect(
+                            drawClipRect(
                                 rect = cropRect,
                             )
                         }
@@ -514,7 +514,7 @@ private fun ImageContent(
     }
 }
 
-private fun DrawScope.drawRect(rect: Rect) {
+private fun DrawScope.drawClipRect(rect: Rect) {
     val overlayColor = Color.Black.copy(alpha = 0.5f)
     drawRect(
         color = overlayColor,
