@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.EmojiMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
+import net.matsudamper.gptclient.util.Log
 import net.matsudamper.gptclient.viewmodel.EmojiGptResponse
 
 class EmojiResponseParser {
@@ -14,7 +15,7 @@ class EmojiResponseParser {
     fun getEmojiList(original: String, onClick: (String) -> Unit): ChatMessageComposableInterface = try {
         val response = Json
             .decodeFromString<EmojiGptResponse>(original)
-        println(response)
+        Log.d("RESPONSE",response.toString())
         if (response.results.isEmpty()) {
             TextMessageComposableInterface(
                 AnnotatedString(response.errorMessage ?: original),

@@ -15,6 +15,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.util.Log
 
 class ChatGptClient(private val secretKey: String) : ChatGptClientInterface {
     override suspend fun request(
@@ -80,7 +81,7 @@ class ChatGptClient(private val secretKey: String) : ChatGptClientInterface {
             GptRequest.serializer(),
             sampleGptRequest,
         )
-        println("Request->$jsonString")
+        Log.d("Request", jsonString)
         val response: HttpResponse = withContext(Dispatchers.IO) {
             HttpClient(CIO) {
                 install(HttpTimeout) {
@@ -95,7 +96,7 @@ class ChatGptClient(private val secretKey: String) : ChatGptClientInterface {
             }
         }
         val responseJson = response.bodyAsText()
-        println("Response->$responseJson")
+        Log.d("Response", responseJson)
         return try {
             ChatGptClientInterface.GptResult.Success(Json.decodeFromString(GptResponse.serializer(), responseJson))
         } catch (e: SerializationException) {

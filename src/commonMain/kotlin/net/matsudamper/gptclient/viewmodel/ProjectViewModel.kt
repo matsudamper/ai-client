@@ -271,7 +271,6 @@ class ProjectViewModel(
                     appDatabase.projectDao().get(projectId = navigator.type.projectId.id)
                         .filterNotNull()
                         .collectLatest { project ->
-                            println("project -> $project")
                             viewModelStateFlow.update { viewModelState ->
                                 viewModelState.copy(
                                     systemInfo = ViewModelState.SystemInfoType.Project(project),
