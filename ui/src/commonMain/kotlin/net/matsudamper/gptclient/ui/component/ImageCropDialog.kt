@@ -33,9 +33,13 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.toRect
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -515,26 +519,23 @@ private fun ImageContent(
 }
 
 private fun DrawScope.drawClipRect(rect: Rect) {
-    val overlayColor = Color.Black.copy(alpha = 0.5f)
-    drawRect(
-        color = overlayColor,
-        size = Size(rect.left, size.height),
-    )
-    drawRect(
-        color = overlayColor,
-        topLeft = Offset(rect.right, 0f),
-        size = Size(size.width - rect.right, size.height),
-    )
-    drawRect(
-        color = overlayColor,
-        topLeft = Offset(rect.left, 0f),
-        size = Size(rect.width, rect.top),
-    )
-    drawRect(
-        color = overlayColor,
-        topLeft = Offset(rect.left, rect.bottom),
-        size = Size(rect.width, size.height - rect.bottom),
-    )
+    val overlayColor = Color.Black.copy(alpha = 0.8f)
+
+    drawIntoCanvas {
+        it.saveLayer(size.toRect(), Paint())
+        drawRect(
+            color = overlayColor,
+            size = size,
+        )
+
+        drawRect(
+            color = Color.Transparent,
+            topLeft = Offset(rect.left, rect.top),
+            size = Size(rect.width, rect.height),
+            blendMode = BlendMode.SrcOut,
+        )
+        it.restore()
+    }
 
     drawRect(
         color = Color.White,
