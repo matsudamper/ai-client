@@ -15,7 +15,7 @@ class EmojiResponseParser {
     fun getEmojiList(original: String, onClick: (String) -> Unit): ChatMessageComposableInterface = try {
         val response = Json
             .decodeFromString<EmojiGptResponse>(original)
-        Log.d("RESPONSE",response.toString())
+        Log.d("RESPONSE", response.toString())
         if (response.results.isEmpty()) {
             TextMessageComposableInterface(
                 AnnotatedString(response.errorMessage ?: original),

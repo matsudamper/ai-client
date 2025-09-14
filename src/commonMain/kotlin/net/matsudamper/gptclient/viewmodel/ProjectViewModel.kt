@@ -55,7 +55,7 @@ class ProjectViewModel(
             when (val info = viewModelStateFlow.value.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo,
                 null,
-                    -> return
+                -> return
 
                 is ViewModelState.SystemInfoType.Project -> {
                     viewModelScope.launch {
@@ -73,7 +73,7 @@ class ProjectViewModel(
             when (val systemInfo = viewModelStateFlow.value.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo,
                 null,
-                    -> return
+                -> return
 
                 is ViewModelState.SystemInfoType.Project -> {
                     viewModelScope.launch {
@@ -207,7 +207,7 @@ class ProjectViewModel(
                     val editable = when (viewModelState.systemInfo) {
                         null,
                         is ViewModelState.SystemInfoType.BuiltinInfo,
-                            -> false
+                        -> false
 
                         is ViewModelState.SystemInfoType.Project -> true
                     }
@@ -216,7 +216,7 @@ class ProjectViewModel(
                             is ViewModelState.SystemInfoType.Project -> viewModelState.systemInfo.project.name
                             is ViewModelState.SystemInfoType.BuiltinInfo,
                             null,
-                                -> navigator.title
+                            -> navigator.title
                         },
                         systemMessage = ProjectUiState.SystemMessage(
                             text = viewModelState.systemInfo?.getInfo()?.systemMessage.orEmpty(),
@@ -323,7 +323,7 @@ class ProjectViewModel(
                         when (val info = viewModelStateFlow.value.systemInfo) {
                             is ViewModelState.SystemInfoType.BuiltinInfo,
                             null,
-                                -> {
+                            -> {
                                 viewModelStateFlow.update {
                                     it.copy(
                                         overwriteModel = model,

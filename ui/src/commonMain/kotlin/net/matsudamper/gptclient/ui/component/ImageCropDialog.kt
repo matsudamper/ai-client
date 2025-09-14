@@ -123,7 +123,6 @@ fun ImageCropDialog(
                     Text("Complete")
                 }
             }
-
         }
     }
 }
@@ -142,7 +141,7 @@ private fun ImageContent(
         is AsyncImagePainter.State.Empty,
         is AsyncImagePainter.State.Error,
         is AsyncImagePainter.State.Loading,
-            -> {
+        -> {
             Box(
                 modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -457,8 +456,14 @@ private fun ImageContent(
                                 onDrag = { change, dragAmount ->
                                     val rect = cropRect ?: return@detectDragGestures
 
-                                    if (isDraggingLeft || isDraggingRight || isDraggingTop || isDraggingBottom ||
-                                        isDraggingTopLeft || isDraggingTopRight || isDraggingBottomLeft || isDraggingBottomRight
+                                    if (isDraggingLeft ||
+                                        isDraggingRight ||
+                                        isDraggingTop ||
+                                        isDraggingBottom ||
+                                        isDraggingTopLeft ||
+                                        isDraggingTopRight ||
+                                        isDraggingBottomLeft ||
+                                        isDraggingBottomRight
                                     ) {
                                         cropRect = Rect(
                                             left = when {

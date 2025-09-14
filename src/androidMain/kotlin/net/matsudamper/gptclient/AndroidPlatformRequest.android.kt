@@ -109,10 +109,10 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 val imageHeight = bitmap.height
 
                 val bitmapCropRect = android.graphics.RectF(
-                    cropRect.left ,
-                    cropRect.top ,
-                    cropRect.right ,
-                    cropRect.bottom ,
+                    cropRect.left,
+                    cropRect.top,
+                    cropRect.right,
+                    cropRect.bottom,
                 )
 
                 val validLeft = bitmapCropRect.left.coerceIn(0f, imageWidth.toFloat())
