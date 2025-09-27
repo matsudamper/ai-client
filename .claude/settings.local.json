@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:developer.android.com)",
-      "WebFetch(domain:www.jetbrains.com)"
+      "WebFetch(domain:www.jetbrains.com)",
+      "Bash(./gradlew:*)"
     ],
     "deny": [],
     "ask": []
