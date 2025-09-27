@@ -92,9 +92,15 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
             },
             selectedModel = "",
             projectNameDialog = null,
+            isLoading = false,
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     viewModelScope.launch {
+                        viewModelStateFlow.update {
+                            it.copy(
+                                isLoading = true,
+                            )
+                        }
                         navControllerProvider().navigate(
                             Navigator.Chat(
                                 Navigator.Chat.ChatOpenContext.NewMessage(
@@ -116,6 +122,11 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                                 ),
                             ),
                         )
+                        viewModelStateFlow.update {
+                            it.copy(
+                                isLoading = false,
+                            )
+                        }
                     }
                 }
 
@@ -201,6 +212,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                         visibleMediaLoading = viewModelState.mediaLoading,
                         selectedModel = viewModelState.selectedModel.modelName,
                         projectNameDialog = viewModelState.projectNameDialog,
+                        isLoading = viewModelState.isLoading,
                         projects = builtinProjects.plus(
                             viewModelState.projects.orEmpty().map {
                                 NewChatUiState.Project(
@@ -252,5 +264,6 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
         val selectedModel: ChatGptModel = ChatGptModel.Gpt5Nano,
         val projectNameDialog: NewChatUiState.ProjectNameDialog? = null,
         val projects: List<Project>? = null,
+        val isLoading: Boolean = false,
     )
 }

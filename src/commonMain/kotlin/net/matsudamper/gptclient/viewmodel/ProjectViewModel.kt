@@ -113,6 +113,11 @@ class ProjectViewModel(
         }
 
         override fun send(text: String) {
+            viewModelStateFlow.update {
+                it.copy(
+                    isLoading = true,
+                )
+            }
             val systemInfo = viewModelStateFlow.value.systemInfo ?: return
             val chatType = when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
@@ -150,10 +155,13 @@ class ProjectViewModel(
                         ),
                     ),
                 )
-            }
 
-            viewModelStateFlow.update {
-                it.copy(uriList = listOf())
+                viewModelStateFlow.update {
+                    it.copy(
+                        uriList = listOf(),
+                        isLoading = false,
+                    )
+                }
             }
         }
     }
@@ -228,6 +236,9 @@ class ProjectViewModel(
                         chatRoomsState = run rooms@{
                             val chatRooms = viewModelState.chatRooms
                                 ?: return@rooms ProjectUiState.ChatRoomsState.Loading
+                            if (viewModelState.isLoading) {
+                                return@rooms ProjectUiState.ChatRoomsState.Loading
+                            }
 
                             ProjectUiState.ChatRoomsState.Loaded(
                                 histories = chatRooms.map { room ->
@@ -353,6 +364,7 @@ class ProjectViewModel(
         val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: SystemInfoType? = null,
         val overwriteModel: ChatGptModel? = null,
+        val isLoading: Boolean = false,
     ) {
         sealed interface SystemInfoType {
             data class BuiltinInfo(val info: GetBuiltinProjectInfoUseCase.Info) : SystemInfoType {
