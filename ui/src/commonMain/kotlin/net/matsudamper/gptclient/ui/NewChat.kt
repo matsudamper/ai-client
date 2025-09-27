@@ -341,7 +341,7 @@ public fun NewChat(
                 selectedMedia = uiState.selectedMedia,
                 visibleMediaLoading = uiState.visibleMediaLoading,
                 onClickRetry = null,
-                enableSend = uiState.enableSend && state.text.isNotBlank(),
+                enableSend = uiState.enableSend || state.text.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .navigationBarsPadding(),
