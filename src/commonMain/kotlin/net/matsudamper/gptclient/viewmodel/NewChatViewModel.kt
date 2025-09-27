@@ -216,17 +216,17 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                         isLoading = viewModelState.isLoading,
                         enableSend = !viewModelState.mediaLoading,
                         projects = builtinProjects.plus(
-                            viewModelState.projects.orEmpty().map {
+                            viewModelState.projects.orEmpty().map { project ->
                                 NewChatUiState.Project(
-                                    name = it.name,
+                                    name = project.name,
                                     icon = NewChatUiState.Project.Icon.Favorite,
                                     listener = object : NewChatUiState.Project.Listener {
                                         override fun onClick() {
                                             navControllerProvider().navigate(
                                                 Navigator.Project(
-                                                    title = it.name,
+                                                    title = project.name,
                                                     type = Navigator.Project.ProjectType.Project(
-                                                        projectId = it.id,
+                                                        projectId = project.id,
                                                     ),
                                                 ),
                                             )
