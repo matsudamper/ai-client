@@ -103,6 +103,7 @@ class ChatViewModel(
             errorDialogMessage = null,
             modelLoadingState = ChatListUiState.ModelLoadingState.Loading,
             title = "",
+            enableSend = false,
         ),
     ).also { uiState ->
         viewModelScope.launch {
@@ -160,6 +161,7 @@ class ChatViewModel(
                         },
                         selectedImage = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
+                        enableSend = !viewModelState.isChatLoading && !viewModelState.isWorkInProgress && !viewModelState.isMediaLoading,
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isWorkInProgress,

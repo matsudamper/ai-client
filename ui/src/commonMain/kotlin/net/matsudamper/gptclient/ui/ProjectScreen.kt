@@ -72,6 +72,7 @@ data class ProjectUiState(
     val selectedMedia: List<ChatFooterImage>,
     val systemMessage: SystemMessage,
     val visibleMediaLoading: Boolean,
+    val enableSend: Boolean,
     val chatRoomsState: ChatRoomsState,
     val modelState: ModelState,
     val listener: Listener,
@@ -354,6 +355,7 @@ fun ProjectScreen(
             onClickVoice = { uiState.listener.recordVoice() },
             selectedMedia = uiState.selectedMedia,
             visibleMediaLoading = uiState.visibleMediaLoading,
+            enableSend = uiState.enableSend,
             onClickRetry = null,
             onClickSend = {
                 uiState.listener.send(state.text.toString())

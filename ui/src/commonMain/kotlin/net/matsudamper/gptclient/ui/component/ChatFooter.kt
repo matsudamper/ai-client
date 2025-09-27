@@ -79,6 +79,7 @@ internal fun ChatFooter(
     textFieldState: TextFieldState,
     selectedMedia: List<ChatFooterImage>,
     visibleMediaLoading: Boolean,
+    enableSend: Boolean,
     onClickAddImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
@@ -192,6 +193,7 @@ internal fun ChatFooter(
             onClickVoice = onClickVoice,
             onClickSend = onClickSend,
             onClickRetry = onClickRetry,
+            enableSend = enableSend,
         )
     }
 }
@@ -199,6 +201,7 @@ internal fun ChatFooter(
 @Composable
 private fun FooterTextSection(
     textFieldState: TextFieldState,
+    enableSend: Boolean,
     onClickSelectImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
@@ -256,7 +259,10 @@ private fun FooterTextSection(
             }
         }
 
-        IconButton(onClick = { onClickSend() }) {
+        IconButton(
+            onClick = { onClickSend() },
+            enabled = enableSend,
+        ) {
             Icon(
                 imageVector = FeatherIcons.ArrowUp,
                 contentDescription = "send",

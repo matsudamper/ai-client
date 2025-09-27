@@ -51,6 +51,7 @@ data class ChatListUiState(
     val visibleMediaLoading: Boolean,
     val errorDialogMessage: String?,
     val modelLoadingState: ModelLoadingState,
+    val enableSend: Boolean,
     val listener: Listener,
 ) {
     sealed interface ModelLoadingState {
@@ -198,6 +199,7 @@ public fun ChatList(
                     uiState.listener.onClickSend(state.text.toString())
                     state.clearText()
                 },
+                enableSend = uiState.enableSend && state.text.isNotEmpty(),
                 onClickRetry = { uiState.listener.onClickRetry() },
             )
         }

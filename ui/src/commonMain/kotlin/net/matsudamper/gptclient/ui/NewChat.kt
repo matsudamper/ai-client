@@ -79,6 +79,7 @@ public data class NewChatUiState(
     val projects: List<Project>,
     val selectedMedia: List<ChatFooterImage>,
     val visibleMediaLoading: Boolean,
+    val enableSend: Boolean,
     val models: List<Model>,
     val selectedModel: String,
     val projectNameDialog: ProjectNameDialog?,
@@ -340,6 +341,7 @@ public fun NewChat(
                 selectedMedia = uiState.selectedMedia,
                 visibleMediaLoading = uiState.visibleMediaLoading,
                 onClickRetry = null,
+                enableSend = uiState.enableSend && state.text.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .navigationBarsPadding(),

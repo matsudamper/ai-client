@@ -177,6 +177,7 @@ class ProjectViewModel(
                 listener = systemMessageListener,
             ),
             modelState = createModelState(ChatGptModel.Gpt5Nano),
+            enableSend = false,
             listener = listener,
         ),
     ).also { uiStateFlow ->
@@ -233,6 +234,7 @@ class ProjectViewModel(
                         ),
                         selectedMedia = viewModelState.uriList,
                         visibleMediaLoading = viewModelState.mediaLoading,
+                        enableSend = !viewModelState.mediaLoading,
                         chatRoomsState = run rooms@{
                             val chatRooms = viewModelState.chatRooms
                                 ?: return@rooms ProjectUiState.ChatRoomsState.Loading

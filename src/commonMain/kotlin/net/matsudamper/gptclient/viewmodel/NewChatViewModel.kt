@@ -93,6 +93,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
             selectedModel = "",
             projectNameDialog = null,
             isLoading = false,
+            enableSend = false,
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     viewModelScope.launch {
@@ -213,6 +214,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                         selectedModel = viewModelState.selectedModel.modelName,
                         projectNameDialog = viewModelState.projectNameDialog,
                         isLoading = viewModelState.isLoading,
+                        enableSend = !viewModelState.mediaLoading,
                         projects = builtinProjects.plus(
                             viewModelState.projects.orEmpty().map {
                                 NewChatUiState.Project(
