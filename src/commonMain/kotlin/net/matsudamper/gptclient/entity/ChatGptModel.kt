@@ -28,7 +28,7 @@ enum class ChatGptModel {
         override val provider = ApiProvider.OpenAI
     },
     GeminiFlashLiteLatest {
-        override val modelName: String = "gemini-2.0-flash-lite"
+        override val modelName: String = "gemini-2.5-flash-lite-preview-06-17"
         override val enableImage: Boolean = true
         override val defaultToken = 5000
         override val requireTemperature = 1.0
