@@ -95,4 +95,3 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 
 - **GitHub Actions** (`build.yaml`): `main` ブランチへの push と PR で `assembleDebug` + `jvmJar` を実行
 - **リリース** (`release.yml`): `v*` タグで Release APK をビルドし GitHub Release に公開
-- **依存関係管理:** Renovate Bot（最大 20 件の同時 PR）
