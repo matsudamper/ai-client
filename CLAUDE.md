@@ -90,7 +90,6 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 ## Android 設定
 
 - **minSdk:** 34 / **targetSdk:** 36 / **compileSdk:** 36
-- **必要なパーミッション:** INTERNET, POST_NOTIFICATIONS, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC
 
 ## CI/CD
 
