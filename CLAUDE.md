@@ -5,8 +5,8 @@
 Kotlin Multiplatform (KMP) で構築された ChatGPT クライアントアプリケーション。Android と Desktop (JVM) の両プラットフォームに対応。
 
 - **パッケージ名:** `net.matsudamper.gptclient`
-- **Kotlin:** 2.0.21
-- **Compose:** 1.9.0-rc02
+- **Kotlin / Compose バージョン:** `gradle.properties` を参照
+- **ライブラリバージョン:** `build-logic/libs.versions.toml` を参照
 - **Java:** JDK 21
 
 ## プロジェクト構成
