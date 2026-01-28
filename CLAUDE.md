@@ -68,15 +68,8 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 
 ## コードスタイル・規約
 
-- **フォーマッター:** ktlint 1.6.0（全モジュールに適用）
-- **コードスタイル:** IntelliJ IDEA スタイル
-- **最大行長:** 200 文字
-- **スターインポート:** 無効 (閾値 9999)
-- **トレーリングカンマ:** 許可
-- **無効化されている ktlint ルール:**
-  - `function-signature`, `parameter-list-wrapping`, `package-name`
-  - `annotation`, `function-naming`, `class-signature`, `function-expression-body`
-- **インポート順序:** `android.** → androidx.** → java.** → javax.** → kotlin.** → kotlinx.** → *`
+- **フォーマッター:** ktlint（全モジュールに適用）
+- 詳細な設定は `.editorconfig` を参照
 
 ## アーキテクチャ
 
