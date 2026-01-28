@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.first
 import net.matsudamper.gptclient.MainActivity
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.entity.ApiProvider
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.gpt.ChatGptClientInterface
@@ -99,20 +100,29 @@ class ChatRequestWorker(
             )
             val newChatIndex = lastItem?.index?.plus(1) ?: 0
 
-            val gptClientProvider: (String) -> ChatGptClientInterface = { secretKey ->
-                ChatGptClient(secretKey)
+            val chatModel = ChatGptModel.entries.firstOrNull { it.modelName == model }
+                ?: return Result.failure()
+
+            val gptClient = when (chatModel.provider) {
+                ApiProvider.OpenAI -> ChatGptClient(
+                    secretKey = settingDataStore.getSecretKey(),
+                    endpoint = ChatGptClient.OPENAI_ENDPOINT,
+                )
+                ApiProvider.Gemini -> ChatGptClient(
+                    secretKey = settingDataStore.getGeminiSecretKey(),
+                    endpoint = ChatGptClient.GEMINI_ENDPOINT,
+                )
             }
 
             val response = when (
-                val response = gptClientProvider(settingDataStore.getSecretKey())
+                val response = gptClient
                     .request(
                         messages = createMessage(
                             systemMessage = systemMessage,
                             chatRoomId = chatRoomId,
                         ),
                         format = format,
-                        model = ChatGptModel.entries.firstOrNull { it.modelName == model }
-                            ?: return Result.failure(),
+                        model = chatModel,
                     )
             ) {
                 is ChatGptClientInterface.GptResult.Error -> return Result.failure()

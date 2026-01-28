@@ -23,7 +23,18 @@ class SettingDataStore(private val filename: String) {
 
     suspend fun getSecretKey(): String = store.data.first()[keySecretKey].orEmpty()
 
+    suspend fun setGeminiSecretKey(key: String) {
+        store.edit {
+            it.also { preferences ->
+                preferences[keyGeminiSecretKey] = key
+            }
+        }
+    }
+
+    suspend fun getGeminiSecretKey(): String = store.data.first()[keyGeminiSecretKey].orEmpty()
+
     companion object {
         private val keySecretKey = stringPreferencesKey("secret_key")
+        private val keyGeminiSecretKey = stringPreferencesKey("gemini_secret_key")
     }
 }

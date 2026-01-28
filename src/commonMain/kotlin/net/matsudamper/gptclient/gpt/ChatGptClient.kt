@@ -17,7 +17,10 @@ import io.ktor.http.HttpHeaders
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.util.Log
 
-class ChatGptClient(private val secretKey: String) : ChatGptClientInterface {
+class ChatGptClient(
+    private val secretKey: String,
+    private val endpoint: String = OPENAI_ENDPOINT,
+) : ChatGptClientInterface {
     override suspend fun request(
         messages: List<ChatGptClientInterface.GptMessage>,
         format: ChatGptClientInterface.Format,
@@ -88,7 +91,7 @@ class ChatGptClient(private val secretKey: String) : ChatGptClientInterface {
                     requestTimeoutMillis = 60 * 2 * 1000L
                 }
             }.use {
-                it.post("https://api.openai.com/v1/chat/completions") {
+                it.post(endpoint) {
                     header(HttpHeaders.ContentType, ContentType.Application.Json)
                     header(HttpHeaders.Authorization, "Bearer $secretKey")
                     setBody(jsonString)
@@ -106,6 +109,9 @@ class ChatGptClient(private val secretKey: String) : ChatGptClientInterface {
     }
 
     companion object {
+        const val OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+        const val GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+
         private val Json = Json {
             ignoreUnknownKeys = true
         }
