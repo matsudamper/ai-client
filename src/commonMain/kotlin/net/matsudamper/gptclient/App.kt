@@ -26,7 +26,7 @@ import net.matsudamper.gptclient.viewmodel.SettingViewModel
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
-internal fun App() {
+fun App() {
     MaterialTheme {
         val navController = rememberNavController()
         val viewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {

@@ -262,7 +262,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
         override fun remove() {
             viewModelStateFlow.update { viewModelState ->
                 viewModelState.copy(
-                    mediaList = viewModelState.mediaList.filter { it.imageUri != imageUrl }
+                    mediaList = viewModelState.mediaList.filter { it.imageUri != imageUrl },
                 )
             }
         }

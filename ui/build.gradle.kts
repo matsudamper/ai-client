@@ -1,27 +1,18 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.kotlinSerialization)
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-android {
-    compileSdk = 36
-    namespace = "net.matsudamper.gptclient.ui"
-
-    defaultConfig {
-        minSdk = 34
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-}
-
 kotlin {
     jvm()
-    androidTarget()
+    androidLibrary {
+        namespace = "net.matsudamper.gptclient.ui"
+        compileSdk = 36
+        minSdk = 34
+    }
 
     sourceSets {
         val commonMain by getting {
@@ -30,6 +21,7 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.uiUtil)
                 implementation(compose.material3)
+                implementation(compose.materialIconsExtended)
                 implementation(compose.foundation)
                 implementation(libs.composeIcons)
                 implementation(libs.androidxNavigationCompose)

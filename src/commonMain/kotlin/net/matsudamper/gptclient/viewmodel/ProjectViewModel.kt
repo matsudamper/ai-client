@@ -329,7 +329,7 @@ class ProjectViewModel(
                 it.copy(
                     uriList = it.uriList.filter { image ->
                         image.imageUri != imageUrl
-                    }
+                    },
                 )
             }
         }

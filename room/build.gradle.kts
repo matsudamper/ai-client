@@ -1,27 +1,18 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidxRoom)
 }
 
-android {
-    compileSdk = 36
-    namespace = "net.matsudamper.gptclient.room"
-
-    defaultConfig {
-        minSdk = 34
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-}
-
 kotlin {
     jvm()
-    androidTarget()
+    androidLibrary {
+        namespace = "net.matsudamper.gptclient.room"
+        compileSdk = 36
+        minSdk = 34
+    }
 
     sourceSets {
         val commonMain by getting {

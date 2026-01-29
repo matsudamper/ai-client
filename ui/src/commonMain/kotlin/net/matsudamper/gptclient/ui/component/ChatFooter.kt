@@ -174,7 +174,7 @@ internal fun ChatFooter(
                             text = {
                                 androidx.compose.material3.Text(
                                     "削除",
-                                    color = androidx.compose.ui.graphics.Color.Red
+                                    color = androidx.compose.ui.graphics.Color.Red,
                                 )
                             },
                             onClick = {

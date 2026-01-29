@@ -393,7 +393,7 @@ class ChatViewModel(
         override fun remove() {
             viewModelStateFlow.update { state ->
                 state.copy(
-                    selectedMedia = state.selectedMedia.filter { it.imageUri != imageUri }
+                    selectedMedia = state.selectedMedia.filter { it.imageUri != imageUri },
                 )
             }
         }
