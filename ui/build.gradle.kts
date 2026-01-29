@@ -30,6 +30,7 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.uiUtil)
                 implementation(compose.material3)
+                implementation(compose.materialIconsExtended)
                 implementation(compose.foundation)
                 implementation(libs.composeIcons)
                 implementation(libs.androidxNavigationCompose)
