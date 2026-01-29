@@ -23,6 +23,7 @@ kotlin {
                 implementation(compose.uiUtil)
                 implementation(compose.material3)
                 implementation(libs.composeMaterial)
+                implementation(libs.composeMaterialIconsExtended)
                 implementation(compose.foundation)
                 implementation(libs.composeIcons)
                 implementation(libs.androidxNavigationCompose)
@@ -34,8 +35,6 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
-                implementation("androidx.compose.material:material-icons-core:1.7.6")
-                implementation("androidx.compose.material:material-icons-extended:1.7.6")
             }
         }
     }
