@@ -323,6 +323,16 @@ class ProjectViewModel(
                 )
             }
         }
+
+        override fun remove() {
+            viewModelStateFlow.update {
+                it.copy(
+                    uriList = it.uriList.filter { image ->
+                        image.imageUri != imageUrl
+                    }
+                )
+            }
+        }
     }
 
     private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState = ProjectUiState.ModelState(
