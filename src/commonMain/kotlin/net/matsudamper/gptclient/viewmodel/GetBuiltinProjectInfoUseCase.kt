@@ -38,8 +38,8 @@ class GetBuiltinProjectInfoUseCase {
                             "error_message": "日付や日時が指定されていない場合に、ユーザーに入力を促すメッセージ(String?)",
                             "results": [
                                 {
-                                    "start_date": "開始日付、時間のISO8601(String)",
-                                    "end_date": "終了日付、時間のISO8601。無ければ、内容から推測して12時間以内で設定して(String)",
+                                    "start_date": "開始日付、時間のISO8601(例: 2023-01-01T12:00:00)(String)",
+                                    "end_date": "終了日付、時間のISO8601(例: 2023-01-01T12:00:00)。無ければ、内容から推測して12時間以内で設定して(String)",
                                     "title": "カレンダーのタイトル(String)",
                                     "location": "nullable, 場所の名前(String?)",
                                     "description": "補足情報(String?)"
@@ -73,14 +73,14 @@ class GetBuiltinProjectInfoUseCase {
                             "error_message": "エラーの内容。日付や金額が画像から見つからない場合に、ユーザーに入力を促すメッセージ等(String?)",
                             "results": [
                                 {
-                                    "date": "日付、時間の ISO8601 Offsetなし (String)",
+                                    "date": "日付、時間の ISO8601 Offsetなし(例: 2023-01-01T12:00:00) (String)",
                                     "amount": "合計金額(税込み)。日本円の金額、ドル表記であればドルで良い(Int)",
                                     "title": "店名(String)",
                                     "description": "商品名一覧(String?)",
                                 },
                                 /* 以下商品の配列 */
                                 {
-                                    "date": "日付、時間の ISO8601 Offsetなし (String)",
+                                    "date": "日付、時間の ISO8601 Offsetなし(例: 2023-01-01T12:00:00) (String)",
                                     "amount": "1つの商品の金額(同じものが2点あれば合計する)。税込みにする。日本円の金額、ドル表記であればドルで良い(Int)",
                                     "title": "商品名(String)",
                                     "description": "補足情報(String?)"
