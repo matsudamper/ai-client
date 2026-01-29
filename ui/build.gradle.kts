@@ -1,27 +1,19 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.kotlinSerialization)
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-android {
-    compileSdk = 36
-    namespace = "net.matsudamper.gptclient.ui"
-
-    defaultConfig {
+kotlin {
+    androidLibrary {
+        compileSdk = 36
+        namespace = "net.matsudamper.gptclient.ui"
         minSdk = 34
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-}
 
-kotlin {
     jvm()
-    androidTarget()
 
     sourceSets {
         val commonMain by getting {
@@ -30,6 +22,7 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.uiUtil)
                 implementation(compose.material3)
+                implementation(libs.composeMaterial)
                 implementation(compose.foundation)
                 implementation(libs.composeIcons)
                 implementation(libs.androidxNavigationCompose)
@@ -37,6 +30,12 @@ kotlin {
                 implementation(libs.coil3Compose)
                 implementation(libs.coil3NetworkOkHttp)
                 implementation(libs.zoomable)
+            }
+        }
+        val androidMain by getting {
+            dependencies {
+                implementation("androidx.compose.material:material-icons-core:1.7.6")
+                implementation("androidx.compose.material:material-icons-extended:1.7.6")
             }
         }
     }
