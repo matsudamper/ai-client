@@ -13,11 +13,14 @@ Kotlin Multiplatform (KMP) で構築された ChatGPT クライアントアプ�
 
 ```
 ai-client/
-├── src/
-│   ├── commonMain/       # 共通コード（ViewModel, UseCase, API クライアント等）
-│   ├── androidMain/      # Android 固有コード
-│   ├── jvmMain/          # Desktop (JVM) 固有コード
-│   └── androidInstrumentedTest/  # Android テスト
+├── core/                 # 共有 KMP コアモジュール
+│   └── src/
+│       ├── commonMain/       # 共通コード（ViewModel, UseCase, API クライアント等）
+│       └── androidMain/      # Android 固有コード
+├── app-android/          # Android アプリケーションモジュール
+├── app-jvm/              # Desktop (JVM) アプリケーションモジュール
+│   └── src/
+│       └── jvmMain/          # Desktop (JVM) 固有コード
 ├── ui/                   # 共有 Compose UI モジュール
 ├── room/                 # Room データベースモジュール
 ├── build-logic/          # ビルド設定・バージョンカタログ (libs.versions.toml)
@@ -25,7 +28,7 @@ ai-client/
 └── gradle/               # Gradle Wrapper
 ```
 
-### 主要パッケージ (commonMain)
+### 主要パッケージ (core/src/commonMain)
 
 | パッケージ | 役割 |
 |---|---|
@@ -52,7 +55,7 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 ./gradlew assembleDebug
 
 # Desktop JVM JAR ビルド
-./gradlew jvmJar
+./gradlew :app-jvm:jvmJar
 
 # Android Release APK ビルド
 ./gradlew assembleRelease
@@ -64,7 +67,7 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 ./gradlew ktlintFormat
 ```
 
-**CI では `assembleDebug` と `jvmJar` が実行される。** 変更後はこの2つが通ることを確認すること。
+**CI では `:app-android:assembleDebug` と `:app-jvm:jvmJar` が実行される。** 変更後はこの2つが通ることを確認すること。
 
 ## コードスタイル・規約
 
@@ -83,9 +86,9 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 
 ## エントリーポイント
 
-- **Android:** `src/androidMain/.../MainActivity.kt`
-- **Desktop:** `src/jvmMain/.../Main.kt`
-- **共通:** `src/commonMain/.../App.kt`
+- **Android:** `core/src/androidMain/.../MainActivity.kt`
+- **Desktop:** `app-jvm/src/jvmMain/.../Main.kt`
+- **共通:** `core/src/commonMain/.../App.kt`
 
 ## Android 設定
 

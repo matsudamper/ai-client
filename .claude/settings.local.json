@@ -4,7 +4,9 @@
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:developer.android.com)",
       "WebFetch(domain:www.jetbrains.com)",
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Bash(mkdir:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

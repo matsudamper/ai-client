@@ -33,6 +33,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "gpt-client"
 
-include(":androidApp")
+include(":core")
+include(":app-android")
+include(":app-jvm")
 include(":ui")
 include(":room")

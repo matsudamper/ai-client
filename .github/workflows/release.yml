@@ -18,14 +18,14 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - run: ./gradlew assembleRelease
+      - run: ./gradlew :app-android:assembleRelease
 
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" build/outputs/apk/*.apk --clobber
+            gh release upload "$TAG" app-android/build/outputs/apk/*.apk --clobber
           else
-            gh release create "$TAG" build/outputs/apk/*.apk --title "$TAG" --notes ""
+            gh release create "$TAG" app-android/build/outputs/apk/*.apk --title "$TAG" --notes ""
           fi

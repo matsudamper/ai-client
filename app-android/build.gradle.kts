@@ -40,7 +40,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":"))
+    implementation(project(":core"))
     implementation(project(":room"))
     implementation(libs.androidActivityActivityCompose)
     implementation(libs.androidActivityKtx)
