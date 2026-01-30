@@ -21,16 +21,16 @@ jobs:
         run: |
           LATEST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
           if [ -z "$LATEST_TAG" ]; then
-            NEW_TAG="v0.0.1"
-          else
-            # Remove 'v' prefix
-            VERSION="${LATEST_TAG#v}"
-            MAJOR=$(echo "$VERSION" | cut -d. -f1)
-            MINOR=$(echo "$VERSION" | cut -d. -f2)
-            PATCH=$(echo "$VERSION" | cut -d. -f3)
-            PATCH=$((PATCH + 1))
-            NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+            echo "::error::既存のタグが見つかりません。初回は手動でタグを作成してください。"
+            exit 1
           fi
+          # Remove 'v' prefix
+          VERSION="${LATEST_TAG#v}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          PATCH=$((PATCH + 1))
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
