@@ -94,6 +94,10 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 
 - **minSdk:** 34 / **targetSdk:** 36 / **compileSdk:** 36
 
+## Pull Request
+
+Pull Requestを作成する際、タイトルと説明文は日本語で記述してください。
+
 ## CI/CD
 
 - **GitHub Actions** (`build.yaml`): `main` ブランチへの push と PR で `assembleDebug` + `jvmJar` を実行
