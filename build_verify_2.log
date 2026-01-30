@@ -1,0 +1,249 @@
+Starting a Gradle Daemon, 1 stopped Daemon could not be reused, use --status for details
+Type-safe project accessors is an incubating feature.
+
+> Configure project :
+Project accessors enabled, but root project name not explicitly set for 'build-logic'. Checking out the project in different folders will impact the generated code and implicitly the buildscript classpath, breaking caching.
+
+> Configure project :app-android
+w: file:///app/app-android/build.gradle.kts:36:28: 'val material3: String' is deprecated. Specify dependency directly.
+w: file:///app/app-android/build.gradle.kts:37:28: 'val ui: String' is deprecated. Specify dependency directly.
+w: file:///app/app-android/build.gradle.kts:38:28: 'val runtime: String' is deprecated. Specify dependency directly.
+
+> Configure project :app-desktop
+w: file:///app/app-desktop/build.gradle.kts:17:40: 'val ui: String' is deprecated. Specify dependency directly.
+w: file:///app/app-desktop/build.gradle.kts:18:40: 'val material3: String' is deprecated. Specify dependency directly.
+
+> Configure project :ui
+w: file:///app/ui/build.gradle.kts:21:40: 'val runtime: String' is deprecated. Specify dependency directly.
+w: file:///app/ui/build.gradle.kts:22:40: 'val ui: String' is deprecated. Specify dependency directly.
+w: file:///app/ui/build.gradle.kts:23:40: 'val uiUtil: String' is deprecated. Specify dependency directly.
+w: file:///app/ui/build.gradle.kts:24:40: 'val material3: String' is deprecated. Specify dependency directly.
+w: file:///app/ui/build.gradle.kts:27:40: 'val foundation: String' is deprecated. Specify dependency directly.
+
+> Task :app-android:preBuild UP-TO-DATE
+> Task :app-android:preDebugBuild UP-TO-DATE
+> Task :app-android:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :kmpPartiallyResolvedDependenciesChecker
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :room:kmpPartiallyResolvedDependenciesChecker
+> Task :room:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :room:androidPreBuild UP-TO-DATE
+> Task :room:preAndroidMainBuild UP-TO-DATE
+> Task :ui:kmpPartiallyResolvedDependenciesChecker
+> Task :ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :ui:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :ui:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :ui:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :ui:generateResourceAccessorsForAndroidMain SKIPPED
+> Task :ui:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :ui:copyNonXmlValueResourcesForCommonMain NO-SOURCE
+> Task :ui:prepareComposeResourcesTaskForCommonMain NO-SOURCE
+> Task :ui:generateResourceAccessorsForCommonMain SKIPPED
+> Task :ui:generateActualResourceCollectorsForAndroidMain SKIPPED
+> Task :ui:generateComposeResClass SKIPPED
+> Task :ui:generateExpectResourceCollectorsForCommonMain SKIPPED
+> Task :ui:androidPreBuild UP-TO-DATE
+> Task :ui:preAndroidMainBuild UP-TO-DATE
+> Task :androidPreBuild UP-TO-DATE
+> Task :preAndroidMainBuild UP-TO-DATE
+> Task :app-android:generateDebugResources
+> Task :app-android:packageDebugResources
+> Task :generateAndroidMainEmptyResourceFiles
+> Task :room:generateAndroidMainEmptyResourceFiles
+> Task :ui:generateAndroidMainEmptyResourceFiles
+
+> Task :room:kspAndroidMain
+w: [ksp] /app/room/src/commonMain/kotlin/net/matsudamper/gptclient/room/dao/ChatRoomDao.kt:31: The query returns some columns [chat_room_id, index, image_uri, role, index, name, system_message] which are not used by net.matsudamper.gptclient.room.entity.ChatRoomWithSummary. You can use @ColumnInfo annotation on the properties to specify the mapping. You can annotate the function with @RewriteQueriesToDropUnusedColumns to direct Room to rewrite your query to avoid fetching unused columns.  You can suppress this warning by annotating the function with @SuppressWarnings(RoomWarnings.QUERY_MISMATCH). Columns returned by the query: id, project_id, builtin_project_id, model_name, summary, create_date_at, worker_id, id, chat_room_id, index, text_message, image_uri, role, create_date_at, id, index, name, model_name, system_message, project_name.
+w: [ksp] /app/room/src/commonMain/kotlin/net/matsudamper/gptclient/room/dao/ChatRoomDao.kt:49: The query returns some columns [chat_room_id, index, image_uri, role] which are not used by net.matsudamper.gptclient.room.entity.ChatRoomWithSummary. You can use @ColumnInfo annotation on the properties to specify the mapping. You can annotate the function with @RewriteQueriesToDropUnusedColumns to direct Room to rewrite your query to avoid fetching unused columns. net.matsudamper.gptclient.room.entity.ChatRoomWithSummary has some properties [project_name] which are not returned by the query. If they are not supposed to be read from the result, you can mark them with @Ignore annotation. You can suppress this warning by annotating the function with @SuppressWarnings(RoomWarnings.QUERY_MISMATCH). Columns returned by the query: id, project_id, builtin_project_id, model_name, summary, create_date_at, worker_id, id, chat_room_id, index, text_message, image_uri, role, create_date_at.
+w: [ksp] /app/room/src/commonMain/kotlin/net/matsudamper/gptclient/room/dao/ChatRoomDao.kt:64: The query returns some columns [chat_room_id, index, image_uri, role] which are not used by net.matsudamper.gptclient.room.entity.ChatRoomWithSummary. You can use @ColumnInfo annotation on the properties to specify the mapping. You can annotate the function with @RewriteQueriesToDropUnusedColumns to direct Room to rewrite your query to avoid fetching unused columns. net.matsudamper.gptclient.room.entity.ChatRoomWithSummary has some properties [project_name] which are not returned by the query. If they are not supposed to be read from the result, you can mark them with @Ignore annotation. You can suppress this warning by annotating the function with @SuppressWarnings(RoomWarnings.QUERY_MISMATCH). Columns returned by the query: id, project_id, builtin_project_id, model_name, summary, create_date_at, worker_id, id, chat_room_id, index, text_message, image_uri, role, create_date_at.
+
+> Task :room:kspKotlinJvm
+w: [ksp] /app/room/src/commonMain/kotlin/net/matsudamper/gptclient/room/dao/ChatRoomDao.kt:31: The query returns some columns [chat_room_id, index, image_uri, role, index, name, system_message] which are not used by net.matsudamper.gptclient.room.entity.ChatRoomWithSummary. You can use @ColumnInfo annotation on the properties to specify the mapping. You can annotate the function with @RewriteQueriesToDropUnusedColumns to direct Room to rewrite your query to avoid fetching unused columns.  You can suppress this warning by annotating the function with @SuppressWarnings(RoomWarnings.QUERY_MISMATCH). Columns returned by the query: id, project_id, builtin_project_id, model_name, summary, create_date_at, worker_id, id, chat_room_id, index, text_message, image_uri, role, create_date_at, id, index, name, model_name, system_message, project_name.
+w: [ksp] /app/room/src/commonMain/kotlin/net/matsudamper/gptclient/room/dao/ChatRoomDao.kt:49: The query returns some columns [chat_room_id, index, image_uri, role] which are not used by net.matsudamper.gptclient.room.entity.ChatRoomWithSummary. You can use @ColumnInfo annotation on the properties to specify the mapping. You can annotate the function with @RewriteQueriesToDropUnusedColumns to direct Room to rewrite your query to avoid fetching unused columns. net.matsudamper.gptclient.room.entity.ChatRoomWithSummary has some properties [project_name] which are not returned by the query. If they are not supposed to be read from the result, you can mark them with @Ignore annotation. You can suppress this warning by annotating the function with @SuppressWarnings(RoomWarnings.QUERY_MISMATCH). Columns returned by the query: id, project_id, builtin_project_id, model_name, summary, create_date_at, worker_id, id, chat_room_id, index, text_message, image_uri, role, create_date_at.
+w: [ksp] /app/room/src/commonMain/kotlin/net/matsudamper/gptclient/room/dao/ChatRoomDao.kt:64: The query returns some columns [chat_room_id, index, image_uri, role] which are not used by net.matsudamper.gptclient.room.entity.ChatRoomWithSummary. You can use @ColumnInfo annotation on the properties to specify the mapping. You can annotate the function with @RewriteQueriesToDropUnusedColumns to direct Room to rewrite your query to avoid fetching unused columns. net.matsudamper.gptclient.room.entity.ChatRoomWithSummary has some properties [project_name] which are not returned by the query. If they are not supposed to be read from the result, you can mark them with @Ignore annotation. You can suppress this warning by annotating the function with @SuppressWarnings(RoomWarnings.QUERY_MISMATCH). Columns returned by the query: id, project_id, builtin_project_id, model_name, summary, create_date_at, worker_id, id, chat_room_id, index, text_message, image_uri, role, create_date_at.
+
+> Task :app-android:processDebugNavigationResources
+> Task :room:copyRoomSchemas NO-SOURCE
+> Task :app-android:javaPreCompileDebug
+> Task :app-android:generateDebugAssets UP-TO-DATE
+> Task :app-android:parseDebugLocalResources
+> Task :app-android:mergeDebugAssets
+> Task :app-android:compressDebugAssets
+> Task :app-android:desugarDebugFileDependencies
+> Task :writeAndroidMainAarMetadata
+> Task :room:writeAndroidMainAarMetadata
+> Task :app-android:generateDebugRFile
+> Task :ui:writeAndroidMainAarMetadata
+> Task :app-android:compileDebugNavigationResources
+> Task :ui:compileAndroidMain
+> Task :app-android:checkDebugAarMetadata
+> Task :app-android:mapDebugSourceSetPaths
+> Task :app-android:createDebugCompatibleScreenManifests
+> Task :processAndroidMainManifest
+> Task :app-android:extractDeepLinksDebug
+> Task :room:processAndroidMainManifest
+> Task :ui:processAndroidMainManifest
+> Task :app-android:mergeDebugResources
+> Task :app-android:processDebugMainManifest
+> Task :app-android:processDebugManifest
+> Task :app-android:processDebugManifestForPackage
+> Task :app-android:checkDebugDuplicateClasses
+> Task :app-android:processDebugResources
+> Task :room:compileAndroidMain
+
+> Task :ui:compileAndroidMain
+w: file:///app/ui/src/commonMain/kotlin/net/matsudamper/gptclient/ui/NewChat.kt:36:8 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+w: file:///app/ui/src/commonMain/kotlin/net/matsudamper/gptclient/ui/NewChat.kt:319:52 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+w: file:///app/ui/src/commonMain/kotlin/net/matsudamper/gptclient/ui/ProjectScreen.kt:37:8 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+w: file:///app/ui/src/commonMain/kotlin/net/matsudamper/gptclient/ui/ProjectScreen.kt:402:48 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+
+> Task :app-android:mergeExtDexDebug
+> Task :room:bundleAndroidMainClassesToCompileJar
+> Task :ui:bundleAndroidMainClassesToCompileJar
+> Task :room:bundleAndroidMainClassesToRuntimeJar
+> Task :ui:bundleAndroidMainClassesToRuntimeJar
+> Task :room:processAndroidMainJavaRes
+> Task :ui:processAndroidMainJavaRes
+> Task :ui:bundleLibRuntimeToDirAndroidMain
+> Task :room:bundleLibRuntimeToDirAndroidMain
+> Task :mergeAndroidMainJniLibFolders
+> Task :mergeAndroidMainNativeLibs NO-SOURCE
+> Task :copyAndroidMainJniLibsProjectOnly
+> Task :app-android:mergeDebugJniLibFolders
+> Task :room:mergeAndroidMainJniLibFolders
+> Task :room:mergeAndroidMainNativeLibs NO-SOURCE
+> Task :room:copyAndroidMainJniLibsProjectOnly
+> Task :ui:mergeAndroidMainJniLibFolders
+> Task :ui:mergeAndroidMainNativeLibs NO-SOURCE
+> Task :ui:copyAndroidMainJniLibsProjectOnly
+> Task :app-android:mergeDebugNativeLibs
+
+> Task :app-android:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libdatastore_shared_counter.so, libsqliteJni.so. Run with --info option to learn more.
+
+> Task :app-android:validateSigningDebug
+> Task :app-android:writeDebugAppMetadata
+> Task :app-android:writeDebugSigningConfigVersions
+> Task :app-desktop:generateProjectStructureMetadata
+> Task :app-desktop:allMetadataJar
+> Task :room:jvmProcessResources NO-SOURCE
+> Task :room:processJvmMainResources SKIPPED
+> Task :ui:checkJvmMainComposeLibrariesCompatibility
+> Task :ui:convertXmlValueResourcesForJvmMain NO-SOURCE
+> Task :ui:copyNonXmlValueResourcesForJvmMain NO-SOURCE
+> Task :ui:prepareComposeResourcesTaskForJvmMain NO-SOURCE
+> Task :ui:generateResourceAccessorsForJvmMain SKIPPED
+> Task :ui:generateActualResourceCollectorsForJvmMain SKIPPED
+> Task :room:compileKotlinJvm
+> Task :room:compileJvmMainJava NO-SOURCE
+> Task :room:jvmMainClasses
+> Task :room:jvmJar UP-TO-DATE
+> Task :ui:assembleJvmMainResources
+> Task :ui:jvmProcessResources UP-TO-DATE
+> Task :ui:processJvmMainResources SKIPPED
+> Task :jvmProcessResources NO-SOURCE
+> Task :processJvmMainResources SKIPPED
+> Task :app-desktop:checkJvmMainComposeLibrariesCompatibility
+> Task :app-desktop:kmpPartiallyResolvedDependenciesChecker
+> Task :app-desktop:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app-desktop:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :app-desktop:copyNonXmlValueResourcesForCommonMain NO-SOURCE
+> Task :app-desktop:prepareComposeResourcesTaskForCommonMain NO-SOURCE
+> Task :app-desktop:generateResourceAccessorsForCommonMain SKIPPED
+> Task :app-desktop:convertXmlValueResourcesForJvmMain NO-SOURCE
+> Task :app-desktop:copyNonXmlValueResourcesForJvmMain NO-SOURCE
+> Task :app-desktop:prepareComposeResourcesTaskForJvmMain NO-SOURCE
+> Task :app-desktop:generateResourceAccessorsForJvmMain SKIPPED
+> Task :app-desktop:generateActualResourceCollectorsForJvmMain SKIPPED
+> Task :app-desktop:generateComposeResClass SKIPPED
+> Task :app-desktop:generateExpectResourceCollectorsForCommonMain SKIPPED
+> Task :app-desktop:assembleJvmMainResources
+> Task :app-desktop:jvmProcessResources
+> Task :app-desktop:processJvmMainResources SKIPPED
+> Task :app-desktop:checkJvmTestComposeLibrariesCompatibility
+> Task :app-desktop:convertXmlValueResourcesForCommonTest NO-SOURCE
+> Task :app-desktop:copyNonXmlValueResourcesForCommonTest NO-SOURCE
+> Task :app-desktop:prepareComposeResourcesTaskForCommonTest NO-SOURCE
+> Task :app-desktop:generateResourceAccessorsForCommonTest SKIPPED
+> Task :app-desktop:convertXmlValueResourcesForJvmTest NO-SOURCE
+> Task :app-desktop:copyNonXmlValueResourcesForJvmTest NO-SOURCE
+> Task :app-desktop:prepareComposeResourcesTaskForJvmTest NO-SOURCE
+> Task :app-desktop:generateResourceAccessorsForJvmTest SKIPPED
+> Task :app-desktop:assembleJvmTestResources
+> Task :app-desktop:jvmTestProcessResources
+> Task :app-desktop:processJvmTestResources SKIPPED
+> Task :compileAndroidMain
+w: file:///app/src/commonMain/kotlin/net/matsudamper/gptclient/App.kt:56:25 The corresponding parameter in the supertype 'UiStateProvider' is named 'navigator'. This may cause problems when calling this function with named arguments.
+
+> Task :ui:compileKotlinJvm
+w: file:///app/ui/src/commonMain/kotlin/net/matsudamper/gptclient/ui/NewChat.kt:36:8 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+w: file:///app/ui/src/commonMain/kotlin/net/matsudamper/gptclient/ui/NewChat.kt:319:52 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+w: file:///app/ui/src/commonMain/kotlin/net/matsudamper/gptclient/ui/ProjectScreen.kt:37:8 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+w: file:///app/ui/src/commonMain/kotlin/net/matsudamper/gptclient/ui/ProjectScreen.kt:402:48 'typealias MenuAnchorType = ExposedDropdownMenuAnchorType' is deprecated. Renamed to ExposedDropdownMenuAnchorType.
+
+> Task :processAndroidMainJavaRes
+> Task :bundleAndroidMainClassesToCompileJar
+> Task :bundleAndroidMainClassesToRuntimeJar
+> Task :app-desktop:loadKtlintReporters
+> Task :bundleLibRuntimeToDirAndroidMain
+> Task :ui:compileJvmMainJava NO-SOURCE
+> Task :ui:jvmMainClasses
+> Task :ui:jvmJar UP-TO-DATE
+> Task :app-desktop:runKtlintCheckOverCommonMainSourceSet NO-SOURCE
+> Task :app-desktop:ktlintCommonMainSourceSetCheck SKIPPED
+> Task :app-desktop:runKtlintCheckOverCommonTestSourceSet NO-SOURCE
+> Task :app-desktop:ktlintCommonTestSourceSetCheck SKIPPED
+> Task :app-desktop:convertXmlValueResourcesForJvmDev NO-SOURCE
+> Task :app-desktop:copyNonXmlValueResourcesForJvmDev NO-SOURCE
+> Task :app-desktop:prepareComposeResourcesTaskForJvmDev NO-SOURCE
+> Task :app-desktop:generateResourceAccessorsForJvmDev SKIPPED
+> Task :app-desktop:runKtlintCheckOverJvmDevSourceSet NO-SOURCE
+> Task :app-desktop:ktlintJvmDevSourceSetCheck SKIPPED
+> Task :app-desktop:runKtlintCheckOverJvmMainSourceSet NO-SOURCE
+> Task :app-desktop:ktlintJvmMainSourceSetCheck SKIPPED
+> Task :app-desktop:runKtlintCheckOverJvmTestSourceSet NO-SOURCE
+> Task :app-desktop:ktlintJvmTestSourceSetCheck SKIPPED
+> Task :app-android:mergeLibDexDebug
+> Task :app-android:compileDebugKotlin
+> Task :app-android:compileDebugJavaWithJavac NO-SOURCE
+> Task :app-android:dexBuilderDebug
+> Task :app-android:processDebugJavaRes
+> Task :app-android:mergeDebugGlobalSynthetics
+> Task :app-android:mergeProjectDexDebug
+> Task :app-desktop:runKtlintCheckOverKotlinScripts
+> Task :app-android:mergeDebugJavaResource
+> Task :app-desktop:ktlintKotlinScriptCheck
+> Task :app-android:packageDebug
+> Task :app-android:createDebugApkListingFileRedirect
+> Task :app-android:assembleDebug
+
+> Task :compileKotlinJvm
+w: file:///app/src/commonMain/kotlin/net/matsudamper/gptclient/App.kt:56:25 The corresponding parameter in the supertype 'UiStateProvider' is named 'navigator'. This may cause problems when calling this function with named arguments.
+
+> Task :compileJvmMainJava NO-SOURCE
+> Task :jvmMainClasses
+> Task :jvmJar UP-TO-DATE
+> Task :app-desktop:compileKotlinJvm NO-SOURCE
+> Task :app-desktop:compileJvmMainJava NO-SOURCE
+> Task :app-desktop:jvmMainClasses
+> Task :app-desktop:jvmJar
+> Task :app-desktop:assemble
+> Task :app-desktop:compileTestKotlinJvm NO-SOURCE
+> Task :app-desktop:compileJvmTestJava NO-SOURCE
+> Task :app-desktop:jvmTestClasses
+> Task :app-desktop:jvmTest NO-SOURCE
+> Task :app-desktop:allTests NO-SOURCE
+> Task :app-desktop:check
+> Task :app-desktop:build
+
+[Incubating] Problems report is available at: file:///app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 5m 12s
+93 actionable tasks: 89 executed, 4 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.1.0/userguide/configuration_cache_enabling.html
