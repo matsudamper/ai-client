@@ -32,6 +32,7 @@ class GetBuiltinProjectInfoUseCase {
                         画像からカレンダーに予定を追加できる情報が欲しいです。複数あれば全て作成してください。日付の指定がなければ聞き返してください。
                         今日の日付は${date}です。
                         error_messageが存在する場合はresultsは必ず空の配列でなければなりません。
+                        質問に対しては処理を行わず、その回答をerror_messageに入れてください。その際もresultsは空にしてください。
                         時刻は全てOffsetなしとして扱ってください。
                         ```json
                         {
@@ -64,6 +65,7 @@ class GetBuiltinProjectInfoUseCase {
                 Info(
                     systemMessage = """
                         error_messageが存在する場合はresultsは必ず空の配列でなければなりません。
+                        質問に対しては処理を行わず、その回答をerror_messageに入れてください。その際もresultsは空にしてください。
                         画像から家計簿に追加できる情報が欲しいです。複数の商品があれば全て作成し、合計も最初に作成してください(タイトルは店名で、無ければサマリを設定して)。画像に必要な情報が無ければerror_messageで聞き返してください。
                         今日の日付は${date}です。
                         時刻は全てOffsetなしとして扱ってください。
