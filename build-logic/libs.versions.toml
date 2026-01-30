@@ -1,8 +1,8 @@
 [versions]
-kotlin = "2.2.0"
-agp = "9.0.0-alpha06"
-compose = "1.9.0"
-jetbrainsCompose = "1.10.0"
+kotlin = "2.3.0"
+agp = "9.0.0"
+compose = "1.11.0-alpha01"
+composeIcons = "1.7.3"
 activity = "1.11.0"
 lifecycle = "2.9.3"
 room = "2.8.0"
@@ -20,7 +20,7 @@ androidxTestRules = "1.7.0"
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
-androidMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -74,6 +74,16 @@ koinAndroid = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 # UI
 composeIcons = { module = "br.com.devsrsouza.compose.icons:feather", version.require = "1.1.1" }
 zoomable = { module = "net.engawapg.lib:zoomable", version.ref = "zoomable" }
+
+# JetBrains Compose (Manual)
+composeRuntime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
+composeUi = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
+composeFoundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
+composeMaterial3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose" }
+composeMaterial = { module = "org.jetbrains.compose.material:material", version.ref = "compose" }
+composeMaterialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeIcons" }
+composeUiUtil = { module = "org.jetbrains.compose.ui:ui-util", version.ref = "compose" }
+composeComponentsResources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
 
 # Test
 androidxTestCoreKtx = { module = "androidx.test:core-ktx", version.require = "1.7.0" }
