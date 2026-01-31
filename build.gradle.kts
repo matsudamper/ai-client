@@ -49,6 +49,7 @@ kotlin {
             dependencies {
                 api(projects.ui)
                 api(projects.room)
+                implementation(libs.androidxRoomRuntime)
                 implementation(libs.composeRuntime)
                 implementation(libs.composeUi)
                 implementation(libs.composeMaterial3)
