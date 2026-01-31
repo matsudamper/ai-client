@@ -11,15 +11,15 @@ object SettingsSerializer : OkioSerializer<Settings> {
     override val defaultValue: Settings = Settings()
 
     override suspend fun readFrom(source: BufferedSource): Settings {
+        val decrypted = SettingsEncryptor.decrypt(source.readByteArray())
         return ProtoBuf.decodeFromByteArray(
             Settings.serializer(),
-            source.readByteArray(),
+            decrypted,
         )
     }
 
     override suspend fun writeTo(t: Settings, sink: BufferedSink) {
-        sink.write(
-            ProtoBuf.encodeToByteArray(Settings.serializer(), t),
-        )
+        val encoded = ProtoBuf.encodeToByteArray(Settings.serializer(), t)
+        sink.write(SettingsEncryptor.encrypt(encoded))
     }
 }
