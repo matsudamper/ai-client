@@ -34,4 +34,4 @@ jobs:
         with:
           name: debug-apk
           path: app-android/build/outputs/apk/debug/*.apk
-      - run: ./gradlew :app-jvm:jvmJar
+      - run: ./gradlew :app-desktop:jvmJar

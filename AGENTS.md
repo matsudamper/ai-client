@@ -13,14 +13,12 @@ Kotlin Multiplatform (KMP) で構築された ChatGPT クライアントアプ�
 
 ```
 ai-client/
-├── core/                 # 共有 KMP コアモジュール
-│   └── src/
-│       ├── commonMain/       # 共通コード（ViewModel, UseCase, API クライアント等）
-│       └── androidMain/      # Android 固有コード
+├── src/                  # 共有 KMP コアモジュール（ルートプロジェクト）
+│   ├── commonMain/       # 共通コード（ViewModel, UseCase, API クライアント等）
+│   ├── androidMain/      # Android 固有コード
+│   └── jvmMain/          # Desktop (JVM) 固有コード
 ├── app-android/          # Android アプリケーションモジュール
-├── app-jvm/              # Desktop (JVM) アプリケーションモジュール
-│   └── src/
-│       └── jvmMain/          # Desktop (JVM) 固有コード
+├── app-desktop/          # Desktop (JVM) アプリケーションモジュール
 ├── ui/                   # 共有 Compose UI モジュール
 ├── room/                 # Room データベースモジュール
 ├── build-logic/          # ビルド設定・バージョンカタログ (libs.versions.toml)
@@ -28,7 +26,7 @@ ai-client/
 └── gradle/               # Gradle Wrapper
 ```
 
-### 主要パッケージ (core/src/commonMain)
+### 主要パッケージ (src/commonMain)
 
 | パッケージ | 役割 |
 |---|---|
@@ -55,7 +53,7 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 ./gradlew assembleDebug
 
 # Desktop JVM JAR ビルド
-./gradlew :app-jvm:jvmJar
+./gradlew :app-desktop:jvmJar
 
 # Android Release APK ビルド
 ./gradlew assembleRelease
@@ -67,7 +65,7 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 ./gradlew ktlintFormat
 ```
 
-**CI では `:app-android:assembleDebug` と `:app-jvm:jvmJar` が実行される。** 変更後はこの2つが通ることを確認すること。
+**CI では `:app-android:assembleDebug` と `:app-desktop:jvmJar` が実行される。** 変更後はこの2つが通ることを確認すること。
 
 ## コードスタイル・規約
 
@@ -86,9 +84,9 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 
 ## エントリーポイント
 
-- **Android:** `core/src/androidMain/.../MainActivity.kt`
-- **Desktop:** `app-jvm/src/jvmMain/.../Main.kt`
-- **共通:** `core/src/commonMain/.../App.kt`
+- **Android:** `app-android/src/main/.../MainActivity.kt`
+- **Desktop:** `app-desktop/src/main/.../Main.kt`
+- **共通:** `src/commonMain/.../App.kt`
 
 ## Android 設定
 
@@ -100,5 +98,5 @@ Pull Requestを作成する際、タイトルと説明文は日本語で記述�
 
 ## CI/CD
 
-- **GitHub Actions** (`build.yaml`): `main` ブランチへの push と PR で `assembleDebug` + `jvmJar` を実行
+- **GitHub Actions** (`build.yaml`): `main` ブランチへの push と PR で `:app-android:assembleDebug` + `:app-desktop:jvmJar` を実行
 - **リリース** (`release.yml`): `v*` タグで Release APK をビルドし GitHub Release に公開
