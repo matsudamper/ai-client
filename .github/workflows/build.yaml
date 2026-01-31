@@ -22,7 +22,18 @@ jobs:
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
-      - run: ./gradlew :app-android:assembleDebug
+      - name: Decode debug keystore
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > debug.keystore
+      - name: Build debug APK
+        env:
+          DEBUG_KEYSTORE_FILE: debug.keystore
+          DEBUG_KEYSTORE_PASSWORD: android
+          DEBUG_KEY_ALIAS: androiddebugkey
+          DEBUG_KEY_PASSWORD: android
+        run: ./gradlew :app-android:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: debug-apk
