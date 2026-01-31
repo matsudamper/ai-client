@@ -16,7 +16,7 @@ android {
                 "DEBUG_KEYSTORE_FILE environment variable must be set in CI environment"
             }
             create("ci") {
-                storeFile = file(debugKeystoreFile)
+                storeFile = rootProject.file(debugKeystoreFile)
                 storePassword = "android"
                 keyAlias = "androiddebugkey"
                 keyPassword = "android"
