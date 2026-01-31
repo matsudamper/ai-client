@@ -14,7 +14,7 @@ coil = "3.3.0"
 zoomable = "2.8.1"
 ktlintGradle = "13.1.0"
 ktlint = "1.6.0"
-workManager = "2.10.4"
+workManager = "2.11.1"
 androidxTestRules = "1.7.0"
 
 [plugins]
