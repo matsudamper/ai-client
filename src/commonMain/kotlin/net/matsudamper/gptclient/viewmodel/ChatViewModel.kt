@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -188,9 +189,9 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
-            viewModelStateFlow.map { viewModelState ->
+            viewModelStateFlow.mapNotNull { viewModelState ->
                 viewModelState.roomInfo?.room?.id
-            }.filterNotNull().stateIn(this).collectLatest { roomId ->
+            }.stateIn(this).collectLatest { roomId ->
                 appDatabase.chatRoomDao().get(chatRoomId = roomId.value).collectLatest { room ->
                     val isWorkInProgress = insertDataAndAddRequestUseCase.isWorkInProgress(roomId)
                     viewModelStateFlow.update {
