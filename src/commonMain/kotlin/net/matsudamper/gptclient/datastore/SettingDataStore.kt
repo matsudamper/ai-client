@@ -16,14 +16,14 @@ class SettingDataStore(private val filename: String) {
     )
 
     suspend fun setSecretKey(key: String) {
-        store.updateData { it.copy(secret_key = key) }
+        store.updateData { it.copy(secretKey = key) }
     }
 
-    suspend fun getSecretKey(): String = store.data.first().secret_key
+    suspend fun getSecretKey(): String = store.data.first().secretKey
 
     suspend fun setGeminiSecretKey(key: String) {
-        store.updateData { it.copy(gemini_secret_key = key) }
+        store.updateData { it.copy(geminiSecretKey = key) }
     }
 
-    suspend fun getGeminiSecretKey(): String = store.data.first().gemini_secret_key
+    suspend fun getGeminiSecretKey(): String = store.data.first().geminiSecretKey
 }
