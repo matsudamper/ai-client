@@ -45,7 +45,7 @@ ktlint = { module = "com.pinterest:ktlint", version.ref = "ktlint" }
 androidxWorkRuntime = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
 
 # ktor
-ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.3.0" }
+ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.4.0" }
 ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "3.3.0" }
 ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "3.3.0" }
 
