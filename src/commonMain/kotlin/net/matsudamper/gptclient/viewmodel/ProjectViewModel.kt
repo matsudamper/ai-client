@@ -176,7 +176,7 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            modelState = createModelState(ChatGptModel.Gpt5Nano),
+            modelState = createModelState(ChatGptModel.GeminiFlashLatest),
             enableSend = false,
             listener = listener,
         ),
@@ -256,7 +256,7 @@ class ProjectViewModel(
                         modelState = createModelState(
                             viewModelState.overwriteModel
                                 ?: viewModelState.systemInfo?.getInfo()?.model
-                                ?: ChatGptModel.Gpt5Nano,
+                                ?: ChatGptModel.GeminiFlashLatest,
                         ),
                     )
                 }
@@ -384,7 +384,7 @@ class ProjectViewModel(
                     format = ChatGptClientInterface.Format.Text,
                     responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
                     model = ChatGptModel.entries.firstOrNull { it.modelName == project.modelName }
-                        ?: ChatGptModel.Gpt5Nano,
+                        ?: ChatGptModel.GeminiFlashLatest,
                 )
             }
 

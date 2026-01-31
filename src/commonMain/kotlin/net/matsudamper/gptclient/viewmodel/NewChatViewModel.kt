@@ -263,7 +263,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
     private data class ViewModelState(
         val mediaList: List<ChatFooterImage> = listOf(),
         val mediaLoading: Boolean = false,
-        val selectedModel: ChatGptModel = ChatGptModel.Gpt5Nano,
+        val selectedModel: ChatGptModel = ChatGptModel.GeminiFlashLatest,
         val projectNameDialog: NewChatUiState.ProjectNameDialog? = null,
         val projects: List<Project>? = null,
         val isLoading: Boolean = false,
