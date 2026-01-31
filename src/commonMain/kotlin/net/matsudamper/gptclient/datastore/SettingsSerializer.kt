@@ -7,19 +7,26 @@ import okio.BufferedSink
 import okio.BufferedSource
 
 @OptIn(ExperimentalSerializationApi::class)
-object SettingsSerializer : OkioSerializer<Settings> {
+class SettingsSerializer(
+    private val encryptor: SettingsEncryptor,
+) : OkioSerializer<Settings> {
     override val defaultValue: Settings = Settings()
 
     override suspend fun readFrom(source: BufferedSource): Settings {
+        val raw = source.readByteArray()
+        val decrypted = try {
+            encryptor.decrypt(raw)
+        } catch (_: Exception) {
+            raw
+        }
         return ProtoBuf.decodeFromByteArray(
             Settings.serializer(),
-            source.readByteArray(),
+            decrypted,
         )
     }
 
     override suspend fun writeTo(t: Settings, sink: BufferedSink) {
-        sink.write(
-            ProtoBuf.encodeToByteArray(Settings.serializer(), t),
-        )
+        val encoded = ProtoBuf.encodeToByteArray(Settings.serializer(), t)
+        sink.write(encryptor.encrypt(encoded))
     }
 }
