@@ -17,9 +17,9 @@ android {
             }
             create("ci") {
                 storeFile = file(debugKeystoreFile)
-                storePassword = System.getenv("DEBUG_KEYSTORE_PASSWORD") ?: "android"
-                keyAlias = System.getenv("DEBUG_KEY_ALIAS") ?: "androiddebugkey"
-                keyPassword = System.getenv("DEBUG_KEY_PASSWORD") ?: "android"
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
             }
         }
     }

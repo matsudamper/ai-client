@@ -30,9 +30,6 @@ jobs:
       - name: Build debug APK
         env:
           DEBUG_KEYSTORE_FILE: debug.keystore
-          DEBUG_KEYSTORE_PASSWORD: android
-          DEBUG_KEY_ALIAS: androiddebugkey
-          DEBUG_KEY_PASSWORD: android
         run: ./gradlew :app-android:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
