@@ -98,7 +98,12 @@ class AddRequestUseCase(
                 message = message,
                 uris = uris,
             )
-            appDatabase.chatRoomDao().update(room.copy(workerId = workId))
+            appDatabase.chatRoomDao().update(
+                room.copy(
+                    workerId = workId,
+                    latestErrorMessage = null,
+                ),
+            )
 
             return@withContext Result.Success
         }

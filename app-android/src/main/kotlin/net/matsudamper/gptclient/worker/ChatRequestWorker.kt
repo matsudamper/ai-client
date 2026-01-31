@@ -129,6 +129,7 @@ class ChatRequestWorker(
                     chatRoomDao.update(id = chatRoomId) {
                         it.copy(
                             workerId = null,
+                            latestErrorMessage = response.reason.message
                         )
                     }
 

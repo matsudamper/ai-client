@@ -27,6 +27,7 @@ import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.ChatListUiState
+import net.matsudamper.gptclient.ui.chat.ChatErrorMessageRetryComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
@@ -176,10 +177,26 @@ class ChatViewModel(
                                     is ViewModelState.RoomInfo.Project,
                                     is ViewModelState.RoomInfo.Normal,
                                     null,
-                                    -> TextMessageComposableInterface(AnnotatedString(it))
+                                        -> TextMessageComposableInterface(AnnotatedString(it))
                                 }
                             },
-                        ),
+                        ).let { items ->
+                            val message = viewModelState.latestChatErrorMessage
+                            if (message != null) {
+                                items.plus(
+                                    ChatListUiState.Message.Agent(
+                                        ChatErrorMessageRetryComposableInterface(
+                                            message = AnnotatedString(message),
+                                            retry = {
+                                                retryRequest()
+                                            },
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                items
+                            }
+                        },
                         errorDialogMessage = viewModelState.errorDialogMessage,
                     )
                 }
@@ -198,6 +215,7 @@ class ChatViewModel(
                         it.copy(
                             roomInfo = it.roomInfo?.copyOnlyRoom(room),
                             isWorkInProgress = isWorkInProgress,
+                            latestChatErrorMessage = room.latestErrorMessage,
                         )
                     }
                 }
@@ -215,7 +233,7 @@ class ChatViewModel(
                             is Navigator.Chat.ChatType.Project -> chatType.projectId
                             is Navigator.Chat.ChatType.BuiltinProject,
                             is Navigator.Chat.ChatType.Normal,
-                            -> null
+                                -> null
                         },
                         model = openContext.model,
                     )
@@ -296,7 +314,7 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.Success,
                     is AddRequestUseCase.Result.WorkInProgress,
                     is AddRequestUseCase.Result.IsLastUserChat,
-                    -> Unit
+                        -> Unit
 
                     is AddRequestUseCase.Result.GptResultError -> {
                         platformRequest.showToast(result.gptError.reason.message)
@@ -351,10 +369,10 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.Success,
                     is AddRequestUseCase.Result.IsLastUserChat,
                     is AddRequestUseCase.Result.WorkInProgress,
-                    -> Unit
+                        -> Unit
 
                     is AddRequestUseCase.Result.GptResultError,
-                    -> {
+                        -> {
                         platformRequest.showToast("エラーが発生しました")
                     }
 
@@ -401,6 +419,7 @@ class ChatViewModel(
         val isChatLoading: Boolean = false,
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
+        val latestChatErrorMessage: String? = null,
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom
