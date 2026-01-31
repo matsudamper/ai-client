@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.ktlingGradle) apply false
+    alias(libs.plugins.wire)
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -61,7 +62,6 @@ kotlin {
                 implementation(libs.ktorClientCio)
                 implementation(libs.kotlinxSerializationJson)
                 implementation(libs.androidxDatastoreCoreOkio)
-                implementation(libs.kotlinxSerializationProtobuf)
                 api(libs.koinCore)
             }
         }
@@ -91,5 +91,14 @@ kotlin {
                 api(libs.androidxWorkRuntime)
             }
         }
+    }
+}
+
+wire {
+    kotlin {
+        out = "${projectDir}/src/commonMain/kotlin"
+    }
+    sourcePath {
+        srcDir("src/commonMain/proto")
     }
 }
