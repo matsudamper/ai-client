@@ -30,7 +30,6 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlingGradle = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
 
 [libraries]
-# Android
 androidActivityActivityCompose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 androidActivityKtx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
 androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.17.0" }
