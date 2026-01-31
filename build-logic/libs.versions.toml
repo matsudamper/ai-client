@@ -65,7 +65,7 @@ androidxDatastoreCoreOkio = { module = "androidx.datastore:datastore-core-okio",
 # Room
 androidxRoomRuntime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidxRoomCompiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-androidxSqliteBundled = { module = "androidx.sqlite:sqlite-bundled", version.require = "2.6.0" }
+androidxSqliteBundled = { module = "androidx.sqlite:sqlite-bundled", version.require = "2.6.2" }
 
 # Koin
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
