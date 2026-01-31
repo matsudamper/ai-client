@@ -57,7 +57,7 @@ class GetBuiltinProjectInfoUseCase {
                         val parsed = CalendarResponseParser().parse(it)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
                     },
-                    model = ChatGptModel.Gpt5Nano,
+                    model = ChatGptModel.GeminiFlashLiteLatest,
                 )
             }
 
@@ -93,7 +93,7 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = ChatGptClientInterface.Format.Json,
                     responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
-                    model = ChatGptModel.Gpt5Nano,
+                    model = ChatGptModel.GeminiFlashLiteLatest,
                     summaryProvider = {
                         val parsed = MoneyResponseParser().parse(it)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
@@ -118,7 +118,7 @@ class GetBuiltinProjectInfoUseCase {
                             platformRequest.copyToClipboard(emoji)
                         }
                     },
-                    model = ChatGptModel.Gpt5Nano,
+                    model = ChatGptModel.GeminiFlashLiteLatest,
                     summaryProvider = { it },
                 )
             }
