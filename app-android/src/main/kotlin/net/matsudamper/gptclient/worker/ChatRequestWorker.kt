@@ -125,7 +125,22 @@ class ChatRequestWorker(
                         model = chatModel,
                     )
             ) {
-                is ChatGptClientInterface.GptResult.Error -> return Result.failure()
+                is ChatGptClientInterface.GptResult.Error -> {
+                    chatRoomDao.update(id = chatRoomId) {
+                        it.copy(
+                            workerId = null,
+                        )
+                    }
+
+                    snowFinishNotification(
+                        title = "処理失敗",
+                        message = response.reason.message,
+                        channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                        notificationId = Random.nextInt(),
+                        pendingIntent = pendingIntent,
+                    )
+                    return Result.failure()
+                }
                 is ChatGptClientInterface.GptResult.Success -> response.response
             }
 
@@ -167,6 +182,7 @@ class ChatRequestWorker(
 
             return Result.success()
         } catch (e: Throwable) {
+            e.printStackTrace()
             val chatRoomDao = appDatabase.chatRoomDao()
 
             chatRoomDao.update(id = chatRoomId) {
