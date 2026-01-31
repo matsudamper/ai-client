@@ -60,7 +60,7 @@ kotlinxSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-seriali
 kotlinxCoroutineSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutine" }
 
 # DataStore
-androidxDatastoreCoreOkio = { module = "androidx.datastore:datastore-core-okio", version.require = "1.1.7" }
+androidxDatastoreCoreOkio = { module = "androidx.datastore:datastore-core-okio", version.require = "1.2.0" }
 
 # Room
 androidxRoomRuntime = { module = "androidx.room:room-runtime", version.ref = "room" }
