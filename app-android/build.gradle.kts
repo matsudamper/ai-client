@@ -11,7 +11,10 @@ android {
     signingConfigs {
         val isCI = System.getenv("CI")?.toBoolean() == true
         val debugKeystoreFile = System.getenv("DEBUG_KEYSTORE_FILE")
-        if (isCI && debugKeystoreFile != null) {
+        if (isCI) {
+            require(debugKeystoreFile != null) {
+                "DEBUG_KEYSTORE_FILE environment variable must be set in CI environment"
+            }
             create("ci") {
                 storeFile = file(debugKeystoreFile)
                 storePassword = System.getenv("DEBUG_KEYSTORE_PASSWORD") ?: "android"
@@ -25,7 +28,7 @@ android {
         debug {
             val isCI = System.getenv("CI")?.toBoolean() == true
             if (isCI) {
-                signingConfig = signingConfigs.findByName("ci")
+                signingConfig = signingConfigs.getByName("ci")
             }
         }
     }
