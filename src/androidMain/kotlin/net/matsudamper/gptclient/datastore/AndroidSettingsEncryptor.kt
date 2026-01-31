@@ -8,15 +8,8 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual object SettingsEncryptor {
-    private const val KEYSTORE_ALIAS = "settings_encryption_key"
-    private const val ANDROID_KEYSTORE = "AndroidKeyStore"
-    private const val TRANSFORMATION = "AES/GCM/NoPadding"
-    private const val GCM_TAG_LENGTH = 128
-    private const val GCM_IV_LENGTH = 12
-
-    actual fun encrypt(data: ByteArray): ByteArray {
+class AndroidSettingsEncryptor : SettingsEncryptor {
+    override fun encrypt(data: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
         val iv = cipher.iv
@@ -24,7 +17,7 @@ actual object SettingsEncryptor {
         return iv + encrypted
     }
 
-    actual fun decrypt(data: ByteArray): ByteArray {
+    override fun decrypt(data: ByteArray): ByteArray {
         val iv = data.copyOfRange(0, GCM_IV_LENGTH)
         val encrypted = data.copyOfRange(GCM_IV_LENGTH, data.size)
         val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -50,5 +43,13 @@ actual object SettingsEncryptor {
                 .build(),
         )
         return keyGenerator.generateKey()
+    }
+
+    private companion object {
+        const val KEYSTORE_ALIAS = "settings_encryption_key"
+        const val ANDROID_KEYSTORE = "AndroidKeyStore"
+        const val TRANSFORMATION = "AES/GCM/NoPadding"
+        const val GCM_TAG_LENGTH = 128
+        const val GCM_IV_LENGTH = 12
     }
 }

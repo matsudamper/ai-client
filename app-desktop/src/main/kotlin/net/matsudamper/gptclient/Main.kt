@@ -3,7 +3,9 @@ package net.matsudamper.gptclient
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlin.system.exitProcess
+import net.matsudamper.gptclient.datastore.NoopSettingsEncryptor
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.datastore.SettingsEncryptor
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.RoomPlatformBuilder
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
@@ -19,9 +21,13 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
                 single<AppDatabase> {
                     RoomPlatformBuilder.create()
                 }
+                single<SettingsEncryptor> {
+                    NoopSettingsEncryptor()
+                }
                 single<SettingDataStore> {
                     SettingDataStore(
                         filename = "setting",
+                        encryptor = get(),
                     )
                 }
                 single<AddRequestUseCase.WorkManagerScheduler> {
