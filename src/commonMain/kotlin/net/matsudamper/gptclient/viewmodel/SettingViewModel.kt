@@ -14,6 +14,10 @@ class SettingViewModel(private val settingDataStore: SettingDataStore) : ViewMod
         override fun updateSecretKey(text: String) {
             saveSecretKey(text)
         }
+
+        override fun updateGeminiSecretKey(text: String) {
+            saveGeminiSecretKey(text)
+        }
     }
 
     val uiStateFlow: StateFlow<SettingsScreenUiState> = MutableStateFlow<SettingsScreenUiState>(
@@ -23,6 +27,7 @@ class SettingViewModel(private val settingDataStore: SettingDataStore) : ViewMod
             uiState.update {
                 SettingsScreenUiState.Loaded(
                     initialSecretKey = settingDataStore.getSecretKey(),
+                    initialGeminiSecretKey = settingDataStore.getGeminiSecretKey(),
                     listener = loadedListener,
                 )
             }
@@ -32,6 +37,12 @@ class SettingViewModel(private val settingDataStore: SettingDataStore) : ViewMod
     private fun saveSecretKey(text: String) {
         viewModelScope.launch {
             settingDataStore.setSecretKey(text)
+        }
+    }
+
+    private fun saveGeminiSecretKey(text: String) {
+        viewModelScope.launch {
+            settingDataStore.setGeminiSecretKey(text)
         }
     }
 }

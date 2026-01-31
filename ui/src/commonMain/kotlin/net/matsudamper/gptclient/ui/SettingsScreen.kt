@@ -34,11 +34,13 @@ sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
     data class Loaded(
         val initialSecretKey: String,
+        val initialGeminiSecretKey: String,
         val listener: Listener,
     ) : SettingsScreenUiState {
         @Immutable
         interface Listener {
             fun updateSecretKey(text: String)
+            fun updateGeminiSecretKey(text: String)
         }
     }
 }
@@ -103,34 +105,55 @@ private fun Loaded(
         modifier = modifier
             .verticalScroll(rememberScrollState()),
     ) {
-        SettingItem(
+        ApiKeySettingItem(
             modifier = Modifier.fillMaxWidth(),
-            title = {
-                Text("Secret Key")
-            },
-            content = {
-                val state = rememberTextFieldState(uiState.initialSecretKey)
-                LaunchedEffect(state.text) {
-                    uiState.listener.updateSecretKey(state.text.toString())
-                }
-                BasicTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    state = state,
-                    decorator = {
-                        Box(
-                            modifier = Modifier
-                                .clip(MaterialTheme.shapes.medium)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .padding(8.dp),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            it()
-                        }
-                    },
-                )
-            },
+            title = "OpenAI Secret Key",
+            initialValue = uiState.initialSecretKey,
+            onValueChange = { uiState.listener.updateSecretKey(it) },
+        )
+        ApiKeySettingItem(
+            modifier = Modifier.fillMaxWidth(),
+            title = "Gemini API Key",
+            initialValue = uiState.initialGeminiSecretKey,
+            onValueChange = { uiState.listener.updateGeminiSecretKey(it) },
         )
     }
+}
+
+@Composable
+private fun ApiKeySettingItem(
+    modifier: Modifier = Modifier,
+    title: String,
+    initialValue: String,
+    onValueChange: (String) -> Unit,
+) {
+    SettingItem(
+        modifier = modifier,
+        title = {
+            Text(title)
+        },
+        content = {
+            val state = rememberTextFieldState(initialValue)
+            LaunchedEffect(state.text) {
+                onValueChange(state.text.toString())
+            }
+            BasicTextField(
+                modifier = Modifier.fillMaxWidth(),
+                state = state,
+                decorator = {
+                    Box(
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        it()
+                    }
+                },
+            )
+        },
+    )
 }
 
 @Composable
