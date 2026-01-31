@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient.viewmodel
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
