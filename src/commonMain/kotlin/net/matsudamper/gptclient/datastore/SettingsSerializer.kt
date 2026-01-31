@@ -13,7 +13,12 @@ class SettingsSerializer(
     override val defaultValue: Settings = Settings()
 
     override suspend fun readFrom(source: BufferedSource): Settings {
-        val decrypted = encryptor.decrypt(source.readByteArray())
+        val raw = source.readByteArray()
+        val decrypted = try {
+            encryptor.decrypt(raw)
+        } catch (_: Exception) {
+            raw
+        }
         return ProtoBuf.decodeFromByteArray(
             Settings.serializer(),
             decrypted,
