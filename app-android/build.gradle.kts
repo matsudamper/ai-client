@@ -8,8 +8,28 @@ android {
     compileSdk = 36
     namespace = "net.matsudamper.gptclient.app"
 
+    signingConfigs {
+        val isCI = System.getenv("CI")?.toBoolean() == true
+        val debugKeystoreFile = System.getenv("DEBUG_KEYSTORE_FILE")
+        if (isCI) {
+            require(debugKeystoreFile != null) {
+                "DEBUG_KEYSTORE_FILE environment variable must be set in CI environment"
+            }
+            create("ci") {
+                storeFile = rootProject.file(debugKeystoreFile)
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
+    }
+
     buildTypes {
         debug {
+            val isCI = System.getenv("CI")?.toBoolean() == true
+            if (isCI) {
+                signingConfig = signingConfigs.getByName("ci")
+            }
         }
     }
     defaultConfig {
