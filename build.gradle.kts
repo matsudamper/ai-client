@@ -46,7 +46,6 @@ kotlin {
 
     sourceSets {
         val commonMain by getting {
-            resources.srcDirs("src/commonMain/proto")
             dependencies {
                 api(projects.ui)
                 api(projects.room)
@@ -61,8 +60,8 @@ kotlin {
                 implementation(libs.ktorClientCore)
                 implementation(libs.ktorClientCio)
                 implementation(libs.kotlinxSerializationJson)
-                implementation(libs.androidxDatastoreCore)
-                implementation(libs.androidxDatastorePreferences)
+                implementation(libs.androidxDatastoreCoreOkio)
+                implementation(libs.kotlinxSerializationProtobuf)
                 api(libs.koinCore)
             }
         }

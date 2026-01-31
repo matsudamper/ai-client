@@ -56,11 +56,11 @@ coil3NetworkOkHttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.
 # Kotlin
 kotlinxSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinSerialization" }
 kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerialization" }
+kotlinxSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinSerialization" }
 kotlinxCoroutineSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutine" }
 
 # DataStore
-androidxDatastoreCore = { module = "androidx.datastore:datastore-core", version.require = "1.1.7" }
-androidxDatastorePreferences = { module = "androidx.datastore:datastore-preferences ", version.require = "1.1.7" }
+androidxDatastoreCoreOkio = { module = "androidx.datastore:datastore-core-okio", version.require = "1.1.7" }
 
 # Room
 androidxRoomRuntime = { module = "androidx.room:room-runtime", version.ref = "room" }
