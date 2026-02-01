@@ -20,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -48,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -136,7 +136,7 @@ private fun ImageContent(
     modifier: Modifier = Modifier,
 ) {
     val asyncImage = rememberAsyncImagePainter(imageUri)
-    val asyncImageState by asyncImage.state.collectAsStateWithLifecycle()
+    val asyncImageState by asyncImage.state.collectAsState()
     when (val asyncImageState = asyncImageState) {
         is AsyncImagePainter.State.Empty,
         is AsyncImagePainter.State.Error,
