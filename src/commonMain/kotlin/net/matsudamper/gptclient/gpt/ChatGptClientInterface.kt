@@ -10,7 +10,7 @@ interface ChatGptClientInterface {
     ): GptResult
 
     sealed interface GptResult {
-        data class Success(val response: GptResponse) : GptResult
+        data class Success(val response: AiResponse) : GptResult
         data class Error(val reason: ErrorReason) : GptResult
 
         sealed interface ErrorReason {
@@ -39,5 +39,24 @@ interface ChatGptClientInterface {
     enum class Format {
         Text,
         Json,
+    }
+
+    data class AiResponse(
+        val choices: List<Choice>,
+    ) {
+        data class Choice(
+            val message: Message,
+        ) {
+            data class Message(
+                val role: Role?,
+                val content: String,
+            )
+
+            enum class Role {
+                System,
+                User,
+                Assistant,
+            }
+        }
     }
 }

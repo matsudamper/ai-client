@@ -1,10 +1,5 @@
 package net.matsudamper.gptclient.gpt
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -15,12 +10,16 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.util.Log
 
 class ChatGptClient(
     private val secretKey: String,
-    private val endpoint: String = OPENAI_ENDPOINT,
 ) : ChatGptClientInterface {
     override suspend fun request(
         messages: List<ChatGptClientInterface.GptMessage>,
@@ -92,7 +91,7 @@ class ChatGptClient(
                     requestTimeoutMillis = 60 * 2 * 1000L
                 }
             }.use {
-                it.post(endpoint) {
+                it.post(OPENAI_ENDPOINT) {
                     header(HttpHeaders.ContentType, ContentType.Application.Json)
                     header(HttpHeaders.Authorization, "Bearer $secretKey")
                     setBody(jsonString)
@@ -102,7 +101,8 @@ class ChatGptClient(
         val responseJson = response.bodyAsText()
         Log.d("Response", responseJson)
         return try {
-            ChatGptClientInterface.GptResult.Success(Json.decodeFromString(GptResponse.serializer(), responseJson))
+            val gptResponse = Json.decodeFromString(GptResponse.serializer(), responseJson)
+            ChatGptClientInterface.GptResult.Success(gptResponse.toAiResponse())
         } catch (e: SerializationException) {
             e.printStackTrace()
             ChatGptClientInterface.GptResult.Error(ChatGptClientInterface.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
@@ -111,10 +111,27 @@ class ChatGptClient(
 
     companion object {
         const val OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
-        const val GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
 
         private val Json = Json {
             ignoreUnknownKeys = true
+        }
+
+        private fun GptResponse.toAiResponse(): ChatGptClientInterface.AiResponse {
+            return ChatGptClientInterface.AiResponse(
+                choices = choices.map { choice ->
+                    ChatGptClientInterface.AiResponse.Choice(
+                        message = ChatGptClientInterface.AiResponse.Choice.Message(
+                            role = when (choice.message.role) {
+                                GptResponse.Choice.Role.System -> ChatGptClientInterface.AiResponse.Choice.Role.System
+                                GptResponse.Choice.Role.User -> ChatGptClientInterface.AiResponse.Choice.Role.User
+                                GptResponse.Choice.Role.Assistant -> ChatGptClientInterface.AiResponse.Choice.Role.Assistant
+                                null -> null
+                            },
+                            content = choice.message.content,
+                        ),
+                    )
+                },
+            )
         }
     }
 }

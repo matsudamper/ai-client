@@ -22,7 +22,7 @@ import net.matsudamper.gptclient.entity.ApiProvider
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.gpt.ChatGptClient
 import net.matsudamper.gptclient.gpt.ChatGptClientInterface
-import net.matsudamper.gptclient.gpt.GptResponse
+import net.matsudamper.gptclient.gpt.gemini.GeminiClient
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -103,14 +103,12 @@ class ChatRequestWorker(
             val chatModel = ChatGptModel.entries.firstOrNull { it.modelName == model }
                 ?: return Result.failure()
 
-            val gptClient = when (chatModel.provider) {
+            val gptClient: ChatGptClientInterface = when (chatModel.provider) {
                 ApiProvider.OpenAI -> ChatGptClient(
                     secretKey = settingDataStore.getSecretKey(),
-                    endpoint = ChatGptClient.OPENAI_ENDPOINT,
                 )
-                ApiProvider.Gemini -> ChatGptClient(
-                    secretKey = settingDataStore.getGeminiSecretKey(),
-                    endpoint = ChatGptClient.GEMINI_ENDPOINT,
+                ApiProvider.Gemini -> GeminiClient(
+                    apiKey = settingDataStore.getGeminiSecretKey(),
                 )
             }
 
@@ -152,9 +150,9 @@ class ChatRequestWorker(
                     textMessage = choice.message.content,
                     imageUri = null,
                     role = when (choice.message.role) {
-                        GptResponse.Choice.Role.System -> Chat.Role.System
-                        GptResponse.Choice.Role.User -> Chat.Role.User
-                        GptResponse.Choice.Role.Assistant -> Chat.Role.Assistant
+                        ChatGptClientInterface.AiResponse.Choice.Role.System -> Chat.Role.System
+                        ChatGptClientInterface.AiResponse.Choice.Role.User -> Chat.Role.User
+                        ChatGptClientInterface.AiResponse.Choice.Role.Assistant -> Chat.Role.Assistant
                         null -> Chat.Role.User
                     },
                 )
@@ -205,12 +203,12 @@ class ChatRequestWorker(
 
     private suspend fun writeSummary(
         chatRoomId: ChatRoomId,
-        response: GptResponse,
+        response: ChatGptClientInterface.AiResponse,
     ) {
         val chatRoomDao = appDatabase.chatRoomDao()
         val room = chatRoomDao.get(chatRoomId = chatRoomId.value).first()
         val message = response.choices
-            .lastOrNull { it.message.role == GptResponse.Choice.Role.Assistant }
+            .lastOrNull { it.message.role == ChatGptClientInterface.AiResponse.Choice.Role.Assistant }
             ?.message ?: return
 
         val summary = when (val builtinProjectId = room.builtInProjectId) {
