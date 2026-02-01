@@ -72,6 +72,8 @@ kotlin {
                 implementation(libs.composeMaterial3)
                 implementation(libs.kotlinxCoroutineSwing)
                 implementation(libs.koinCore)
+                implementation(libs.androidxLifecycleViewModelCompose)
+                implementation(libs.androidxLifecycleRuntimeCompose)
             }
         }
         val androidMain by getting {
