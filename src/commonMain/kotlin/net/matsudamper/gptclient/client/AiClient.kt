@@ -1,8 +1,8 @@
-package net.matsudamper.gptclient.gpt
+package net.matsudamper.gptclient.client
 
 import net.matsudamper.gptclient.entity.ChatGptModel
 
-interface ChatGptClientInterface {
+interface AiClient {
     suspend fun request(
         messages: List<GptMessage>,
         format: Format,

@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient.gpt.gemini
+package net.matsudamper.gptclient.client.gemini
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

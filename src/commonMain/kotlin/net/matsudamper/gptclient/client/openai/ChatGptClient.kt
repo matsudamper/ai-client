@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient.gpt
+package net.matsudamper.gptclient.client.openai
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -15,35 +15,36 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.util.Log
 
 class ChatGptClient(
     private val secretKey: String,
-) : ChatGptClientInterface {
+) : AiClient {
     override suspend fun request(
-        messages: List<ChatGptClientInterface.GptMessage>,
-        format: ChatGptClientInterface.Format,
+        messages: List<AiClient.GptMessage>,
+        format: AiClient.Format,
         model: ChatGptModel,
-    ): ChatGptClientInterface.GptResult {
+    ): AiClient.GptResult {
         val requestMessages = messages.map { message ->
             val role = when (message.role) {
-                ChatGptClientInterface.GptMessage.Role.Assistant -> GptRequest.Role.Assistant
-                ChatGptClientInterface.GptMessage.Role.System -> GptRequest.Role.System
-                ChatGptClientInterface.GptMessage.Role.User -> GptRequest.Role.User
+                AiClient.GptMessage.Role.Assistant -> GptRequest.Role.Assistant
+                AiClient.GptMessage.Role.System -> GptRequest.Role.System
+                AiClient.GptMessage.Role.User -> GptRequest.Role.User
             }
             val contents = message.contents.map { content ->
                 when (content) {
-                    is ChatGptClientInterface.GptMessage.Content.Base64Image -> {
+                    is AiClient.GptMessage.Content.Base64Image -> {
                         GptRequest.Content(
                             type = "image_url",
                             imageUrl = GptRequest.ImageUrl("data:image/png;base64,${content.base64}"),
                         )
                     }
 
-                    is ChatGptClientInterface.GptMessage.Content.ImageUrl -> {
+                    is AiClient.GptMessage.Content.ImageUrl -> {
                         if (model.enableImage.not()) {
-                            return ChatGptClientInterface.GptResult.Error(ChatGptClientInterface.GptResult.ErrorReason.ImageNotSupported())
+                            return AiClient.GptResult.Error(AiClient.GptResult.ErrorReason.ImageNotSupported())
                         }
                         GptRequest.Content(
                             type = "image_url",
@@ -51,7 +52,7 @@ class ChatGptClient(
                         )
                     }
 
-                    is ChatGptClientInterface.GptMessage.Content.Text -> {
+                    is AiClient.GptMessage.Content.Text -> {
                         GptRequest.Content(
                             type = "text",
                             text = content.text,
@@ -70,8 +71,8 @@ class ChatGptClient(
             messages = requestMessages,
             responseFormat = GptRequest.ResponseFormat(
                 type = when (format) {
-                    ChatGptClientInterface.Format.Text -> "text"
-                    ChatGptClientInterface.Format.Json -> "json_object"
+                    AiClient.Format.Text -> "text"
+                    AiClient.Format.Json -> "json_object"
                 },
             ),
             topP = 1.0,
@@ -102,10 +103,10 @@ class ChatGptClient(
         Log.d("Response", responseJson)
         return try {
             val gptResponse = Json.decodeFromString(GptResponse.serializer(), responseJson)
-            ChatGptClientInterface.GptResult.Success(gptResponse.toAiResponse())
+            AiClient.GptResult.Success(gptResponse.toAiResponse())
         } catch (e: SerializationException) {
             e.printStackTrace()
-            ChatGptClientInterface.GptResult.Error(ChatGptClientInterface.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
+            AiClient.GptResult.Error(AiClient.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
         }
     }
 
@@ -116,15 +117,15 @@ class ChatGptClient(
             ignoreUnknownKeys = true
         }
 
-        private fun GptResponse.toAiResponse(): ChatGptClientInterface.AiResponse {
-            return ChatGptClientInterface.AiResponse(
+        private fun GptResponse.toAiResponse(): AiClient.AiResponse {
+            return AiClient.AiResponse(
                 choices = choices.map { choice ->
-                    ChatGptClientInterface.AiResponse.Choice(
-                        message = ChatGptClientInterface.AiResponse.Choice.Message(
+                    AiClient.AiResponse.Choice(
+                        message = AiClient.AiResponse.Choice.Message(
                             role = when (choice.message.role) {
-                                GptResponse.Choice.Role.System -> ChatGptClientInterface.AiResponse.Choice.Role.System
-                                GptResponse.Choice.Role.User -> ChatGptClientInterface.AiResponse.Choice.Role.User
-                                GptResponse.Choice.Role.Assistant -> ChatGptClientInterface.AiResponse.Choice.Role.Assistant
+                                GptResponse.Choice.Role.System -> AiClient.AiResponse.Choice.Role.System
+                                GptResponse.Choice.Role.User -> AiClient.AiResponse.Choice.Role.User
+                                GptResponse.Choice.Role.Assistant -> AiClient.AiResponse.Choice.Role.Assistant
                                 null -> null
                             },
                             content = choice.message.content,

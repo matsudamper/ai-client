@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.gpt.ChatGptClientInterface
+import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -381,7 +381,7 @@ class ProjectViewModel(
             data class Project(val project: net.matsudamper.gptclient.room.entity.Project) : SystemInfoType {
                 override fun getInfo(): Info = Info(
                     systemMessage = project.systemMessage,
-                    format = ChatGptClientInterface.Format.Text,
+                    format = AiClient.Format.Text,
                     responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
                     model = ChatGptModel.entries.firstOrNull { it.modelName == project.modelName }
                         ?: ChatGptModel.Gpt5Nano,
@@ -391,6 +391,6 @@ class ProjectViewModel(
             fun getInfo(): Info
         }
 
-        data class Info(val systemMessage: String, val format: ChatGptClientInterface.Format, val responseTransformer: (String) -> ChatMessageComposableInterface, val model: ChatGptModel)
+        data class Info(val systemMessage: String, val format: AiClient.Format, val responseTransformer: (String) -> ChatMessageComposableInterface, val model: ChatGptModel)
     }
 }

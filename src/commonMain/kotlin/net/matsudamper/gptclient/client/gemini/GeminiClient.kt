@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient.gpt.gemini
+package net.matsudamper.gptclient.client.gemini
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -16,23 +16,23 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.gpt.ChatGptClientInterface
+import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.util.Log
 
 class GeminiClient(
     private val apiKey: String,
-) : ChatGptClientInterface {
+) : AiClient {
     override suspend fun request(
-        messages: List<ChatGptClientInterface.GptMessage>,
-        format: ChatGptClientInterface.Format,
+        messages: List<AiClient.GptMessage>,
+        format: AiClient.Format,
         model: ChatGptModel,
-    ): ChatGptClientInterface.GptResult {
+    ): AiClient.GptResult {
         val systemInstruction = messages
-            .filter { it.role == ChatGptClientInterface.GptMessage.Role.System }
+            .filter { it.role == AiClient.GptMessage.Role.System }
             .flatMap { message ->
                 message.contents.mapNotNull { content ->
                     when (content) {
-                        is ChatGptClientInterface.GptMessage.Content.Text -> GeminiRequest.Part(text = content.text)
+                        is AiClient.GptMessage.Content.Text -> GeminiRequest.Part(text = content.text)
                         else -> null
                     }
                 }
@@ -41,20 +41,20 @@ class GeminiClient(
             ?.let { GeminiRequest.Content(parts = it) }
 
         val contents = messages
-            .filter { it.role != ChatGptClientInterface.GptMessage.Role.System }
+            .filter { it.role != AiClient.GptMessage.Role.System }
             .map { message ->
                 val role = when (message.role) {
-                    ChatGptClientInterface.GptMessage.Role.User -> "user"
-                    ChatGptClientInterface.GptMessage.Role.Assistant -> "model"
-                    ChatGptClientInterface.GptMessage.Role.System -> "user"
+                    AiClient.GptMessage.Role.User -> "user"
+                    AiClient.GptMessage.Role.Assistant -> "model"
+                    AiClient.GptMessage.Role.System -> "user"
                 }
                 val parts = message.contents.map { content ->
                     when (content) {
-                        is ChatGptClientInterface.GptMessage.Content.Text -> {
+                        is AiClient.GptMessage.Content.Text -> {
                             GeminiRequest.Part(text = content.text)
                         }
 
-                        is ChatGptClientInterface.GptMessage.Content.Base64Image -> {
+                        is AiClient.GptMessage.Content.Base64Image -> {
                             GeminiRequest.Part(
                                 inlineData = GeminiRequest.InlineData(
                                     mimeType = "image/png",
@@ -63,10 +63,10 @@ class GeminiClient(
                             )
                         }
 
-                        is ChatGptClientInterface.GptMessage.Content.ImageUrl -> {
+                        is AiClient.GptMessage.Content.ImageUrl -> {
                             if (model.enableImage.not()) {
-                                return ChatGptClientInterface.GptResult.Error(
-                                    ChatGptClientInterface.GptResult.ErrorReason.ImageNotSupported(),
+                                return AiClient.GptResult.Error(
+                                    AiClient.GptResult.ErrorReason.ImageNotSupported(),
                                 )
                             }
                             GeminiRequest.Part(
@@ -89,8 +89,8 @@ class GeminiClient(
                 topP = 1.0,
                 maxOutputTokens = model.defaultToken,
                 responseMimeType = when (format) {
-                    ChatGptClientInterface.Format.Text -> "text/plain"
-                    ChatGptClientInterface.Format.Json -> "application/json"
+                    AiClient.Format.Text -> "text/plain"
+                    AiClient.Format.Json -> "application/json"
                 },
             ),
         )
@@ -117,11 +117,11 @@ class GeminiClient(
 
         return try {
             val geminiResponse = ResponseJson.decodeFromString(GeminiResponse.serializer(), responseJson)
-            ChatGptClientInterface.GptResult.Success(geminiResponse.toAiResponse())
+            AiClient.GptResult.Success(geminiResponse.toAiResponse())
         } catch (e: SerializationException) {
             e.printStackTrace()
-            ChatGptClientInterface.GptResult.Error(
-                ChatGptClientInterface.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"),
+            AiClient.GptResult.Error(
+                AiClient.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"),
             )
         }
     }
@@ -138,19 +138,19 @@ class GeminiClient(
             ignoreUnknownKeys = true
         }
 
-        private fun GeminiResponse.toAiResponse(): ChatGptClientInterface.AiResponse {
-            return ChatGptClientInterface.AiResponse(
+        private fun GeminiResponse.toAiResponse(): AiClient.AiResponse {
+            return AiClient.AiResponse(
                 choices = candidates.map { candidate ->
                     val textContent = candidate.content.parts
                         .mapNotNull { it.text }
                         .joinToString("")
                     val role = when (candidate.content.role) {
-                        "model" -> ChatGptClientInterface.AiResponse.Choice.Role.Assistant
-                        "user" -> ChatGptClientInterface.AiResponse.Choice.Role.User
-                        else -> ChatGptClientInterface.AiResponse.Choice.Role.Assistant
+                        "model" -> AiClient.AiResponse.Choice.Role.Assistant
+                        "user" -> AiClient.AiResponse.Choice.Role.User
+                        else -> AiClient.AiResponse.Choice.Role.Assistant
                     }
-                    ChatGptClientInterface.AiResponse.Choice(
-                        message = ChatGptClientInterface.AiResponse.Choice.Message(
+                    AiClient.AiResponse.Choice(
+                        message = AiClient.AiResponse.Choice.Message(
                             role = role,
                             content = textContent,
                         ),

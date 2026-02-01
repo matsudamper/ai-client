@@ -20,9 +20,9 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ApiProvider
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.gpt.ChatGptClient
-import net.matsudamper.gptclient.gpt.ChatGptClientInterface
-import net.matsudamper.gptclient.gpt.gemini.GeminiClient
+import net.matsudamper.gptclient.client.openai.ChatGptClient
+import net.matsudamper.gptclient.client.AiClient
+import net.matsudamper.gptclient.client.gemini.GeminiClient
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -66,7 +66,7 @@ class ChatRequestWorker(
             ),
         )
 
-        val format: ChatGptClientInterface.Format
+        val format: AiClient.Format
         val systemMessage: String?
         val model: String
         when (val builtinProjectId = firstChatRoom.builtInProjectId) {
@@ -75,7 +75,7 @@ class ChatRequestWorker(
                 else -> {
                     val projectDao = appDatabase.projectDao()
                     val project = projectDao.get(projectId.id).first()
-                    format = ChatGptClientInterface.Format.Text
+                    format = AiClient.Format.Text
                     systemMessage = project?.systemMessage
                     model = firstChatRoom.modelName
                 }
@@ -103,7 +103,7 @@ class ChatRequestWorker(
             val chatModel = ChatGptModel.entries.firstOrNull { it.modelName == model }
                 ?: return Result.failure()
 
-            val gptClient: ChatGptClientInterface = when (chatModel.provider) {
+            val gptClient: AiClient = when (chatModel.provider) {
                 ApiProvider.OpenAI -> ChatGptClient(
                     secretKey = settingDataStore.getSecretKey(),
                 )
@@ -123,7 +123,7 @@ class ChatRequestWorker(
                         model = chatModel,
                     )
             ) {
-                is ChatGptClientInterface.GptResult.Error -> {
+                is AiClient.GptResult.Error -> {
                     chatRoomDao.update(id = chatRoomId) {
                         it.copy(
                             workerId = null,
@@ -140,7 +140,7 @@ class ChatRequestWorker(
                     )
                     return Result.failure()
                 }
-                is ChatGptClientInterface.GptResult.Success -> response.response
+                is AiClient.GptResult.Success -> response.response
             }
 
             val roomChats = response.choices.mapIndexed { index, choice ->
@@ -150,9 +150,9 @@ class ChatRequestWorker(
                     textMessage = choice.message.content,
                     imageUri = null,
                     role = when (choice.message.role) {
-                        ChatGptClientInterface.AiResponse.Choice.Role.System -> Chat.Role.System
-                        ChatGptClientInterface.AiResponse.Choice.Role.User -> Chat.Role.User
-                        ChatGptClientInterface.AiResponse.Choice.Role.Assistant -> Chat.Role.Assistant
+                        AiClient.AiResponse.Choice.Role.System -> Chat.Role.System
+                        AiClient.AiResponse.Choice.Role.User -> Chat.Role.User
+                        AiClient.AiResponse.Choice.Role.Assistant -> Chat.Role.Assistant
                         null -> Chat.Role.User
                     },
                 )
@@ -203,12 +203,12 @@ class ChatRequestWorker(
 
     private suspend fun writeSummary(
         chatRoomId: ChatRoomId,
-        response: ChatGptClientInterface.AiResponse,
+        response: AiClient.AiResponse,
     ) {
         val chatRoomDao = appDatabase.chatRoomDao()
         val room = chatRoomDao.get(chatRoomId = chatRoomId.value).first()
         val message = response.choices
-            .lastOrNull { it.message.role == ChatGptClientInterface.AiResponse.Choice.Role.Assistant }
+            .lastOrNull { it.message.role == AiClient.AiResponse.Choice.Role.Assistant }
             ?.message ?: return
 
         val summary = when (val builtinProjectId = room.builtInProjectId) {
@@ -237,29 +237,29 @@ class ChatRequestWorker(
     private suspend fun createMessage(
         systemMessage: String?,
         chatRoomId: ChatRoomId,
-    ): List<ChatGptClientInterface.GptMessage> {
+    ): List<AiClient.GptMessage> {
         val chatDao = appDatabase.chatDao()
         val chats = chatDao.get(chatRoomId = chatRoomId.value)
             .first()
 
         val systemMessage = run {
             systemMessage ?: return@run null
-            ChatGptClientInterface.GptMessage(
-                role = ChatGptClientInterface.GptMessage.Role.System,
-                contents = listOf(ChatGptClientInterface.GptMessage.Content.Text(systemMessage)),
+            AiClient.GptMessage(
+                role = AiClient.GptMessage.Role.System,
+                contents = listOf(AiClient.GptMessage.Content.Text(systemMessage)),
             )
         }
         val messages = chats.map {
             val role = when (it.role) {
-                Chat.Role.System -> ChatGptClientInterface.GptMessage.Role.System
-                Chat.Role.User -> ChatGptClientInterface.GptMessage.Role.User
-                Chat.Role.Assistant -> ChatGptClientInterface.GptMessage.Role.Assistant
-                Chat.Role.Unknown -> ChatGptClientInterface.GptMessage.Role.User
+                Chat.Role.System -> AiClient.GptMessage.Role.System
+                Chat.Role.User -> AiClient.GptMessage.Role.User
+                Chat.Role.Assistant -> AiClient.GptMessage.Role.Assistant
+                Chat.Role.Unknown -> AiClient.GptMessage.Role.User
             }
             val contents = buildList {
                 val textMessage = it.textMessage
                 if (textMessage != null) {
-                    add(ChatGptClientInterface.GptMessage.Content.Text(textMessage))
+                    add(AiClient.GptMessage.Content.Text(textMessage))
                 }
                 val imageMessage = it.imageUri
                 if (imageMessage != null) {
@@ -268,7 +268,7 @@ class ChatRequestWorker(
                         return listOf()
                     }
                     add(
-                        ChatGptClientInterface.GptMessage.Content.Base64Image(
+                        AiClient.GptMessage.Content.Base64Image(
                             @OptIn(ExperimentalEncodingApi::class)
                             Base64.encode(byteArray),
                         ),
@@ -276,7 +276,7 @@ class ChatRequestWorker(
                 }
             }
 
-            ChatGptClientInterface.GptMessage(
+            AiClient.GptMessage(
                 role = role,
                 contents = contents,
             )
