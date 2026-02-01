@@ -88,7 +88,7 @@ class ChatRequestWorker(
                 )
                 format = builtinProjectInfo.format
                 systemMessage = builtinProjectInfo.systemMessage
-                model = builtinProjectInfo.model.modelName
+                model = firstChatRoom.modelName
             }
         }
 
