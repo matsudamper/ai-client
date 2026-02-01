@@ -62,6 +62,8 @@ kotlin {
                 implementation(libs.ktorClientCio)
                 implementation(libs.kotlinxSerializationJson)
                 implementation(libs.androidxDatastoreCoreOkio)
+                implementation(libs.androidxLifecycleViewModelCompose)
+                implementation(libs.androidxLifecycleRuntimeCompose)
                 implementation(libs.kotlinxSerializationProtobuf)
                 api(libs.koinCore)
             }
@@ -72,8 +74,6 @@ kotlin {
                 implementation(libs.composeMaterial3)
                 implementation(libs.kotlinxCoroutineSwing)
                 implementation(libs.koinCore)
-                implementation(libs.androidxLifecycleViewModelCompose)
-                implementation(libs.androidxLifecycleRuntimeCompose)
             }
         }
         val androidMain by getting {
