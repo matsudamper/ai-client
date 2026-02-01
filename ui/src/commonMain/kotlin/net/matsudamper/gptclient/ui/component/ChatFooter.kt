@@ -24,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +45,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
@@ -278,7 +278,7 @@ private fun CroppedImageView(
     modifier: Modifier = Modifier,
 ) {
     val asyncImagePainter = rememberAsyncImagePainter(imageUri)
-    val asyncImageState by asyncImagePainter.state.collectAsStateWithLifecycle()
+    val asyncImageState by asyncImagePainter.state.collectAsState()
 
     when (val state = asyncImageState) {
         is AsyncImagePainter.State.Success -> {

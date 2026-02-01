@@ -7,7 +7,7 @@ import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
-import net.matsudamper.gptclient.gpt.ChatGptClientInterface
+import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
@@ -49,7 +49,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = ChatGptClientInterface.Format.Json,
+                    format = AiClient.Format.Json,
                     responseTransformer = {
                         TextMessageComposableInterface(CalendarResponseParser().toAnnotatedString(it))
                     },
@@ -91,7 +91,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = ChatGptClientInterface.Format.Json,
+                    format = AiClient.Format.Json,
                     responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
                     model = ChatGptModel.GeminiFlashLiteLatest,
                     summaryProvider = {
@@ -112,7 +112,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = ChatGptClientInterface.Format.Json,
+                    format = AiClient.Format.Json,
                     responseTransformer = {
                         EmojiResponseParser().getEmojiList(it) { emoji ->
                             platformRequest.copyToClipboard(emoji)
@@ -129,7 +129,7 @@ class GetBuiltinProjectInfoUseCase {
 
     data class Info(
         val systemMessage: String,
-        val format: ChatGptClientInterface.Format,
+        val format: AiClient.Format,
         val responseTransformer: (String) -> ChatMessageComposableInterface,
         val summaryProvider: (String) -> String?,
         val model: ChatGptModel,

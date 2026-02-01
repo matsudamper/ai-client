@@ -10,7 +10,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.rememberNavController
-import net.matsudamper.gptclient.gpt.ChatGptClient
+import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState

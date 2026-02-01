@@ -62,6 +62,8 @@ kotlin {
                 implementation(libs.ktorClientCio)
                 implementation(libs.kotlinxSerializationJson)
                 implementation(libs.androidxDatastoreCoreOkio)
+                implementation(libs.androidxLifecycleViewModelCompose)
+                implementation(libs.androidxLifecycleRuntimeCompose)
                 implementation(libs.kotlinxSerializationProtobuf)
                 api(libs.koinCore)
             }

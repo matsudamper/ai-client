@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
-import net.matsudamper.gptclient.gpt.ChatGptClientInterface
+import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -14,7 +14,7 @@ import net.matsudamper.gptclient.room.entity.ChatRoomId
 class AddRequestUseCase(
     private val appDatabase: AppDatabase,
     private val platformRequest: PlatformRequest,
-    private val gptClientProvider: (secretKey: String) -> ChatGptClientInterface,
+    private val gptClientProvider: (secretKey: String) -> AiClient,
     private val settingDataStore: SettingDataStore,
     private val workManagerScheduler: WorkManagerScheduler,
 ) {
@@ -126,7 +126,7 @@ class AddRequestUseCase(
 
     sealed interface Result {
         data object Success : Result
-        data class GptResultError(val gptError: ChatGptClientInterface.GptResult.Error) : Result
+        data class GptResultError(val gptError: AiClient.GptResult.Error) : Result
         data object IsLastUserChat : Result
         data object ModelNotFoundError : Result
         data object WorkInProgress : Result

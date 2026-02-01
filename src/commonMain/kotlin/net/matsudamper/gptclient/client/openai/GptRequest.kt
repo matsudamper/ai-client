@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient.gpt
+package net.matsudamper.gptclient.client.openai
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
