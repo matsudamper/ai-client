@@ -83,7 +83,6 @@ data class MainScreenUiState(val history: History, val listener: Listener) {
     interface Listener {
         fun onClickHome()
         fun onClickSettings()
-        fun onClickUsage()
         fun clearHistory()
     }
 }
@@ -128,7 +127,6 @@ public fun MainScreen(
                             }
                         },
                     onClickSettings = { rootUiState.listener.onClickSettings() },
-                    onClickUsage = { rootUiState.listener.onClickUsage() },
                     onClickHome = { rootUiState.listener.onClickHome() },
                     historyClear = { rootUiState.listener.clearHistory() },
                     history = rootUiState.history,
@@ -234,7 +232,6 @@ private fun Navigation(
 @Composable
 private fun SidePanel(
     onClickSettings: () -> Unit,
-    onClickUsage: () -> Unit,
     onClickHome: () -> Unit,
     historyClear: () -> Unit,
     history: MainScreenUiState.History,
@@ -341,12 +338,10 @@ private fun SidePanel(
         }
         Row(
             modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer)
-                .navigationBarsPadding(),
+                .navigationBarsPadding()
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
         ) {
-            TextButton(onClick = { onClickUsage() }) {
-                Text("Usage")
-            }
-            Spacer(Modifier.weight(1f))
             IconButton(onClick = onClickSettings) {
                 Icon(
                     imageVector = Icons.Default.Settings,
