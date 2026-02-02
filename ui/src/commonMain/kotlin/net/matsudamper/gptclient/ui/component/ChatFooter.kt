@@ -71,6 +71,7 @@ data class ChatFooterImage(
     @Immutable
     interface Listener {
         fun crop(rect: Rect)
+        fun delete()
     }
 }
 
@@ -166,6 +167,13 @@ internal fun ChatFooter(
                             text = { androidx.compose.material3.Text("Crop") },
                             onClick = {
                                 showCropImageState.value = media
+                                showMenu = false
+                            },
+                        )
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { androidx.compose.material3.Text("Delete") },
+                            onClick = {
+                                media.listener.delete()
                                 showMenu = false
                             },
                         )

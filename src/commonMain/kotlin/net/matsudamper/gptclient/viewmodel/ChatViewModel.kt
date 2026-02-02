@@ -409,6 +409,14 @@ class ChatViewModel(
                 )
             }
         }
+
+        override fun delete() {
+            viewModelStateFlow.update { state ->
+                state.copy(
+                    selectedMedia = state.selectedMedia.filter { it.imageUri != imageUri },
+                )
+            }
+        }
     }
 
     private data class ViewModelState(
