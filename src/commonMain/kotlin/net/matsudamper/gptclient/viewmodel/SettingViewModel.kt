@@ -6,10 +6,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 
-class SettingViewModel(private val settingDataStore: SettingDataStore) : ViewModel() {
+class SettingViewModel(
+    private val settingDataStore: SettingDataStore,
+    private val platformRequest: PlatformRequest,
+) : ViewModel() {
     private val loadedListener = object : SettingsScreenUiState.Loaded.Listener {
         override fun updateSecretKey(text: String) {
             saveSecretKey(text)
@@ -17,6 +21,18 @@ class SettingViewModel(private val settingDataStore: SettingDataStore) : ViewMod
 
         override fun updateGeminiSecretKey(text: String) {
             saveGeminiSecretKey(text)
+        }
+
+        override fun onClickOpenAiUsage() {
+            platformRequest.openLink(
+                url = "https://platform.openai.com/settings/organization/usage",
+            )
+        }
+
+        override fun onClickGeminiUsage() {
+            platformRequest.openLink(
+                url = "https://aistudio.google.com/usagecontinue",
+            )
         }
     }
 

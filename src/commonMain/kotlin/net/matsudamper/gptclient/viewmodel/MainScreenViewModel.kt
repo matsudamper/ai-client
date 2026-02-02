@@ -35,12 +35,6 @@ class MainScreenViewModel(
                     )
                 }
 
-                override fun onClickUsage() {
-                    platformRequest.openLink(
-                        url = "https://platform.openai.com/settings/organization/usage",
-                    )
-                }
-
                 override fun onClickHome() {
                     navControllerProvider().navigate(
                         Navigator.StartChat,

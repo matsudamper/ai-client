@@ -73,6 +73,7 @@ fun App() {
                             val koin = getKoin()
                             SettingViewModel(
                                 settingDataStore = koin.get(),
+                                platformRequest = koin.get(),
                             )
                         }
                         return viewModel.uiStateFlow.collectAsState().value

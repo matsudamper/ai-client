@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +42,8 @@ sealed interface SettingsScreenUiState {
         interface Listener {
             fun updateSecretKey(text: String)
             fun updateGeminiSecretKey(text: String)
+            fun onClickOpenAiUsage()
+            fun onClickGeminiUsage()
         }
     }
 }
@@ -111,11 +114,39 @@ private fun Loaded(
             initialValue = uiState.initialSecretKey,
             onValueChange = { uiState.listener.updateSecretKey(it) },
         )
+        SettingItem(
+            modifier = Modifier.fillMaxWidth(),
+            title = {
+                Text("OpenAI Usage")
+            },
+            content = {
+                Button(
+                    onClick = { uiState.listener.onClickOpenAiUsage() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("OpenAI Usageを確認")
+                }
+            },
+        )
         ApiKeySettingItem(
             modifier = Modifier.fillMaxWidth(),
             title = "Gemini API Key",
             initialValue = uiState.initialGeminiSecretKey,
             onValueChange = { uiState.listener.updateGeminiSecretKey(it) },
+        )
+        SettingItem(
+            modifier = Modifier.fillMaxWidth(),
+            title = {
+                Text("Gemini Usage")
+            },
+            content = {
+                Button(
+                    onClick = { uiState.listener.onClickGeminiUsage() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Gemini Usageを確認")
+                }
+            },
         )
     }
 }
