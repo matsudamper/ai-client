@@ -2,7 +2,6 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -13,6 +12,7 @@ import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
+import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -21,7 +21,11 @@ import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
-class NewChatViewModel(private val platformRequest: PlatformRequest, private val appDatabase: AppDatabase, navControllerProvider: () -> NavHostController) : ViewModel() {
+class NewChatViewModel(
+    private val platformRequest: PlatformRequest,
+    private val appDatabase: AppDatabase,
+    private val appNavigator: AppNavigator,
+) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val builtinProjects = listOf(
         NewChatUiState.Project(
@@ -29,7 +33,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
             icon = NewChatUiState.Project.Icon.Calendar,
             listener = object : NewChatUiState.Project.Listener {
                 override fun onClick() {
-                    navControllerProvider().navigate(
+                    appNavigator.navigate(
                         Navigator.Project(
                             title = "カレンダー追加",
                             type = Navigator.Project.ProjectType.Builtin(
@@ -45,7 +49,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
             icon = NewChatUiState.Project.Icon.Card,
             listener = object : NewChatUiState.Project.Listener {
                 override fun onClick() {
-                    navControllerProvider().navigate(
+                    appNavigator.navigate(
                         Navigator.Project(
                             title = "家計簿追加",
                             type = Navigator.Project.ProjectType.Builtin(
@@ -61,7 +65,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
             icon = NewChatUiState.Project.Icon.Emoji,
             listener = object : NewChatUiState.Project.Listener {
                 override fun onClick() {
-                    navControllerProvider().navigate(
+                    appNavigator.navigate(
                         Navigator.Project(
                             title = "絵文字",
                             type = Navigator.Project.ProjectType.Builtin(
@@ -102,7 +106,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                                 isLoading = true,
                             )
                         }
-                        navControllerProvider().navigate(
+                        appNavigator.navigate(
                             Navigator.Chat(
                                 Navigator.Chat.ChatOpenContext.NewMessage(
                                     initialMessage = text,
@@ -177,7 +181,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                                                 ),
                                             )
                                             viewModelStateFlow.update { it.copy(projectNameDialog = null) }
-                                            navControllerProvider().navigate(
+                                            appNavigator.navigate(
                                                 Navigator.Project(
                                                     title = text,
                                                     type = Navigator.Project.ProjectType.Project(
@@ -222,7 +226,7 @@ class NewChatViewModel(private val platformRequest: PlatformRequest, private val
                                     icon = NewChatUiState.Project.Icon.Favorite,
                                     listener = object : NewChatUiState.Project.Listener {
                                         override fun onClick() {
-                                            navControllerProvider().navigate(
+                                            appNavigator.navigate(
                                                 Navigator.Project(
                                                     title = project.name,
                                                     type = Navigator.Project.ProjectType.Project(
