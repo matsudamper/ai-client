@@ -40,15 +40,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSaveableStateNavEntryDecorator
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.navigation.Navigator
@@ -90,15 +93,15 @@ data class MainScreenUiState(val history: History, val listener: Listener) {
 
 @Composable
 public fun MainScreen(
-    navController: NavHostController,
+    backStack: SnapshotStateList<Navigator>,
     uiStateProvider: UiStateProvider,
     modifier: Modifier = Modifier,
 ) {
     val rootUiState = uiStateProvider.provideMainScreenUiState()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
-    LaunchedEffect(navController) {
-        navController.currentBackStackEntryFlow
+    LaunchedEffect(backStack) {
+        snapshotFlow { backStack.lastOrNull() }
             .collect {
                 isVisibleSidePanel = false
             }
@@ -152,7 +155,7 @@ public fun MainScreen(
                     ) {
                         Navigation(
                             enableNavigationBack = isVisibleSidePanel.not(),
-                            navController = navController,
+                            backStack = backStack,
                             uiStateProvider = uiStateProvider,
                             onClickMenu = { isVisibleSidePanel = true },
                             requestBack = { isVisibleSidePanel = false },
@@ -177,57 +180,54 @@ public fun MainScreen(
 
 @Composable
 private fun Navigation(
-    navController: NavHostController,
+    backStack: SnapshotStateList<Navigator>,
     uiStateProvider: UiStateProvider,
     onClickMenu: () -> Unit,
     enableNavigationBack: Boolean,
     requestBack: () -> Unit,
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = Navigator.StartChat,
-    ) {
-        composable<Navigator.StartChat> {
-            val uiState = uiStateProvider.provideNewChatUiState(entry = it)
-            NewChat(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
-        }
-        composable<Navigator.Chat>(
-            typeMap = Navigator.Chat.typeMap,
-        ) {
-            val navigatorItem = it.toRoute<Navigator.Chat>()
-            val uiState = uiStateProvider.provideChatUiState(entry = it, navigator = navigatorItem)
-
-            ChatList(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
-        }
-        composable<Navigator.Settings> {
-            val uiState = uiStateProvider.provideSettingUiState(entry = it)
-            SettingsScreen(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
-        }
-        composable<Navigator.Project>(
-            typeMap = Navigator.Project.typeMap,
-        ) {
-            val navigatorItem = it.toRoute<Navigator.Project>()
-            val uiState = uiStateProvider.provideProjectUiState(entry = it, navigator = navigatorItem)
-
-            ProjectScreen(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
-        }
-    }
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryDecorators = listOf(
+            rememberSavedStateNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
+        entryProvider = entryProvider {
+            entry<Navigator.StartChat> {
+                val uiState = uiStateProvider.provideNewChatUiState()
+                NewChat(
+                    modifier = Modifier.fillMaxSize(),
+                    uiState = uiState,
+                    onClickMenu = { onClickMenu() },
+                )
+            }
+            entry<Navigator.Chat> { key ->
+                val uiState = uiStateProvider.provideChatUiState(navigator = key)
+                ChatList(
+                    modifier = Modifier.fillMaxSize(),
+                    uiState = uiState,
+                    onClickMenu = { onClickMenu() },
+                )
+            }
+            entry<Navigator.Settings> {
+                val uiState = uiStateProvider.provideSettingUiState()
+                SettingsScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    uiState = uiState,
+                    onClickMenu = { onClickMenu() },
+                )
+            }
+            entry<Navigator.Project> { key ->
+                val uiState = uiStateProvider.provideProjectUiState(navigator = key)
+                ProjectScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    uiState = uiState,
+                    onClickMenu = { onClickMenu() },
+                )
+            }
+        },
+    )
     BackHandler(enableNavigationBack.not()) { requestBack() }
 }
 
