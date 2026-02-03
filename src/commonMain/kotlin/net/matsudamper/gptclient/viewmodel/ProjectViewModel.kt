@@ -3,7 +3,6 @@ package net.matsudamper.gptclient.viewmodel
 import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +14,7 @@ import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.client.AiClient
+import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -28,7 +28,7 @@ class ProjectViewModel(
     private val navigator: Navigator.Project,
     private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
-    private val navControllerProvider: () -> NavHostController,
+    private val navigatorProvider: () -> AppNavigator,
 ) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val systemMessageListener = object : ProjectUiState.SystemMessage.Listener {
@@ -80,7 +80,7 @@ class ProjectViewModel(
                         withContext(Dispatchers.IO) {
                             appDatabase.projectDao().delete(systemInfo.project)
                         }
-                        navControllerProvider().popBackStack()
+                        navigatorProvider().goBack()
                     }
                 }
             }
@@ -133,7 +133,7 @@ class ProjectViewModel(
                 }
             }
             viewModelScope.launch {
-                navControllerProvider().navigate(
+                navigatorProvider().navigate(
                     Navigator.Chat(
                         openContext = Navigator.Chat.ChatOpenContext.NewMessage(
                             initialMessage = text,
@@ -297,7 +297,7 @@ class ProjectViewModel(
 
     inner class ChatRoomListener(private val chatRoomId: ChatRoomId) : ProjectUiState.History.Listener {
         override fun onClick() {
-            navControllerProvider().navigate(
+            navigatorProvider().navigate(
                 Navigator.Chat(
                     openContext = Navigator.Chat.ChatOpenContext.OpenChat(
                         chatRoomId = chatRoomId,
