@@ -8,10 +8,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.compose.rememberNavController
 import net.matsudamper.gptclient.client.openai.ChatGptClient
+import net.matsudamper.gptclient.navigation.AppNavigator
+import net.matsudamper.gptclient.navigation.NavigationState
 import net.matsudamper.gptclient.navigation.Navigator
+import net.matsudamper.gptclient.navigation.rememberAppNavigator
+import net.matsudamper.gptclient.navigation.rememberNavigationState
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.ProjectUiState
@@ -28,21 +30,26 @@ import org.koin.java.KoinJavaComponent.getKoin
 @Composable
 fun App() {
     MaterialTheme {
-        val navController = rememberNavController()
+        val navigationState = rememberNavigationState(
+            startRoute = Navigator.StartChat,
+            topLevelRoutes = setOf(Navigator.StartChat),
+        )
+        val appNavigator = rememberAppNavigator(navigationState)
         val viewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         }
 
         MainScreen(
             modifier = Modifier.fillMaxSize(),
-            navController = navController,
+            navigationState = navigationState,
+            appNavigator = appNavigator,
             uiStateProvider = remember {
                 object : UiStateProvider {
                     @Composable
-                    override fun provideNewChatUiState(entry: NavBackStackEntry): NewChatUiState {
-                        val viewModel = viewModel(entry) {
+                    override fun provideNewChatUiState(): NewChatUiState {
+                        val viewModel = viewModel(viewModelStoreOwner, key = "NewChat") {
                             NewChatViewModel(
-                                navControllerProvider = { navController },
+                                navigatorProvider = { appNavigator },
                                 platformRequest = getKoin().get(),
                                 appDatabase = getKoin().get(),
                             )
@@ -52,14 +59,13 @@ fun App() {
 
                     @Composable
                     override fun provideChatUiState(
-                        entry: NavBackStackEntry,
-                        navigation: Navigator.Chat,
+                        navigator: Navigator.Chat,
                     ): ChatListUiState {
-                        val viewModel = viewModel(entry) {
+                        val viewModel = viewModel(viewModelStoreOwner, key = navigator.toString()) {
                             val koin = getKoin()
                             ChatViewModel(
                                 platformRequest = koin.get(),
-                                openContext = navigation.openContext,
+                                openContext = navigator.openContext,
                                 insertDataAndAddRequestUseCase = createInsertDataAndAddRequestUseCase(),
                                 appDatabase = koin.get(),
                             )
@@ -68,8 +74,8 @@ fun App() {
                     }
 
                     @Composable
-                    override fun provideSettingUiState(entry: NavBackStackEntry): SettingsScreenUiState {
-                        val viewModel = viewModel(entry) {
+                    override fun provideSettingUiState(): SettingsScreenUiState {
+                        val viewModel = viewModel(viewModelStoreOwner, key = "Settings") {
                             val koin = getKoin()
                             SettingViewModel(
                                 settingDataStore = koin.get(),
@@ -83,7 +89,7 @@ fun App() {
                     override fun provideMainScreenUiState(): MainScreenUiState {
                         val viewModel = viewModel(viewModelStoreOwner) {
                             MainScreenViewModel(
-                                navControllerProvider = { navController },
+                                navigatorProvider = { appNavigator },
                                 appDatabase = getKoin().get(),
                                 platformRequest = getKoin().get(),
                                 deleteChatRoomUseCase = DeleteChatRoomUseCase(
@@ -98,15 +104,14 @@ fun App() {
 
                     @Composable
                     override fun provideProjectUiState(
-                        entry: NavBackStackEntry,
                         navigator: Navigator.Project,
                     ): ProjectUiState {
                         val viewModel = viewModel(
                             viewModelStoreOwner = viewModelStoreOwner,
-                            key = navigator.type.toString(),
+                            key = navigator.toString(),
                         ) {
                             ProjectViewModel(
-                                navControllerProvider = { navController },
+                                navigatorProvider = { appNavigator },
                                 navigator = navigator,
                                 platformRequest = getKoin().get(),
                                 appDatabase = getKoin().get(),

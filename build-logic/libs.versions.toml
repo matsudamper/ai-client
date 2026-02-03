@@ -16,6 +16,7 @@ ktlintGradle = "14.0.1"
 ktlint = "1.6.0"
 workManager = "2.11.1"
 androidxTestRules = "1.7.0"
+nav3 = "1.0.0-alpha01"
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -39,6 +40,10 @@ androidxLifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runti
 googleMaterial = { module = "com.google.android.material:material", version.require = "1.13.0" }
 androidxNavigationCompose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.require = "2.9.1" }
 ktlint = { module = "com.pinterest:ktlint", version.ref = "ktlint" }
+
+# Navigation 3
+androidxNavigation3Runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3" }
+androidxNavigation3Ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3" }
 
 # WorkManager
 androidxWorkRuntime = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }

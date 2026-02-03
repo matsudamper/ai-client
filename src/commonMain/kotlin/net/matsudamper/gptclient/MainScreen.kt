@@ -45,12 +45,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
+// import androidx.navigation3.runtime.entry // Try to import entry if it exists, otherwise assume constructor or manual
+import androidx.navigation3.ui.NavDisplay
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
+import net.matsudamper.gptclient.navigation.AppNavigator
+import net.matsudamper.gptclient.navigation.NavigationState
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
@@ -89,19 +91,19 @@ data class MainScreenUiState(val history: History, val listener: Listener) {
 
 @Composable
 public fun MainScreen(
-    navController: NavHostController,
+    navigationState: NavigationState,
+    appNavigator: AppNavigator,
     uiStateProvider: UiStateProvider,
     modifier: Modifier = Modifier,
 ) {
     val rootUiState = uiStateProvider.provideMainScreenUiState()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
-    LaunchedEffect(navController) {
-        navController.currentBackStackEntryFlow
-            .collect {
-                isVisibleSidePanel = false
-            }
+
+    LaunchedEffect(navigationState.topLevelRoute, navigationState.currentStack.size) {
+        isVisibleSidePanel = false
     }
+
     Surface(
         modifier = modifier,
     ) {
@@ -150,7 +152,8 @@ public fun MainScreen(
                     ) {
                         Navigation(
                             enableNavigationBack = isVisibleSidePanel.not(),
-                            navController = navController,
+                            navigationState = navigationState,
+                            appNavigator = appNavigator,
                             uiStateProvider = uiStateProvider,
                             onClickMenu = { isVisibleSidePanel = true },
                             requestBack = { isVisibleSidePanel = false },
@@ -175,57 +178,66 @@ public fun MainScreen(
 
 @Composable
 private fun Navigation(
-    navController: NavHostController,
+    navigationState: NavigationState,
+    appNavigator: AppNavigator,
     uiStateProvider: UiStateProvider,
     onClickMenu: () -> Unit,
     enableNavigationBack: Boolean,
     requestBack: () -> Unit,
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = Navigator.StartChat,
-    ) {
-        composable<Navigator.StartChat> {
-            val uiState = uiStateProvider.provideNewChatUiState(entry = it)
-            NewChat(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
-        }
-        composable<Navigator.Chat>(
-            typeMap = Navigator.Chat.typeMap,
-        ) {
-            val navigatorItem = it.toRoute<Navigator.Chat>()
-            val uiState = uiStateProvider.provideChatUiState(entry = it, navigator = navigatorItem)
-
-            ChatList(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
-        }
-        composable<Navigator.Settings> {
-            val uiState = uiStateProvider.provideSettingUiState(entry = it)
-            SettingsScreen(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
-        }
-        composable<Navigator.Project>(
-            typeMap = Navigator.Project.typeMap,
-        ) {
-            val navigatorItem = it.toRoute<Navigator.Project>()
-            val uiState = uiStateProvider.provideProjectUiState(entry = it, navigator = navigatorItem)
-
-            ProjectScreen(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState,
-                onClickMenu = { onClickMenu() },
-            )
+    val provider = remember(uiStateProvider, onClickMenu) {
+        object : (NavKey) -> NavEntry<NavKey> {
+            override fun invoke(key: NavKey): NavEntry<NavKey> {
+                return NavEntry(key) {
+                    when (key) {
+                        is Navigator.StartChat -> {
+                            val uiState = uiStateProvider.provideNewChatUiState()
+                            NewChat(
+                                modifier = Modifier.fillMaxSize(),
+                                uiState = uiState,
+                                onClickMenu = { onClickMenu() },
+                            )
+                        }
+                        is Navigator.Chat -> {
+                            val uiState = uiStateProvider.provideChatUiState(navigator = key)
+                            ChatList(
+                                modifier = Modifier.fillMaxSize(),
+                                uiState = uiState,
+                                onClickMenu = { onClickMenu() },
+                            )
+                        }
+                        is Navigator.Settings -> {
+                            val uiState = uiStateProvider.provideSettingUiState()
+                            SettingsScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                uiState = uiState,
+                                onClickMenu = { onClickMenu() },
+                            )
+                        }
+                        is Navigator.Project -> {
+                            val uiState = uiStateProvider.provideProjectUiState(navigator = key)
+                            ProjectScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                uiState = uiState,
+                                onClickMenu = { onClickMenu() },
+                            )
+                        }
+                        else -> {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                Text("Unknown Route")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+
+    NavDisplay(
+        backStack = navigationState.currentStack,
+        entryProvider = provider,
+        onBack = { appNavigator.goBack() },
+    )
     BackHandler(enableNavigationBack.not()) { requestBack() }
 }
 

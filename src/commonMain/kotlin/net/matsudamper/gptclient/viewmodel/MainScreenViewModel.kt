@@ -2,7 +2,6 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -12,6 +11,7 @@ import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.MainScreenUiState
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.getName
+import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -22,7 +22,7 @@ class MainScreenViewModel(
     private val appDatabase: AppDatabase,
     private val platformRequest: PlatformRequest,
     private val deleteChatRoomUseCase: DeleteChatRoomUseCase,
-    private val navControllerProvider: () -> NavHostController,
+    private val navigatorProvider: () -> AppNavigator,
 ) : ViewModel() {
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     val uiStateFlow: StateFlow<MainScreenUiState> = MutableStateFlow(
@@ -30,17 +30,13 @@ class MainScreenViewModel(
             history = MainScreenUiState.History.Loading,
             listener = object : MainScreenUiState.Listener {
                 override fun onClickSettings() {
-                    navControllerProvider().navigate(
+                    navigatorProvider().navigate(
                         Navigator.Settings,
                     )
                 }
 
                 override fun onClickHome() {
-                    navControllerProvider().navigate(
-                        Navigator.StartChat,
-                    ) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navigatorProvider().navigateToStart()
                 }
 
                 override fun clearHistory() {
@@ -85,12 +81,10 @@ class MainScreenViewModel(
 
     private inner class HistoryItemListenerImpl(val roomId: ChatRoomId) : MainScreenUiState.HistoryItemListener {
         override fun onClick() {
-            val navHostController: NavHostController = navControllerProvider()
-            navHostController.navigate(Navigator.Chat(Navigator.Chat.ChatOpenContext.OpenChat(roomId))) {
-                popUpTo(navHostController.graph.startDestinationRoute!!) {
-                    inclusive = false
-                }
-            }
+            navigatorProvider().navigate(
+                Navigator.Chat(Navigator.Chat.ChatOpenContext.OpenChat(roomId)),
+                popToRoot = true,
+            )
         }
     }
 

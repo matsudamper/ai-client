@@ -1,17 +1,15 @@
 package net.matsudamper.gptclient.navigation
 
 import androidx.compose.runtime.Immutable
-import androidx.navigation.NavType
-import kotlin.reflect.KType
-import kotlin.reflect.typeOf
 import kotlinx.serialization.Serializable
+import androidx.navigation3.runtime.NavKey
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ProjectId
 
 @Immutable
-sealed interface Navigator {
+sealed interface Navigator : NavKey {
     @Serializable
     data object StartChat : Navigator
 
@@ -37,16 +35,10 @@ sealed interface Navigator {
             @Serializable
             data class Project(val projectId: ProjectId) : ChatType
         }
-
-        companion object {
-            val typeMap: Map<KType, NavType<*>> = mapOf(
-                typeOf<ChatOpenContext>() to JsonNavType<ChatOpenContext>(ChatOpenContext.serializer(), false),
-            )
-        }
     }
 
     @Serializable
-    data class Project(val title: String, val type: ProjectType) {
+    data class Project(val title: String, val type: ProjectType) : Navigator {
         @Serializable
         sealed interface ProjectType {
             @Serializable
@@ -54,11 +46,6 @@ sealed interface Navigator {
 
             @Serializable
             data class Project(val projectId: ProjectId) : ProjectType
-        }
-        companion object {
-            val typeMap: Map<KType, NavType<*>> = mapOf(
-                typeOf<ProjectType>() to JsonNavType<ProjectType>(ProjectType.serializer(), false),
-            )
         }
     }
 
