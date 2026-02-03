@@ -15,10 +15,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -41,9 +43,12 @@ sealed interface SettingsScreenUiState {
         interface Listener {
             fun updateSecretKey(text: String)
             fun updateGeminiSecretKey(text: String)
+            fun onClickOpenAiUsage()
+            fun onClickGeminiUsage()
         }
     }
 }
+private val HorizontalPadding = 12.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,12 +116,27 @@ private fun Loaded(
             initialValue = uiState.initialSecretKey,
             onValueChange = { uiState.listener.updateSecretKey(it) },
         )
+        OutlinedButton(
+            modifier = Modifier.align(Alignment.End)
+                .padding(horizontal = HorizontalPadding),
+            onClick = { uiState.listener.onClickOpenAiUsage() },
+        ) {
+            Text("Usage")
+        }
+        Spacer(modifier = Modifier.height(12.dp))
         ApiKeySettingItem(
             modifier = Modifier.fillMaxWidth(),
             title = "Gemini API Key",
             initialValue = uiState.initialGeminiSecretKey,
             onValueChange = { uiState.listener.updateGeminiSecretKey(it) },
         )
+        OutlinedButton(
+            modifier = Modifier.align(Alignment.End)
+                .padding(horizontal = HorizontalPadding),
+            onClick = { uiState.listener.onClickGeminiUsage() },
+        ) {
+            Text("Usage")
+        }
     }
 }
 
@@ -164,7 +184,7 @@ private fun SettingItem(
 ) {
     Column(
         modifier = modifier.padding(
-            horizontal = 12.dp,
+            horizontal = HorizontalPadding,
             vertical = 8.dp,
         ),
     ) {

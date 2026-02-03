@@ -262,6 +262,14 @@ class NewChatViewModel(
                 )
             }
         }
+
+        override fun delete() {
+            viewModelStateFlow.update { viewModelState ->
+                viewModelState.copy(
+                    mediaList = viewModelState.mediaList.filter { it.imageUri != imageUrl },
+                )
+            }
+        }
     }
 
     private data class ViewModelState(

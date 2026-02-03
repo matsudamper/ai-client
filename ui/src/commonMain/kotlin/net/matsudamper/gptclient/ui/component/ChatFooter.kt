@@ -3,6 +3,7 @@ package net.matsudamper.gptclient.ui.component
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -71,6 +72,7 @@ data class ChatFooterImage(
     @Immutable
     interface Listener {
         fun crop(rect: Rect)
+        fun delete()
     }
 }
 
@@ -143,9 +145,12 @@ internal fun ChatFooter(
                 var showMenu by remember { mutableStateOf(false) }
                 Box {
                     AsyncImage(
-                        modifier = Modifier.clickable {
-                            showMenu = true
-                        }.then(imageModifier),
+                        modifier = Modifier
+                            .combinedClickable(
+                                onLongClick = { showMenu = true },
+                                onClick = { showMenu = true },
+                            )
+                            .then(imageModifier),
                         model = media.imageUri,
                         contentScale = ContentScale.Crop,
                         contentDescription = null,
@@ -166,6 +171,13 @@ internal fun ChatFooter(
                             text = { androidx.compose.material3.Text("Crop") },
                             onClick = {
                                 showCropImageState.value = media
+                                showMenu = false
+                            },
+                        )
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { androidx.compose.material3.Text("Delete") },
+                            onClick = {
+                                media.listener.delete()
                                 showMenu = false
                             },
                         )
