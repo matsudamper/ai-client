@@ -26,7 +26,7 @@ kotlin {
                 implementation(libs.composeMaterialIconsExtended)
                 implementation(compose.foundation)
                 implementation(libs.composeIcons)
-                implementation(libs.androidxNavigationCompose)
+                implementation(libs.navigation3Ui)
                 implementation(libs.kotlinxSerializationJson)
                 implementation(libs.coil3Compose)
                 implementation(libs.coil3NetworkOkHttp)
