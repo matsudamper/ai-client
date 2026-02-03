@@ -48,10 +48,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.NavDisplay
-import androidx.navigation3.entry
-import androidx.navigation3.entryProvider
-import androidx.navigation3.rememberSaveableStateNavEntryDecorator
+import androidx.navigation3.NavEntry
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSaveableStateNavEntryDecorator
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.navigation.Navigator
@@ -193,38 +192,40 @@ private fun Navigation(
             rememberSaveableStateNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
         ),
-        entryProvider = entryProvider {
-            entry<Navigator.StartChat> {
-                val uiState = uiStateProvider.provideNewChatUiState()
-                NewChat(
-                    modifier = Modifier.fillMaxSize(),
-                    uiState = uiState,
-                    onClickMenu = { onClickMenu() },
-                )
-            }
-            entry<Navigator.Chat> { key ->
-                val uiState = uiStateProvider.provideChatUiState(navigator = key)
-                ChatList(
-                    modifier = Modifier.fillMaxSize(),
-                    uiState = uiState,
-                    onClickMenu = { onClickMenu() },
-                )
-            }
-            entry<Navigator.Settings> {
-                val uiState = uiStateProvider.provideSettingUiState()
-                SettingsScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    uiState = uiState,
-                    onClickMenu = { onClickMenu() },
-                )
-            }
-            entry<Navigator.Project> { key ->
-                val uiState = uiStateProvider.provideProjectUiState(navigator = key)
-                ProjectScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    uiState = uiState,
-                    onClickMenu = { onClickMenu() },
-                )
+        entryProvider = { key ->
+            when (key) {
+                is Navigator.StartChat -> NavEntry(key) {
+                    val uiState = uiStateProvider.provideNewChatUiState()
+                    NewChat(
+                        modifier = Modifier.fillMaxSize(),
+                        uiState = uiState,
+                        onClickMenu = { onClickMenu() },
+                    )
+                }
+                is Navigator.Chat -> NavEntry(key) {
+                    val uiState = uiStateProvider.provideChatUiState(navigator = key)
+                    ChatList(
+                        modifier = Modifier.fillMaxSize(),
+                        uiState = uiState,
+                        onClickMenu = { onClickMenu() },
+                    )
+                }
+                is Navigator.Settings -> NavEntry(key) {
+                    val uiState = uiStateProvider.provideSettingUiState()
+                    SettingsScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        uiState = uiState,
+                        onClickMenu = { onClickMenu() },
+                    )
+                }
+                is Navigator.Project -> NavEntry(key) {
+                    val uiState = uiStateProvider.provideProjectUiState(navigator = key)
+                    ProjectScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        uiState = uiState,
+                        onClickMenu = { onClickMenu() },
+                    )
+                }
             }
         },
     )
