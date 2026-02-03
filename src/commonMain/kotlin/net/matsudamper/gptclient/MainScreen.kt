@@ -48,9 +48,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.NavEntry
+import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
-import androidx.navigation3.ui.rememberSaveableStateNavEntryDecorator
+import androidx.navigation3.ui.rememberSaveableStateHolderNavEntryDecorator
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.navigation.Navigator
@@ -187,7 +187,7 @@ private fun Navigation(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
         entryDecorators = listOf(
-            rememberSaveableStateNavEntryDecorator(),
+            rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
         ),
         entryProvider = { key ->
