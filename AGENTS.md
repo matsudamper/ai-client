@@ -67,6 +67,11 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 
 **CI では `:app-android:assembleDebug` と `:app-desktop:jvmJar` が実行される。** 変更後はこの2つが通ることを確認すること。
 
+## Agent固有
+### Claude Code Web
+Claude Code WebではGradleの依存がダウンロードでエラーになります。
+https://github.com/anthropics/claude-code/issues/13372
+
 ## コードスタイル・規約
 
 - **フォーマッター:** ktlint（全モジュールに適用）
