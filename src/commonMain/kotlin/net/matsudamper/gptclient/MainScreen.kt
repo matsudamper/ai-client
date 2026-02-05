@@ -195,7 +195,8 @@ private fun Navigation(
                 is Navigator.StartChat -> NavEntry(key) {
                     val uiState = uiStateProvider.provideNewChatUiState()
                     NewChat(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
                         uiState = uiState,
                         onClickMenu = { onClickMenu() },
                     )
@@ -203,7 +204,8 @@ private fun Navigation(
                 is Navigator.Chat -> NavEntry(key) {
                     val uiState = uiStateProvider.provideChatUiState(navigator = key)
                     ChatList(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
                         uiState = uiState,
                         onClickMenu = { onClickMenu() },
                     )
@@ -211,7 +213,8 @@ private fun Navigation(
                 is Navigator.Settings -> NavEntry(key) {
                     val uiState = uiStateProvider.provideSettingUiState()
                     SettingsScreen(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
                         uiState = uiState,
                         onClickMenu = { onClickMenu() },
                     )
@@ -219,7 +222,8 @@ private fun Navigation(
                 is Navigator.Project -> NavEntry(key) {
                     val uiState = uiStateProvider.provideProjectUiState(navigator = key)
                     ProjectScreen(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
                         uiState = uiState,
                         onClickMenu = { onClickMenu() },
                     )
