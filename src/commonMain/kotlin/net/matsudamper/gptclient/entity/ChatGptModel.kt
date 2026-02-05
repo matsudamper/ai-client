@@ -35,14 +35,14 @@ enum class ChatGptModel {
         override val provider = ApiProvider.Gemini
     },
     Gemini3Pro {
-        override val modelName: String = "gemini-3.0-pro"
+        override val modelName: String = "gemini-3-pro-preview"
         override val enableImage: Boolean = true
         override val defaultToken = 5000
         override val requireTemperature = 1.0
         override val provider = ApiProvider.Gemini
     },
     Gemini3Flash {
-        override val modelName: String = "gemini-3.0-flash"
+        override val modelName: String = "gemini-3-flash-preview"
         override val enableImage: Boolean = true
         override val defaultToken = 5000
         override val requireTemperature = 1.0
