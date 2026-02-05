@@ -67,7 +67,7 @@ class ChatGptClient(
             )
         }
         val sampleGptRequest = GptRequest(
-            model = model.modelName,
+            model = model.apiModelName,
             messages = requestMessages,
             responseFormat = GptRequest.ResponseFormat(
                 type = when (format) {

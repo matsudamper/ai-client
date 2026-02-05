@@ -81,6 +81,10 @@ class GeminiClient(
                 GeminiRequest.Content(role = role, parts = parts)
             }
 
+        val thinkingConfig = model.thinkingBudget?.let { budget ->
+            GeminiRequest.ThinkingConfig(thinkingBudget = budget)
+        }
+
         val geminiRequest = GeminiRequest(
             contents = contents,
             systemInstruction = systemInstruction,
@@ -93,12 +97,13 @@ class GeminiClient(
                     AiClient.Format.Json -> "application/json"
                 },
             ),
+            thinkingConfig = thinkingConfig,
         )
 
         val jsonString = RequestJson.encodeToString(GeminiRequest.serializer(), geminiRequest)
         Log.d("GeminiRequest", jsonString)
 
-        val endpoint = "$GEMINI_ENDPOINT/${model.modelName}:generateContent?key=$apiKey"
+        val endpoint = "$GEMINI_ENDPOINT/${model.apiModelName}:generateContent?key=$apiKey"
 
         val response: HttpResponse = withContext(Dispatchers.IO) {
             HttpClient(CIO) {
@@ -155,6 +160,7 @@ class GeminiClient(
                 choices = candidates.mapNotNull { candidate ->
                     val content = candidate.content ?: return@mapNotNull null
                     val textContent = content.parts
+                        .filter { it.thought != true }
                         .mapNotNull { it.text }
                         .joinToString("")
                     val role = when (content.role) {
