@@ -71,7 +71,11 @@ class ChatRequestWorker(
         val model: String
         when (val builtinProjectId = firstChatRoom.builtInProjectId) {
             null -> when (val projectId = firstChatRoom.projectId) {
-                null -> throw IllegalStateException("Project Not Found.")
+                null -> {
+                    format = AiClient.Format.Text
+                    systemMessage = null
+                    model = firstChatRoom.modelName
+                }
                 else -> {
                     val projectDao = appDatabase.projectDao()
                     val project = projectDao.get(projectId.id).first()
