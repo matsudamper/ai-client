@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -175,16 +176,10 @@ public fun NewChat(
             )
         }
     }
-    BoxWithConstraints(
+    Scaffold(
         modifier = modifier.testTag(NewChatTestTag.Root.testTag())
             .imePadding(),
-    ) {
-        val maxWidth = this.maxWidth
-        Column {
-            val projectModifier = Modifier.fillMaxWidth()
-                .height(150.dp)
-                .padding(bottom = 8.dp)
-
+        topBar = {
             TopAppBar(
                 modifier = Modifier,
                 title = {
@@ -199,161 +194,174 @@ public fun NewChat(
                     }
                 },
             )
-            LazyVerticalGrid(
-                modifier = Modifier.fillMaxWidth()
-                    .weight(1f),
-                contentPadding = PaddingValues(
-                    horizontal = 24.dp,
-                ),
-                columns = GridCells.Fixed(
-                    ceil(
-                        with(LocalDensity.current) {
-                            maxWidth.roundToPx() / 160.dp.roundToPx()
-                        }.toFloat(),
-                    ).toInt(),
-                ),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.Center,
-            ) {
-                item(
-                    span = { GridItemSpan(maxLineSpan) },
-                ) {
-                    Column {
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            text = "Projects",
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                }
-                itemsIndexed(uiState.projects) { index, project ->
-                    ProjectScreen(
-                        modifier = projectModifier.testTag(
-                            NewChatTestTag.ProjectButton(index).testTag(),
-                        ),
-                        content = {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                when (project.icon) {
-                                    NewChatUiState.Project.Icon.Calendar -> {
-                                        Icon(
-                                            imageVector = FeatherIcons.Calendar,
-                                            contentDescription = null,
-                                        )
-                                    }
+        },
+    ) { innerPadding ->
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            val maxWidth = this.maxWidth
+            Column {
+                val projectModifier = Modifier.fillMaxWidth()
+                    .height(150.dp)
+                    .padding(bottom = 8.dp)
 
-                                    NewChatUiState.Project.Icon.Card -> {
-                                        Icon(
-                                            imageVector = FeatherIcons.CreditCard,
-                                            contentDescription = null,
-                                        )
-                                    }
-
-                                    NewChatUiState.Project.Icon.Favorite -> {
-                                        Icon(
-                                            imageVector = Icons.Filled.Favorite,
-                                            contentDescription = null,
-                                        )
-                                    }
-
-                                    NewChatUiState.Project.Icon.Emoji -> {
-                                        Text(
-                                            text = "☺️",
-                                        )
-                                    }
-                                }
-                                Text(project.name)
-                            }
-                        },
-                        onClick = { project.listener.onClick() },
-                    )
-                }
-                item {
-                    ProjectScreen(
-                        modifier = projectModifier.testTag(NewChatTestTag.AddProjectButton.testTag()),
-                        content = {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = null,
-                                )
-                                Text("追加")
-                            }
-                        },
-                        onClick = { uiState.listener.addProject() },
-                    )
-                }
-            }
-            var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally),
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-            ) {
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
+                LazyVerticalGrid(
+                    modifier = Modifier.fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(
+                        horizontal = 24.dp,
+                    ),
+                    columns = GridCells.Fixed(
+                        ceil(
+                            with(LocalDensity.current) {
+                                maxWidth.roundToPx() / 160.dp.roundToPx()
+                            }.toFloat(),
+                        ).toInt(),
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.Center,
                 ) {
-                    for (model in uiState.models) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(text = model.name)
-                            },
-                            onClick = {
-                                expanded = false
-                                model.listener.onClick()
-                            },
-                        )
-                    }
-                }
-                OutlinedButton(
-                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                    onClick = { },
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                    item(
+                        span = { GridItemSpan(maxLineSpan) },
                     ) {
-                        Text(uiState.selectedModel)
-                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+                        Column {
+                            Text(
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                text = "Projects",
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                    itemsIndexed(uiState.projects) { index, project ->
+                        ProjectScreen(
+                            modifier = projectModifier.testTag(
+                                NewChatTestTag.ProjectButton(index).testTag(),
+                            ),
+                            content = {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    when (project.icon) {
+                                        NewChatUiState.Project.Icon.Calendar -> {
+                                            Icon(
+                                                imageVector = FeatherIcons.Calendar,
+                                                contentDescription = null,
+                                            )
+                                        }
+
+                                        NewChatUiState.Project.Icon.Card -> {
+                                            Icon(
+                                                imageVector = FeatherIcons.CreditCard,
+                                                contentDescription = null,
+                                            )
+                                        }
+
+                                        NewChatUiState.Project.Icon.Favorite -> {
+                                            Icon(
+                                                imageVector = Icons.Filled.Favorite,
+                                                contentDescription = null,
+                                            )
+                                        }
+
+                                        NewChatUiState.Project.Icon.Emoji -> {
+                                            Text(
+                                                text = "☺️",
+                                            )
+                                        }
+                                    }
+                                    Text(project.name)
+                                }
+                            },
+                            onClick = { project.listener.onClick() },
+                        )
+                    }
+                    item {
+                        ProjectScreen(
+                            modifier = projectModifier.testTag(NewChatTestTag.AddProjectButton.testTag()),
+                            content = {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                    )
+                                    Text("追加")
+                                }
+                            },
+                            onClick = { uiState.listener.addProject() },
+                        )
                     }
                 }
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                ) {
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                    ) {
+                        for (model in uiState.models) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(text = model.name)
+                                },
+                                onClick = {
+                                    expanded = false
+                                    model.listener.onClick()
+                                },
+                            )
+                        }
+                    }
+                    OutlinedButton(
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        onClick = { },
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(uiState.selectedModel)
+                            Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                val state = rememberTextFieldState()
+                ChatFooter(
+                    textFieldState = state,
+                    onClickAddImage = { uiState.listener.onClickSelectMedia() },
+                    onClickVoice = { uiState.listener.onClickVoice() },
+                    onClickSend = {
+                        uiState.listener.send(state.text.toString())
+                        state.clearText()
+                    },
+                    selectedMedia = uiState.selectedMedia,
+                    visibleMediaLoading = uiState.visibleMediaLoading,
+                    onClickRetry = null,
+                    enableSend = uiState.enableSend || state.text.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .navigationBarsPadding(),
+                )
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            val state = rememberTextFieldState()
-            ChatFooter(
-                textFieldState = state,
-                onClickAddImage = { uiState.listener.onClickSelectMedia() },
-                onClickVoice = { uiState.listener.onClickVoice() },
-                onClickSend = {
-                    uiState.listener.send(state.text.toString())
-                    state.clearText()
-                },
-                selectedMedia = uiState.selectedMedia,
-                visibleMediaLoading = uiState.visibleMediaLoading,
-                onClickRetry = null,
-                enableSend = uiState.enableSend || state.text.isNotBlank(),
-                modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .navigationBarsPadding(),
-            )
-        }
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize()
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }

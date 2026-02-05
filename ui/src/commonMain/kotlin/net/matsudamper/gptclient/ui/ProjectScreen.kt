@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -210,158 +211,165 @@ fun ProjectScreen(
             },
         )
     }
-    Column(
+    Scaffold(
         modifier = modifier
             .testTag(ProjectScreenTestTag.Root.testTag())
             .imePadding(),
-    ) {
-        TopAppBar(
-            modifier = Modifier,
-            navigationIcon = {
-                IconButton(onClick = { onClickMenu() }) {
-                    Icon(imageVector = Icons.Default.Menu, contentDescription = null)
-                }
-            },
-            title = {
-                Text(text = uiState.projectName)
-            },
-            actions = {
-                var visibleMenu by remember { mutableStateOf(false) }
-                if (visibleMenu) {
-                    DropdownMenu(
-                        expanded = true,
-                        onDismissRequest = { visibleMenu = false },
-                    ) {
-                        DropdownMenuItem(
-                            text = {
-                                Text("名前変更")
-                            },
-                            onClick = { visibleChangeNameDialog = true },
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text("削除")
-                            },
-                            onClick = { visibleDeleteDialog = true },
-                        )
+        topBar = {
+            TopAppBar(
+                modifier = Modifier,
+                navigationIcon = {
+                    IconButton(onClick = { onClickMenu() }) {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = null)
                     }
-                }
-
-                IconButton(onClick = { visibleMenu = !visibleMenu }) {
-                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
-                }
-            },
-        )
-        val itemHorizontalPadding = 12.dp
-        Box(
-            modifier = Modifier.fillMaxWidth()
-                .weight(1f),
-        ) {
-            var menuHeight by remember { mutableStateOf(0.dp) }
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = menuHeight),
-            ) {
-                when (uiState.chatRoomsState) {
-                    is ProjectUiState.ChatRoomsState.Loaded -> {
-                        item {
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
-                                    .padding(horizontal = itemHorizontalPadding),
-                            ) {
-                                Text(
-                                    style = MaterialTheme.typography.titleLarge,
-                                    text = "命令",
-                                )
-                                val state = rememberTextFieldState(uiState.systemMessage.text)
-                                LaunchedEffect(state.text) {
-                                    uiState.systemMessage.listener.onChange(state.text.toString())
-                                }
-                                BasicTextField(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(MaterialTheme.shapes.small)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                        .padding(8.dp),
-                                    textStyle = MaterialTheme.typography.bodyMedium,
-                                    state = state,
-                                    enabled = uiState.systemMessage.editable,
-                                )
-                                Spacer(modifier = Modifier.height(24.dp))
-                            }
-                        }
-                        item {
-                            Text(
-                                modifier = Modifier.fillMaxWidth()
-                                    .padding(horizontal = itemHorizontalPadding),
-                                style = MaterialTheme.typography.titleLarge,
-                                text = "履歴",
+                },
+                title = {
+                    Text(text = uiState.projectName)
+                },
+                actions = {
+                    var visibleMenu by remember { mutableStateOf(false) }
+                    if (visibleMenu) {
+                        DropdownMenu(
+                            expanded = true,
+                            onDismissRequest = { visibleMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("名前変更")
+                                },
+                                onClick = { visibleChangeNameDialog = true },
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text("削除")
+                                },
+                                onClick = { visibleDeleteDialog = true },
                             )
                         }
-                        items(uiState.chatRoomsState.histories) { history ->
-                            Row(
-                                modifier = Modifier.fillMaxSize()
-                                    .clickable {
-                                        history.listener.onClick()
-                                    }
-                                    .padding(
-                                        horizontal = itemHorizontalPadding,
-                                        vertical = 12.dp,
-                                    ),
-                            ) {
-                                Icon(
-                                    imageVector = FeatherIcons.MessageSquare,
-                                    contentDescription = null,
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    history.text,
-                                    maxLines = 1,
-                                )
-                            }
-                        }
                     }
 
-                    is ProjectUiState.ChatRoomsState.Loading -> {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator()
+                    IconButton(onClick = { visibleMenu = !visibleMenu }) {
+                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            val itemHorizontalPadding = 12.dp
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .weight(1f),
+            ) {
+                var menuHeight by remember { mutableStateOf(0.dp) }
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = menuHeight),
+                ) {
+                    when (uiState.chatRoomsState) {
+                        is ProjectUiState.ChatRoomsState.Loaded -> {
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .padding(horizontal = itemHorizontalPadding),
+                                ) {
+                                    Text(
+                                        style = MaterialTheme.typography.titleLarge,
+                                        text = "命令",
+                                    )
+                                    val state = rememberTextFieldState(uiState.systemMessage.text)
+                                    LaunchedEffect(state.text) {
+                                        uiState.systemMessage.listener.onChange(state.text.toString())
+                                    }
+                                    BasicTextField(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(MaterialTheme.shapes.small)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                                            .padding(8.dp),
+                                        textStyle = MaterialTheme.typography.bodyMedium,
+                                        state = state,
+                                        enabled = uiState.systemMessage.editable,
+                                    )
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                }
+                            }
+                            item {
+                                Text(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .padding(horizontal = itemHorizontalPadding),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    text = "履歴",
+                                )
+                            }
+                            items(uiState.chatRoomsState.histories) { history ->
+                                Row(
+                                    modifier = Modifier.fillMaxSize()
+                                        .clickable {
+                                            history.listener.onClick()
+                                        }
+                                        .padding(
+                                            horizontal = itemHorizontalPadding,
+                                            vertical = 12.dp,
+                                        ),
+                                ) {
+                                    Icon(
+                                        imageVector = FeatherIcons.MessageSquare,
+                                        contentDescription = null,
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        history.text,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                        }
+
+                        is ProjectUiState.ChatRoomsState.Loading -> {
+                            item {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularProgressIndicator()
+                                }
                             }
                         }
                     }
                 }
+                ModelMenu(
+                    uiState = uiState.modelState,
+                    modifier = Modifier.fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .onGloballyPositioned {
+                            menuHeight = with(density) {
+                                it.size.height.toDp()
+                            }
+                        },
+                )
             }
-            ModelMenu(
-                uiState = uiState.modelState,
+            val state = rememberTextFieldState()
+            ChatFooter(
                 modifier = Modifier.fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .onGloballyPositioned {
-                        menuHeight = with(density) {
-                            it.size.height.toDp()
-                        }
-                    },
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .navigationBarsPadding(),
+                textFieldState = state,
+                onClickAddImage = { uiState.listener.selectMedia() },
+                onClickVoice = { uiState.listener.recordVoice() },
+                selectedMedia = uiState.selectedMedia,
+                visibleMediaLoading = uiState.visibleMediaLoading,
+                enableSend = uiState.enableSend,
+                onClickRetry = null,
+                onClickSend = {
+                    uiState.listener.send(state.text.toString())
+                    state.clearText()
+                },
             )
         }
-        val state = rememberTextFieldState()
-        ChatFooter(
-            modifier = Modifier.fillMaxWidth()
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-                .navigationBarsPadding(),
-            textFieldState = state,
-            onClickAddImage = { uiState.listener.selectMedia() },
-            onClickVoice = { uiState.listener.recordVoice() },
-            selectedMedia = uiState.selectedMedia,
-            visibleMediaLoading = uiState.visibleMediaLoading,
-            enableSend = uiState.enableSend,
-            onClickRetry = null,
-            onClickSend = {
-                uiState.listener.send(state.text.toString())
-                state.clearText()
-            },
-        )
     }
 }
 
