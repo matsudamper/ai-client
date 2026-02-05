@@ -117,7 +117,19 @@ class GeminiClient(
 
         return try {
             val geminiResponse = ResponseJson.decodeFromString(GeminiResponse.serializer(), responseJson)
-            AiClient.GptResult.Success(geminiResponse.toAiResponse())
+            if (geminiResponse.error != null) {
+                AiClient.GptResult.Error(
+                    AiClient.GptResult.ErrorReason.Unknown(
+                        geminiResponse.error.message ?: "Gemini API Error: ${geminiResponse.error.status}",
+                    ),
+                )
+            } else if (geminiResponse.candidates.isEmpty()) {
+                AiClient.GptResult.Error(
+                    AiClient.GptResult.ErrorReason.Unknown("No response candidates returned"),
+                )
+            } else {
+                AiClient.GptResult.Success(geminiResponse.toAiResponse())
+            }
         } catch (e: SerializationException) {
             e.printStackTrace()
             AiClient.GptResult.Error(
@@ -140,11 +152,12 @@ class GeminiClient(
 
         private fun GeminiResponse.toAiResponse(): AiClient.AiResponse {
             return AiClient.AiResponse(
-                choices = candidates.map { candidate ->
-                    val textContent = candidate.content.parts
+                choices = candidates.mapNotNull { candidate ->
+                    val content = candidate.content ?: return@mapNotNull null
+                    val textContent = content.parts
                         .mapNotNull { it.text }
                         .joinToString("")
-                    val role = when (candidate.content.role) {
+                    val role = when (content.role) {
                         "model" -> AiClient.AiResponse.Choice.Role.Assistant
                         "user" -> AiClient.AiResponse.Choice.Role.User
                         else -> AiClient.AiResponse.Choice.Role.Assistant

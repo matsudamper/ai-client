@@ -5,13 +5,21 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class GeminiResponse(
-    @SerialName("candidates") val candidates: List<Candidate>,
+    @SerialName("candidates") val candidates: List<Candidate> = emptyList(),
     @SerialName("usageMetadata") val usageMetadata: UsageMetadata? = null,
     @SerialName("modelVersion") val modelVersion: String? = null,
+    @SerialName("error") val error: Error? = null,
 ) {
     @Serializable
+    data class Error(
+        @SerialName("code") val code: Int? = null,
+        @SerialName("message") val message: String? = null,
+        @SerialName("status") val status: String? = null,
+    )
+
+    @Serializable
     data class Candidate(
-        @SerialName("content") val content: CandidateContent,
+        @SerialName("content") val content: CandidateContent? = null,
         @SerialName("finishReason") val finishReason: String? = null,
         @SerialName("index") val index: Int? = null,
     )
