@@ -38,14 +38,6 @@ enum class ChatGptModel {
         override val requireTemperature = 1.0
         override val provider = ApiProvider.Gemini
     },
-    Gemini3Pro {
-        override val modelName: String = "gemini-3-pro-preview"
-        override val displayName: String = "Gemini 3 Pro"
-        override val enableImage: Boolean = true
-        override val defaultToken = 5000
-        override val requireTemperature = 1.0
-        override val provider = ApiProvider.Gemini
-    },
     Gemini3ProThinkingHigh {
         override val modelName: String = "gemini-3-pro-preview-thinking-high"
         override val displayName: String = "Gemini 3 Pro (Thinking High)"
@@ -65,14 +57,6 @@ enum class ChatGptModel {
         override val requireTemperature = 1.0
         override val provider = ApiProvider.Gemini
         override val thinkingLevel: String? = "low"
-    },
-    Gemini3Flash {
-        override val modelName: String = "gemini-3-flash-preview"
-        override val displayName: String = "Gemini 3 Flash"
-        override val enableImage: Boolean = true
-        override val defaultToken = 5000
-        override val requireTemperature = 1.0
-        override val provider = ApiProvider.Gemini
     },
     Gemini3FlashThinkingHigh {
         override val modelName: String = "gemini-3-flash-preview-thinking-high"

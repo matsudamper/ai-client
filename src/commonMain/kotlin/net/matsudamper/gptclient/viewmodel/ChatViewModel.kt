@@ -145,7 +145,7 @@ class ChatViewModel(
                             ChatListUiState.ModelLoadingState.Loaded(
                                 ChatGptModel.entries.map { model ->
                                     ChatListUiState.Model(
-                                        modelName = model.displayName,
+                                        modelName = "${model.displayName} (${model.modelName})",
                                         selected = model.modelName == roomInfo.room.modelName,
                                         listener = object : ChatListUiState.Model.Listener {
                                             override fun onClick() {
