@@ -33,6 +33,7 @@ data class GeminiResponse(
     @Serializable
     data class Part(
         @SerialName("text") val text: String? = null,
+        @SerialName("thought") val thought: Boolean? = null,
     )
 
     @Serializable

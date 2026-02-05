@@ -33,5 +33,11 @@ data class GeminiRequest(
         @SerialName("topP") val topP: Double,
         @SerialName("maxOutputTokens") val maxOutputTokens: Int,
         @SerialName("responseMimeType") val responseMimeType: String,
+        @SerialName("thinkingConfig") val thinkingConfig: ThinkingConfig? = null,
+    )
+
+    @Serializable
+    data class ThinkingConfig(
+        @SerialName("thinkingLevel") val thinkingLevel: String,
     )
 }

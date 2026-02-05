@@ -84,7 +84,7 @@ class NewChatViewModel(
             visibleMediaLoading = false,
             models = ChatGptModel.entries.map { gptModel ->
                 NewChatUiState.Model(
-                    name = gptModel.modelName,
+                    name = "${gptModel.displayName} (${gptModel.modelName})",
                     listener = object : NewChatUiState.Model.Listener {
                         override fun onClick() {
                             viewModelStateFlow.update { viewModelState ->
@@ -215,7 +215,7 @@ class NewChatViewModel(
                     it.copy(
                         selectedMedia = viewModelState.mediaList,
                         visibleMediaLoading = viewModelState.mediaLoading,
-                        selectedModel = viewModelState.selectedModel.modelName,
+                        selectedModel = "${viewModelState.selectedModel.displayName} (${viewModelState.selectedModel.modelName})",
                         projectNameDialog = viewModelState.projectNameDialog,
                         isLoading = viewModelState.isLoading,
                         enableSend = !viewModelState.mediaLoading,
