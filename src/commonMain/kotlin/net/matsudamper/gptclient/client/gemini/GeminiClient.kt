@@ -81,8 +81,8 @@ class GeminiClient(
                 GeminiRequest.Content(role = role, parts = parts)
             }
 
-        val thinkingConfig = model.thinkingBudget?.let { budget ->
-            GeminiRequest.ThinkingConfig(thinkingBudget = budget)
+        val thinkingConfig = model.thinkingLevel?.let { level ->
+            GeminiRequest.ThinkingConfig(thinkingLevel = level)
         }
 
         val geminiRequest = GeminiRequest(
@@ -96,8 +96,8 @@ class GeminiClient(
                     AiClient.Format.Text -> "text/plain"
                     AiClient.Format.Json -> "application/json"
                 },
+                thinkingConfig = thinkingConfig,
             ),
-            thinkingConfig = thinkingConfig,
         )
 
         val jsonString = RequestJson.encodeToString(GeminiRequest.serializer(), geminiRequest)

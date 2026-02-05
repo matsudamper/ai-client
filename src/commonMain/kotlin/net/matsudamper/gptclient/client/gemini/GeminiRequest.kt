@@ -8,7 +8,6 @@ data class GeminiRequest(
     @SerialName("contents") val contents: List<Content>,
     @SerialName("systemInstruction") val systemInstruction: Content? = null,
     @SerialName("generationConfig") val generationConfig: GenerationConfig,
-    @SerialName("thinkingConfig") val thinkingConfig: ThinkingConfig? = null,
 ) {
     @Serializable
     data class Content(
@@ -34,10 +33,11 @@ data class GeminiRequest(
         @SerialName("topP") val topP: Double,
         @SerialName("maxOutputTokens") val maxOutputTokens: Int,
         @SerialName("responseMimeType") val responseMimeType: String,
+        @SerialName("thinkingConfig") val thinkingConfig: ThinkingConfig? = null,
     )
 
     @Serializable
     data class ThinkingConfig(
-        @SerialName("thinkingBudget") val thinkingBudget: Int,
+        @SerialName("thinkingLevel") val thinkingLevel: String,
     )
 }
