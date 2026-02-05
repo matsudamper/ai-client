@@ -27,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -110,98 +111,105 @@ public fun ChatList(
             }
         }
     }
-    Column(
+    Scaffold(
         modifier = modifier
             .navigationBarsPadding()
             .imePadding(),
-    ) {
-        TopAppBar(
-            modifier = Modifier,
-            navigationIcon = {
-                IconButton(onClick = { onClickMenu() }) {
-                    Icon(imageVector = Icons.Default.Menu, contentDescription = null)
-                }
-            },
-            title = {
-                Text(text = uiState.title)
-            },
-            actions = {
-                when (uiState.modelLoadingState) {
-                    is ChatListUiState.ModelLoadingState.Loading -> Unit
-                    is ChatListUiState.ModelLoadingState.Loaded -> {
-                        var visibleMenu by remember { mutableStateOf(false) }
-                        if (visibleMenu) {
-                            DropdownMenu(
-                                expanded = true,
-                                onDismissRequest = { visibleMenu = false },
-                            ) {
-                                for (model in uiState.modelLoadingState.models) {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(model.modelName)
-                                        },
-                                        onClick = { model.listener.onClick() },
-                                        trailingIcon = {
-                                            if (model.selected) {
-                                                Icon(imageVector = Icons.Default.Check, contentDescription = "check")
-                                            }
-                                        },
-                                    )
+        topBar = {
+            TopAppBar(
+                modifier = Modifier,
+                navigationIcon = {
+                    IconButton(onClick = { onClickMenu() }) {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = null)
+                    }
+                },
+                title = {
+                    Text(text = uiState.title)
+                },
+                actions = {
+                    when (uiState.modelLoadingState) {
+                        is ChatListUiState.ModelLoadingState.Loading -> Unit
+                        is ChatListUiState.ModelLoadingState.Loaded -> {
+                            var visibleMenu by remember { mutableStateOf(false) }
+                            if (visibleMenu) {
+                                DropdownMenu(
+                                    expanded = true,
+                                    onDismissRequest = { visibleMenu = false },
+                                ) {
+                                    for (model in uiState.modelLoadingState.models) {
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(model.modelName)
+                                            },
+                                            onClick = { model.listener.onClick() },
+                                            trailingIcon = {
+                                                if (model.selected) {
+                                                    Icon(imageVector = Icons.Default.Check, contentDescription = "check")
+                                                }
+                                            },
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        IconButton(onClick = { visibleMenu = !visibleMenu }) {
-                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+                            IconButton(onClick = { visibleMenu = !visibleMenu }) {
+                                Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+                            }
                         }
                     }
-                }
-            },
-        )
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth()
-                .weight(1f),
+                },
+            )
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(innerPadding),
         ) {
-            items(uiState.items) { item ->
-                Box(modifier = Modifier.padding(vertical = 4.dp)) {
-                    when (item) {
-                        is ChatListUiState.Message.Agent -> {
-                            AgentItem(
-                                modifier = Modifier.fillMaxWidth(),
-                                item = item,
-                            )
-                        }
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth()
+                    .weight(1f),
+            ) {
+                items(uiState.items) { item ->
+                    Box(modifier = Modifier.padding(vertical = 4.dp)) {
+                        when (item) {
+                            is ChatListUiState.Message.Agent -> {
+                                AgentItem(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    item = item,
+                                )
+                            }
 
-                        is ChatListUiState.Message.User -> {
-                            UserItem(
-                                modifier = Modifier.fillMaxWidth(),
-                                item = item,
-                            )
+                            is ChatListUiState.Message.User -> {
+                                UserItem(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    item = item,
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
-        Column(
-            modifier = Modifier.fillMaxWidth()
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-                .navigationBarsPadding(),
-        ) {
-            val state = rememberTextFieldState()
-            ChatFooter(
-                modifier = Modifier.fillMaxWidth(),
-                textFieldState = state,
-                onClickAddImage = { uiState.listener.onClickImage() },
-                onClickVoice = { uiState.listener.onClickVoice() },
-                selectedMedia = uiState.selectedImage,
-                visibleMediaLoading = uiState.visibleMediaLoading,
-                onClickSend = {
-                    uiState.listener.onClickSend(state.text.toString())
-                    state.clearText()
-                },
-                enableSend = uiState.enableSend && state.text.isNotEmpty(),
-                onClickRetry = { uiState.listener.onClickRetry() },
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .navigationBarsPadding(),
+            ) {
+                val state = rememberTextFieldState()
+                ChatFooter(
+                    modifier = Modifier.fillMaxWidth(),
+                    textFieldState = state,
+                    onClickAddImage = { uiState.listener.onClickImage() },
+                    onClickVoice = { uiState.listener.onClickVoice() },
+                    selectedMedia = uiState.selectedImage,
+                    visibleMediaLoading = uiState.visibleMediaLoading,
+                    onClickSend = {
+                        uiState.listener.onClickSend(state.text.toString())
+                        state.clearText()
+                    },
+                    enableSend = uiState.enableSend && state.text.isNotEmpty(),
+                    onClickRetry = { uiState.listener.onClickRetry() },
+                )
+            }
         }
     }
 }
