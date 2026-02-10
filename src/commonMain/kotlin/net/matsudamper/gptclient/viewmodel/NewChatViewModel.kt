@@ -1,5 +1,6 @@
 package net.matsudamper.gptclient.viewmodel
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -224,6 +225,7 @@ class NewChatViewModel(
                                 NewChatUiState.Project(
                                     name = project.name,
                                     icon = NewChatUiState.Project.Icon.Favorite,
+                                    color = project.color?.let { Color(it.toULong()) },
                                     listener = object : NewChatUiState.Project.Listener {
                                         override fun onClick() {
                                             appNavigator.navigate(
