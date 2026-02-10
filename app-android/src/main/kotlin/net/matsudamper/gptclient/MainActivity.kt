@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import net.matsudamper.gptclient.room.entity.ChatRoomId
 import org.koin.android.ext.android.getKoin
 import org.koin.dsl.module
 
@@ -45,9 +47,17 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
+        val chatRoomId = getChatRoomIdFromIntent(intent)
+
         setContent {
-            App()
+            App(initialChatRoomId = chatRoomId)
         }
+    }
+
+    private fun getChatRoomIdFromIntent(intent: Intent): ChatRoomId? {
+        val chatRoomIdString = intent.getStringExtra(KEY_CHATROOM_ID) ?: return null
+        val chatRoomIdLong = chatRoomIdString.toLongOrNull() ?: return null
+        return ChatRoomId(chatRoomIdLong)
     }
 
     companion object {
