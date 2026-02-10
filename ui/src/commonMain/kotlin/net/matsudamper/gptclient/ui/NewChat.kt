@@ -30,6 +30,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -195,6 +196,17 @@ public fun NewChat(
                 },
             )
         },
+        floatingActionButton = {
+            FloatingActionButton(
+                modifier = Modifier.testTag(NewChatTestTag.AddProjectButton.testTag()),
+                onClick = { uiState.listener.addProject() },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "追加",
+                )
+            }
+        },
     ) { innerPadding ->
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize()
@@ -211,6 +223,7 @@ public fun NewChat(
                         .weight(1f),
                     contentPadding = PaddingValues(
                         horizontal = 24.dp,
+                        bottom = 88.dp,
                     ),
                     columns = GridCells.Fixed(
                         ceil(
@@ -277,25 +290,6 @@ public fun NewChat(
                                 }
                             },
                             onClick = { project.listener.onClick() },
-                        )
-                    }
-                    item {
-                        ProjectScreen(
-                            modifier = projectModifier.testTag(NewChatTestTag.AddProjectButton.testTag()),
-                            content = {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = null,
-                                    )
-                                    Text("追加")
-                                }
-                            },
-                            onClick = { uiState.listener.addProject() },
                         )
                     }
                 }
