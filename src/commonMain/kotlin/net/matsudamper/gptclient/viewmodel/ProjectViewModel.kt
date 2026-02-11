@@ -334,10 +334,10 @@ class ProjectViewModel(
     }
 
     private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState = ProjectUiState.ModelState(
-        selectedModel = "${selectedModel.displayName} (${selectedModel.modelName})",
+        selectedModel = selectedModel.displayName,
         models = ChatGptModel.entries.map { model ->
             ProjectUiState.ModelState.Item(
-                modelName = "${model.displayName} (${model.modelName})",
+                modelName = model.displayName,
                 selected = model == selectedModel,
                 listener = object : ProjectUiState.ModelState.ItemListener {
                     override fun onClick() {

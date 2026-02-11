@@ -215,7 +215,7 @@ class NewChatViewModel(
                     it.copy(
                         selectedMedia = viewModelState.mediaList,
                         visibleMediaLoading = viewModelState.mediaLoading,
-                        selectedModel = "${viewModelState.selectedModel.displayName} (${viewModelState.selectedModel.modelName})",
+                        selectedModel = viewModelState.selectedModel.displayName,
                         projectNameDialog = viewModelState.projectNameDialog,
                         isLoading = viewModelState.isLoading,
                         enableSend = !viewModelState.mediaLoading,
