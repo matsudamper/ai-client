@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
+import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.ProjectUiState
@@ -26,9 +27,19 @@ import net.matsudamper.gptclient.viewmodel.SettingViewModel
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
-fun App() {
+fun App(initialChatRoomId: ChatRoomId? = null) {
     MaterialTheme {
-        val backStack = remember { mutableStateListOf<Navigator>(Navigator.StartChat) }
+        val backStack = remember {
+            mutableStateListOf<Navigator>(Navigator.StartChat).apply {
+                if (initialChatRoomId != null) {
+                    add(
+                        Navigator.Chat(
+                            openContext = Navigator.Chat.ChatOpenContext.OpenChat(initialChatRoomId),
+                        ),
+                    )
+                }
+            }
+        }
         val appNavigator = remember(backStack) { AppNavigator(backStack) }
         val viewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
