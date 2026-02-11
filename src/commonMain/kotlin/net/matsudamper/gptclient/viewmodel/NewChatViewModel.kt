@@ -84,7 +84,7 @@ class NewChatViewModel(
             visibleMediaLoading = false,
             models = ChatGptModel.entries.map { gptModel ->
                 NewChatUiState.Model(
-                    name = "${gptModel.displayName} (${gptModel.modelName})",
+                    name = gptModel.displayName,
                     listener = object : NewChatUiState.Model.Listener {
                         override fun onClick() {
                             viewModelStateFlow.update { viewModelState ->
