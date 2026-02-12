@@ -233,7 +233,7 @@ class ChatRequestWorker(
                     builtinProjectId = builtinProjectId,
                     platformRequest = platformRequest,
                 )
-                builtinProjectInfo.summaryProvider(firstInstruction, message.content)
+                builtinProjectInfo.summaryProvider.provide(firstInstruction, message.content)
             }
         }
 

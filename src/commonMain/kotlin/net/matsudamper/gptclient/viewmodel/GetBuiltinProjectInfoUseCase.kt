@@ -145,7 +145,11 @@ class GetBuiltinProjectInfoUseCase {
         val systemMessage: String,
         val format: AiClient.Format,
         val responseTransformer: (String) -> ChatMessageComposableInterface,
-        val summaryProvider: (String?, String) -> String?,
+        val summaryProvider: SummaryProvider,
         val model: ChatGptModel,
-    )
+    ) {
+        fun interface SummaryProvider {
+            fun provide(instruction: String?, response: String): String?
+        }
+    }
 }
