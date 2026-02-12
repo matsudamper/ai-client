@@ -1,6 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
-
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)

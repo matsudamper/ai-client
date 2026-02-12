@@ -37,11 +37,11 @@ class MoneyResponseParser {
                     appendLine("説明: ${result.description}")
 
                     val googleCalendarUrl = "https://money.matsudamper.net/add/money-usage" +
-                            "?action=TEMPLATE" +
-                            "&title=${result.title.encodeURLParameter()}" +
-                            "&date=$date" +
-                            "&price=${result.amount}" +
-                            "&description=${result.description.orEmpty().encodeURLParameter()}"
+                        "?action=TEMPLATE" +
+                        "&title=${result.title.encodeURLParameter()}" +
+                        "&date=$date" +
+                        "&price=${result.amount}" +
+                        "&description=${result.description.orEmpty().encodeURLParameter()}"
                     pushLink(LinkAnnotation.Url(googleCalendarUrl))
                     withStyle(SpanStyle(color = Color.Blue)) {
                         append("家計簿への追加リンク")

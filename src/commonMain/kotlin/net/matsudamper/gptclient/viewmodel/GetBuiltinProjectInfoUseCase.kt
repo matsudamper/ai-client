@@ -2,12 +2,13 @@ package net.matsudamper.gptclient.viewmodel
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatterBuilder
+import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
-import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
@@ -53,8 +54,8 @@ class GetBuiltinProjectInfoUseCase {
                     responseTransformer = {
                         TextMessageComposableInterface(CalendarResponseParser().toAnnotatedString(it))
                     },
-                    summaryProvider = {
-                        val parsed = CalendarResponseParser().parse(it)
+                    summaryProvider = { _, _, response ->
+                        val parsed = CalendarResponseParser().parse(response)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
                     },
                     model = ChatGptModel.GeminiFlashLiteLatest,
@@ -94,8 +95,8 @@ class GetBuiltinProjectInfoUseCase {
                     format = AiClient.Format.Json,
                     responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
                     model = ChatGptModel.GeminiFlashLiteLatest,
-                    summaryProvider = {
-                        val parsed = MoneyResponseParser().parse(it)
+                    summaryProvider = { _, _, response ->
+                        val parsed = MoneyResponseParser().parse(response)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
                     },
                 )
@@ -119,7 +120,20 @@ class GetBuiltinProjectInfoUseCase {
                         }
                     },
                     model = ChatGptModel.GeminiFlashLiteLatest,
-                    summaryProvider = { it },
+                    summaryProvider = { _, lastInstruction, response ->
+                        val emoji = runCatching {
+                            Json.decodeFromString<EmojiGptResponse>(response).results.firstOrNull()
+                        }.getOrNull()
+                        val instruction = lastInstruction
+                            ?.replace("\n", "")
+                            ?.trim()
+                            .orEmpty()
+                        when {
+                            instruction.isBlank() -> emoji
+                            emoji.isNullOrBlank() -> instruction
+                            else -> "$instruction $emoji"
+                        }
+                    },
                 )
             }
 
@@ -131,7 +145,11 @@ class GetBuiltinProjectInfoUseCase {
         val systemMessage: String,
         val format: AiClient.Format,
         val responseTransformer: (String) -> ChatMessageComposableInterface,
-        val summaryProvider: (String) -> String?,
+        val summaryProvider: SummaryProvider,
         val model: ChatGptModel,
-    )
+    ) {
+        fun interface SummaryProvider {
+            fun provide(firstInstruction: String?, lastInstruction: String?, response: String): String?
+        }
+    }
 }
