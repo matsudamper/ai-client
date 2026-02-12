@@ -210,7 +210,13 @@ class ChatRequestWorker(
         response: AiClient.AiResponse,
     ) {
         val chatRoomDao = appDatabase.chatRoomDao()
+        val chatDao = appDatabase.chatDao()
         val room = chatRoomDao.get(chatRoomId = chatRoomId.value).first()
+        val firstInstruction = chatDao.get(chatRoomId.value)
+            .first()
+            .firstOrNull { it.role == Chat.Role.User }
+            ?.textMessage
+            ?.takeIf { it.isNotBlank() }
         val message = response.choices
             .lastOrNull { it.message.role == AiClient.AiResponse.Choice.Role.Assistant }
             ?.message ?: return
@@ -227,7 +233,7 @@ class ChatRequestWorker(
                     builtinProjectId = builtinProjectId,
                     platformRequest = platformRequest,
                 )
-                builtinProjectInfo.summaryProvider(message.content)
+                builtinProjectInfo.summaryProvider(firstInstruction, message.content)
             }
         }
 
