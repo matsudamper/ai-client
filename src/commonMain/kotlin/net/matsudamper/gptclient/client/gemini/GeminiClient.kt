@@ -1,5 +1,10 @@
 package net.matsudamper.gptclient.client.gemini
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -10,13 +15,8 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
-import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.client.AiClient
+import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.util.Log
 
 class GeminiClient(
