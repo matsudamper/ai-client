@@ -15,6 +15,9 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.random.Random
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.lastOrNull
 import net.matsudamper.gptclient.MainActivity
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
@@ -213,8 +216,13 @@ class ChatRequestWorker(
         val chatDao = appDatabase.chatDao()
         val room = chatRoomDao.get(chatRoomId = chatRoomId.value).first()
         val firstInstruction = chatDao.get(chatRoomId.value)
-            .first()
-            .firstOrNull { it.role == Chat.Role.User }
+            .firstOrNull()
+            ?.firstOrNull { it.role == Chat.Role.User }
+            ?.textMessage
+            ?.takeIf { it.isNotBlank() }
+        val lastInstruction = chatDao.get(chatRoomId.value)
+            .lastOrNull()
+            ?.firstOrNull { it.role == Chat.Role.User }
             ?.textMessage
             ?.takeIf { it.isNotBlank() }
         val message = response.choices
@@ -233,7 +241,7 @@ class ChatRequestWorker(
                     builtinProjectId = builtinProjectId,
                     platformRequest = platformRequest,
                 )
-                builtinProjectInfo.summaryProvider.provide(firstInstruction, message.content)
+                builtinProjectInfo.summaryProvider.provide(firstInstruction, lastInstruction,message.content)
             }
         }
 
