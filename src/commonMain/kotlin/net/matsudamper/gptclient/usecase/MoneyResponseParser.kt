@@ -34,6 +34,10 @@ class MoneyResponseParser {
                         .appendPattern("yyyy-MM-dd")
                         .toFormatter()
                         .format(result.date)
+                    val time = DateTimeFormatterBuilder()
+                        .appendPattern("HH:mm")
+                        .toFormatter()
+                        .format(result.date)
 
                     appendLine("タイトル: ${result.title}")
                     appendLine("日時: $dateTime")
@@ -44,6 +48,7 @@ class MoneyResponseParser {
                         "?action=TEMPLATE" +
                         "&title=${result.title.encodeURLParameter()}" +
                         "&date=$date" +
+                        "&time=$time" +
                         "&price=${result.amount}" +
                         "&description=${result.description.orEmpty().encodeURLParameter()}"
                     pushLink(LinkAnnotation.Url(googleCalendarUrl))
