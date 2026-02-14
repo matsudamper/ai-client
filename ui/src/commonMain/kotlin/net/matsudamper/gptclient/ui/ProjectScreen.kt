@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -281,12 +282,19 @@ fun ProjectScreen(
                                         text = "命令",
                                     )
                                     val state = rememberTextFieldState(uiState.systemMessage.text)
+                                    val collapsedMaxHeight = 160.dp
+                                    var expandedSystemMessage by remember { mutableStateOf(false) }
                                     LaunchedEffect(state.text) {
                                         uiState.systemMessage.listener.onChange(state.text.toString())
                                     }
+                                    val canExpandSystemMessage = state.text.length > 200
+                                    val systemMessageModifier = if (expandedSystemMessage) {
+                                        Modifier.fillMaxWidth()
+                                    } else {
+                                        Modifier.fillMaxWidth().heightIn(max = collapsedMaxHeight)
+                                    }
                                     BasicTextField(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
+                                        modifier = systemMessageModifier
                                             .clip(MaterialTheme.shapes.small)
                                             .background(MaterialTheme.colorScheme.surfaceVariant)
                                             .padding(8.dp),
@@ -294,6 +302,13 @@ fun ProjectScreen(
                                         state = state,
                                         enabled = uiState.systemMessage.editable,
                                     )
+                                    if (canExpandSystemMessage && !expandedSystemMessage) {
+                                        OutlinedButton(
+                                            onClick = { expandedSystemMessage = true },
+                                        ) {
+                                            Text("展開")
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.height(24.dp))
                                 }
                             }
