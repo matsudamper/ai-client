@@ -49,11 +49,12 @@ class ChatRequestWorker(
 
         val firstChatRoom = chatRoom.get(chatRoomId = chatRoomId.value).first()
         val roomTitle = firstChatRoom.summary ?: "チャット"
+        val progressNotificationId = getProgressNotificationId(chatRoomId = chatRoomId)
 
         val pendingIntent = createPendingIntent(chatRoomId = chatRoomId.value.toString())
         setForeground(
             ForegroundInfo(
-                Random.nextInt(),
+                progressNotificationId,
                 createNotificationBuilder(
                     title = roomTitle,
                     message = "処理中...",
@@ -139,6 +140,7 @@ class ChatRequestWorker(
                         title = "処理失敗",
                         message = response.reason.message,
                         channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                        progressNotificationId = progressNotificationId,
                         notificationId = Random.nextInt(),
                         pendingIntent = pendingIntent,
                     )
@@ -179,6 +181,7 @@ class ChatRequestWorker(
                 title = "処理完了",
                 message = "${notificationTitle}の処理が完了しました",
                 channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                progressNotificationId = progressNotificationId,
                 notificationId = Random.nextInt(),
                 pendingIntent = pendingIntent,
             )
@@ -198,6 +201,7 @@ class ChatRequestWorker(
                 title = "処理失敗",
                 message = e.message.orEmpty(),
                 channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                progressNotificationId = progressNotificationId,
                 notificationId = Random.nextInt(),
                 pendingIntent = pendingIntent,
             )
@@ -295,6 +299,7 @@ class ChatRequestWorker(
         title: String,
         message: String,
         channelId: String,
+        progressNotificationId: Int,
         notificationId: Int,
         pendingIntent: PendingIntent,
     ) {
@@ -311,8 +316,10 @@ class ChatRequestWorker(
                 android.Manifest.permission.POST_NOTIFICATIONS,
             )
         ) {
-            NotificationManagerCompat.from(applicationContext)
-                .notify(notificationId, builder.build())
+            NotificationManagerCompat.from(applicationContext).apply {
+                cancel(progressNotificationId)
+                notify(notificationId, builder.build())
+            }
         }
     }
 
@@ -352,6 +359,10 @@ class ChatRequestWorker(
         const val KEY_CHAT_ROOM_ID = "chat_room_id"
         const val KEY_MESSAGE = "message"
         const val KEY_URIS = "uris"
+
+        fun getProgressNotificationId(chatRoomId: ChatRoomId): Int {
+            return chatRoomId.value.hashCode()
+        }
 
         fun createInputData(
             chatRoomId: ChatRoomId,
