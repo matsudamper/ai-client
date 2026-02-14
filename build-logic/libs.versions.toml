@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.3.0"
-agp = "9.0.0-alpha06"
+agp = "9.0.1"
 compose = "1.11.0-SNAPSHOT+ok-check-kotlin-2-3-20"
 composeIcons = "1.7.3"
 activity = "1.12.4"
