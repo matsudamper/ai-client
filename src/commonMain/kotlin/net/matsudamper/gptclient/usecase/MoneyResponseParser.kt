@@ -26,13 +26,17 @@ class MoneyResponseParser {
         } else {
             buildAnnotatedString {
                 for ((index, result) in response.results.withIndex()) {
+                    val dateTime = DateTimeFormatterBuilder()
+                        .appendPattern("yyyy-MM-dd HH:mm")
+                        .toFormatter()
+                        .format(result.date)
                     val date = DateTimeFormatterBuilder()
                         .appendPattern("yyyy-MM-dd")
                         .toFormatter()
                         .format(result.date)
 
                     appendLine("タイトル: ${result.title}")
-                    appendLine("日付: $date")
+                    appendLine("日時: $dateTime")
                     appendLine("金額: ${result.amount}")
                     appendLine("説明: ${result.description}")
 
