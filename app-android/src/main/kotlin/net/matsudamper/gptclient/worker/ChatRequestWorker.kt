@@ -7,6 +7,8 @@ import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
@@ -52,20 +54,22 @@ class ChatRequestWorker(
         val progressNotificationId = getProgressNotificationId(chatRoomId = chatRoomId)
 
         val pendingIntent = createPendingIntent(chatRoomId = chatRoomId.value.toString())
-        setForeground(
-            ForegroundInfo(
-                progressNotificationId,
-                createNotificationBuilder(
-                    title = roomTitle,
-                    message = "処理中...",
-                    channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
-                    pendingIntent = pendingIntent,
-                )
-                    .setOngoing(true)
-                    .setProgress(1, 1, true).build(),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
-            ),
-        )
+        if (shouldShowProgressNotification()) {
+            setForeground(
+                ForegroundInfo(
+                    progressNotificationId,
+                    createNotificationBuilder(
+                        title = roomTitle,
+                        message = "処理中...",
+                        channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                        pendingIntent = pendingIntent,
+                    )
+                        .setOngoing(true)
+                        .setProgress(1, 1, true).build(),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+                ),
+            )
+        }
 
         val format: AiClient.Format
         val systemMessage: String?
@@ -293,6 +297,10 @@ class ChatRequestWorker(
             add(systemMessage)
             addAll(messages)
         }.filterNotNull()
+    }
+
+    private fun shouldShowProgressNotification(): Boolean {
+        return !ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
     }
 
     private fun snowFinishNotification(
