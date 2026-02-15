@@ -1,8 +1,10 @@
 package net.matsudamper.gptclient.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,12 +33,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import net.matsudamper.gptclient.datastore.ThemeMode
 
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
     data class Loaded(
         val initialSecretKey: String,
         val initialGeminiSecretKey: String,
+        val themeMode: ThemeMode,
         val listener: Listener,
     ) : SettingsScreenUiState {
         @Immutable
@@ -44,6 +49,7 @@ sealed interface SettingsScreenUiState {
             fun updateGeminiSecretKey(text: String)
             fun onClickOpenAiUsage()
             fun onClickGeminiUsage()
+            fun onClickThemeMode(themeMode: ThemeMode)
         }
     }
 }
@@ -109,6 +115,12 @@ private fun Loaded(
         modifier = modifier
             .verticalScroll(rememberScrollState()),
     ) {
+        ThemeSettingItem(
+            modifier = Modifier.fillMaxWidth(),
+            currentThemeMode = uiState.themeMode,
+            onClickThemeMode = { uiState.listener.onClickThemeMode(it) },
+        )
+        Spacer(modifier = Modifier.height(12.dp))
         ApiKeySettingItem(
             modifier = Modifier.fillMaxWidth(),
             title = "OpenAI Secret Key",
@@ -137,6 +149,41 @@ private fun Loaded(
             Text("Usage")
         }
     }
+}
+
+@Composable
+private fun ThemeSettingItem(
+    modifier: Modifier = Modifier,
+    currentThemeMode: ThemeMode,
+    onClickThemeMode: (ThemeMode) -> Unit,
+) {
+    SettingItem(
+        modifier = modifier,
+        title = {
+            Text("テーマ")
+        },
+        content = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ThemeMode.entries.forEach { mode ->
+                    FilterChip(
+                        selected = currentThemeMode == mode,
+                        onClick = { onClickThemeMode(mode) },
+                        label = {
+                            Text(
+                                when (mode) {
+                                    ThemeMode.SYSTEM -> "端末に同期"
+                                    ThemeMode.LIGHT -> "ライト"
+                                    ThemeMode.DARK -> "ダーク"
+                                },
+                            )
+                        },
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable

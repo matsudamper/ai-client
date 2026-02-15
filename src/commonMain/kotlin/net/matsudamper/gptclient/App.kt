@@ -1,7 +1,10 @@
 package net.matsudamper.gptclient
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
@@ -10,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.matsudamper.gptclient.client.openai.ChatGptClient
+import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -28,7 +33,18 @@ import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
 fun App(initialChatRoomId: ChatRoomId? = null) {
-    MaterialTheme {
+    val settingDataStore: SettingDataStore = remember { getKoin().get() }
+    val themeMode = settingDataStore.getThemeModeFlow()
+        .collectAsState(initial = ThemeMode.SYSTEM).value
+    val isSystemDark = isSystemInDarkTheme()
+    val isDark = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemDark
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+    MaterialTheme(
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+    ) {
         val backStack = remember {
             mutableStateListOf<Navigator>(Navigator.StartChat).apply {
                 if (initialChatRoomId != null) {

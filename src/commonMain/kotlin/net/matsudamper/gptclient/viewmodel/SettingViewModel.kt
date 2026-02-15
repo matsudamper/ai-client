@@ -8,12 +8,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 
 class SettingViewModel(
     private val settingDataStore: SettingDataStore,
     private val platformRequest: PlatformRequest,
 ) : ViewModel() {
+    private val _uiStateFlow = MutableStateFlow<SettingsScreenUiState>(
+        SettingsScreenUiState.Loading,
+    )
+
     private val loadedListener = object : SettingsScreenUiState.Loaded.Listener {
         override fun updateSecretKey(text: String) {
             saveSecretKey(text)
@@ -34,18 +39,28 @@ class SettingViewModel(
                 url = "https://aistudio.google.com/usagecontinue",
             )
         }
+
+        override fun onClickThemeMode(themeMode: ThemeMode) {
+            viewModelScope.launch {
+                settingDataStore.setThemeMode(themeMode)
+            }
+        }
     }
 
-    val uiStateFlow: StateFlow<SettingsScreenUiState> = MutableStateFlow<SettingsScreenUiState>(
-        SettingsScreenUiState.Loading,
-    ).also { uiState ->
+    val uiStateFlow: StateFlow<SettingsScreenUiState> = _uiStateFlow.also { uiState ->
         viewModelScope.launch {
-            uiState.update {
-                SettingsScreenUiState.Loaded(
-                    initialSecretKey = settingDataStore.getSecretKey(),
-                    initialGeminiSecretKey = settingDataStore.getGeminiSecretKey(),
-                    listener = loadedListener,
-                )
+            val secretKey = settingDataStore.getSecretKey()
+            val geminiSecretKey = settingDataStore.getGeminiSecretKey()
+            settingDataStore.getThemeModeFlow().collect { themeMode ->
+                uiState.update {
+                    val current = it as? SettingsScreenUiState.Loaded
+                    SettingsScreenUiState.Loaded(
+                        initialSecretKey = current?.initialSecretKey ?: secretKey,
+                        initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
+                        themeMode = themeMode,
+                        listener = loadedListener,
+                    )
+                }
             }
         }
     }
