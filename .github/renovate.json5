@@ -4,5 +4,9 @@
   "prConcurrentLimit": 20,
   "extends": [":dependencyDashboard"],
   "packageRules": [
+    {
+      "matchPackagePatterns": ["^org\\.jetbrains\\.compose", "^androidx\\.compose"],
+      "allowedVersions": "!/ok-check-kotlin/"
+    }
   ],
 }
