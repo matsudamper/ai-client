@@ -9,6 +9,7 @@ import androidx.compose.ui.text.withStyle
 import java.time.format.DateTimeFormatterBuilder
 import kotlinx.serialization.json.Json
 import io.ktor.http.encodeURLParameter
+import net.matsudamper.gptclient.serialization.ISO8601LocalDateTimeSerializer
 import net.matsudamper.gptclient.viewmodel.calendar.MoneyGptResponse
 
 class MoneyResponseParser {
@@ -30,14 +31,6 @@ class MoneyResponseParser {
                         .appendPattern("yyyy-MM-dd HH:mm")
                         .toFormatter()
                         .format(result.date)
-                    val date = DateTimeFormatterBuilder()
-                        .appendPattern("yyyy-MM-dd")
-                        .toFormatter()
-                        .format(result.date)
-                    val time = DateTimeFormatterBuilder()
-                        .appendPattern("HH:mm")
-                        .toFormatter()
-                        .format(result.date)
 
                     appendLine("タイトル: ${result.title}")
                     appendLine("日時: $dateTime")
@@ -47,8 +40,7 @@ class MoneyResponseParser {
                     val googleCalendarUrl = "https://money.matsudamper.net/add/money-usage" +
                         "?action=TEMPLATE" +
                         "&title=${result.title.encodeURLParameter()}" +
-                        "&date=$date" +
-                        "&time=$time" +
+                        "&date=${result.date}" +
                         "&price=${result.amount}" +
                         "&description=${result.description.orEmpty().encodeURLParameter()}"
                     pushLink(LinkAnnotation.Url(googleCalendarUrl))
