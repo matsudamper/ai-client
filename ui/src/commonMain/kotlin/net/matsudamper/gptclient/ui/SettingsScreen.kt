@@ -33,12 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-enum class ThemeOption {
-    SYSTEM,
-    LIGHT,
-    DARK,
-}
-
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
     data class Loaded(
@@ -55,6 +49,12 @@ sealed interface SettingsScreenUiState {
             fun onClickGeminiUsage()
             fun onClickThemeOption(themeOption: ThemeOption)
         }
+    }
+
+    enum class ThemeOption {
+        SYSTEM,
+        LIGHT,
+        DARK,
     }
 }
 private val HorizontalPadding = 12.dp
@@ -158,8 +158,8 @@ private fun Loaded(
 @Composable
 private fun ThemeSettingItem(
     modifier: Modifier = Modifier,
-    currentThemeOption: ThemeOption,
-    onClickThemeOption: (ThemeOption) -> Unit,
+    currentThemeOption: SettingsScreenUiState.ThemeOption,
+    onClickThemeOption: (SettingsScreenUiState.ThemeOption) -> Unit,
 ) {
     SettingItem(
         modifier = modifier,
@@ -170,16 +170,16 @@ private fun ThemeSettingItem(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ThemeOption.entries.forEach { option ->
+                SettingsScreenUiState.ThemeOption.entries.forEach { option ->
                     FilterChip(
                         selected = currentThemeOption == option,
                         onClick = { onClickThemeOption(option) },
                         label = {
                             Text(
                                 when (option) {
-                                    ThemeOption.SYSTEM -> "端末に同期"
-                                    ThemeOption.LIGHT -> "ライト"
-                                    ThemeOption.DARK -> "ダーク"
+                                    SettingsScreenUiState.ThemeOption.SYSTEM -> "端末に同期"
+                                    SettingsScreenUiState.ThemeOption.LIGHT -> "ライト"
+                                    SettingsScreenUiState.ThemeOption.DARK -> "ダーク"
                                 },
                             )
                         },

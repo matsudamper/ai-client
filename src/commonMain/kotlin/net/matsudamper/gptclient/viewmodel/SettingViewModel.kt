@@ -10,7 +10,6 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
-import net.matsudamper.gptclient.ui.ThemeOption
 
 class SettingViewModel(
     private val settingDataStore: SettingDataStore,
@@ -41,9 +40,9 @@ class SettingViewModel(
             )
         }
 
-        override fun onClickThemeOption(themeOption: ThemeOption) {
+        override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) {
             viewModelScope.launch {
-                settingDataStore.setThemeMode(themeOption.toThemeMode())
+                settingDataStore.setThemeMode(themeOption.toData())
             }
         }
     }
@@ -58,7 +57,7 @@ class SettingViewModel(
                     SettingsScreenUiState.Loaded(
                         initialSecretKey = current?.initialSecretKey ?: secretKey,
                         initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
-                        themeOption = themeMode.toThemeOption(),
+                        themeOption = themeMode.toUiState(),
                         listener = loadedListener,
                     )
                 }
@@ -79,14 +78,14 @@ class SettingViewModel(
     }
 }
 
-private fun ThemeMode.toThemeOption(): ThemeOption = when (this) {
-    ThemeMode.SYSTEM -> ThemeOption.SYSTEM
-    ThemeMode.LIGHT -> ThemeOption.LIGHT
-    ThemeMode.DARK -> ThemeOption.DARK
+private fun ThemeMode.toUiState(): SettingsScreenUiState.ThemeOption = when (this) {
+    ThemeMode.SYSTEM -> SettingsScreenUiState.ThemeOption.SYSTEM
+    ThemeMode.LIGHT -> SettingsScreenUiState.ThemeOption.LIGHT
+    ThemeMode.DARK -> SettingsScreenUiState.ThemeOption.DARK
 }
 
-private fun ThemeOption.toThemeMode(): ThemeMode = when (this) {
-    ThemeOption.SYSTEM -> ThemeMode.SYSTEM
-    ThemeOption.LIGHT -> ThemeMode.LIGHT
-    ThemeOption.DARK -> ThemeMode.DARK
+private fun SettingsScreenUiState.ThemeOption.toData(): ThemeMode = when (this) {
+    SettingsScreenUiState.ThemeOption.SYSTEM -> ThemeMode.SYSTEM
+    SettingsScreenUiState.ThemeOption.LIGHT -> ThemeMode.LIGHT
+    SettingsScreenUiState.ThemeOption.DARK -> ThemeMode.DARK
 }
