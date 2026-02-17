@@ -33,14 +33,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import net.matsudamper.gptclient.datastore.ThemeMode
+enum class ThemeOption {
+    SYSTEM,
+    LIGHT,
+    DARK,
+}
 
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
     data class Loaded(
         val initialSecretKey: String,
         val initialGeminiSecretKey: String,
-        val themeMode: ThemeMode,
+        val themeOption: ThemeOption,
         val listener: Listener,
     ) : SettingsScreenUiState {
         @Immutable
@@ -49,7 +53,7 @@ sealed interface SettingsScreenUiState {
             fun updateGeminiSecretKey(text: String)
             fun onClickOpenAiUsage()
             fun onClickGeminiUsage()
-            fun onClickThemeMode(themeMode: ThemeMode)
+            fun onClickThemeOption(themeOption: ThemeOption)
         }
     }
 }
@@ -117,8 +121,8 @@ private fun Loaded(
     ) {
         ThemeSettingItem(
             modifier = Modifier.fillMaxWidth(),
-            currentThemeMode = uiState.themeMode,
-            onClickThemeMode = { uiState.listener.onClickThemeMode(it) },
+            currentThemeOption = uiState.themeOption,
+            onClickThemeOption = { uiState.listener.onClickThemeOption(it) },
         )
         Spacer(modifier = Modifier.height(12.dp))
         ApiKeySettingItem(
@@ -154,8 +158,8 @@ private fun Loaded(
 @Composable
 private fun ThemeSettingItem(
     modifier: Modifier = Modifier,
-    currentThemeMode: ThemeMode,
-    onClickThemeMode: (ThemeMode) -> Unit,
+    currentThemeOption: ThemeOption,
+    onClickThemeOption: (ThemeOption) -> Unit,
 ) {
     SettingItem(
         modifier = modifier,
@@ -166,16 +170,16 @@ private fun ThemeSettingItem(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ThemeMode.entries.forEach { mode ->
+                ThemeOption.entries.forEach { option ->
                     FilterChip(
-                        selected = currentThemeMode == mode,
-                        onClick = { onClickThemeMode(mode) },
+                        selected = currentThemeOption == option,
+                        onClick = { onClickThemeOption(option) },
                         label = {
                             Text(
-                                when (mode) {
-                                    ThemeMode.SYSTEM -> "端末に同期"
-                                    ThemeMode.LIGHT -> "ライト"
-                                    ThemeMode.DARK -> "ダーク"
+                                when (option) {
+                                    ThemeOption.SYSTEM -> "端末に同期"
+                                    ThemeOption.LIGHT -> "ライト"
+                                    ThemeOption.DARK -> "ダーク"
                                 },
                             )
                         },

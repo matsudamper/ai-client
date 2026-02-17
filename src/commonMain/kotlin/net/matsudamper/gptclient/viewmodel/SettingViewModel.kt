@@ -10,6 +10,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
+import net.matsudamper.gptclient.ui.ThemeOption
 
 class SettingViewModel(
     private val settingDataStore: SettingDataStore,
@@ -40,9 +41,9 @@ class SettingViewModel(
             )
         }
 
-        override fun onClickThemeMode(themeMode: ThemeMode) {
+        override fun onClickThemeOption(themeOption: ThemeOption) {
             viewModelScope.launch {
-                settingDataStore.setThemeMode(themeMode)
+                settingDataStore.setThemeMode(themeOption.toThemeMode())
             }
         }
     }
@@ -57,7 +58,7 @@ class SettingViewModel(
                     SettingsScreenUiState.Loaded(
                         initialSecretKey = current?.initialSecretKey ?: secretKey,
                         initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
-                        themeMode = themeMode,
+                        themeOption = themeMode.toThemeOption(),
                         listener = loadedListener,
                     )
                 }
@@ -76,4 +77,16 @@ class SettingViewModel(
             settingDataStore.setGeminiSecretKey(text)
         }
     }
+}
+
+private fun ThemeMode.toThemeOption(): ThemeOption = when (this) {
+    ThemeMode.SYSTEM -> ThemeOption.SYSTEM
+    ThemeMode.LIGHT -> ThemeOption.LIGHT
+    ThemeMode.DARK -> ThemeOption.DARK
+}
+
+private fun ThemeOption.toThemeMode(): ThemeMode = when (this) {
+    ThemeOption.SYSTEM -> ThemeMode.SYSTEM
+    ThemeOption.LIGHT -> ThemeMode.LIGHT
+    ThemeOption.DARK -> ThemeMode.DARK
 }
