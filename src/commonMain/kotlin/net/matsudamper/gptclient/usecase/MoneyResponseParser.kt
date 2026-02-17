@@ -9,7 +9,6 @@ import androidx.compose.ui.text.withStyle
 import java.time.format.DateTimeFormatterBuilder
 import kotlinx.serialization.json.Json
 import io.ktor.http.encodeURLParameter
-import net.matsudamper.gptclient.serialization.ISO8601LocalDateTimeSerializer
 import net.matsudamper.gptclient.viewmodel.calendar.MoneyGptResponse
 
 class MoneyResponseParser {
