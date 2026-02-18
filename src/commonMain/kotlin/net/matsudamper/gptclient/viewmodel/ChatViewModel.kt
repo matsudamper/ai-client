@@ -92,10 +92,6 @@ class ChatViewModel(
                 it.copy(selectedMedia = listOf())
             }
         }
-
-        override fun onClickRetry() {
-            retryRequest()
-        }
     }
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
         ChatListUiState(
@@ -181,21 +177,34 @@ class ChatViewModel(
                                 }
                             },
                         ).let { items ->
-                            val message = viewModelState.latestChatErrorMessage
-                            if (message != null) {
-                                items.plus(
+                            val chatErrorMessage = viewModelState.latestChatErrorMessage
+                            val clientErrorMessage = viewModelState.latestClientErrorMessage
+                            var resultItems = items
+                            if (chatErrorMessage != null) {
+                                resultItems = resultItems.plus(
                                     ChatListUiState.Message.Agent(
                                         ChatErrorMessageRetryComposableInterface(
-                                            message = AnnotatedString(message),
+                                            message = AnnotatedString(chatErrorMessage),
                                             retry = {
                                                 retryRequest()
                                             },
                                         ),
                                     ),
                                 )
-                            } else {
-                                items
                             }
+                            if (clientErrorMessage != null) {
+                                resultItems = resultItems.plus(
+                                    ChatListUiState.Message.Agent(
+                                        ChatErrorMessageRetryComposableInterface(
+                                            message = AnnotatedString(clientErrorMessage),
+                                            retry = {
+                                                retryRequest()
+                                            },
+                                        ),
+                                    ),
+                                )
+                            }
+                            resultItems
                         },
                         errorDialogMessage = viewModelState.errorDialogMessage,
                     )
@@ -314,7 +323,11 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.Success,
                     is AddRequestUseCase.Result.WorkInProgress,
                     is AddRequestUseCase.Result.IsLastUserChat,
-                    -> Unit
+                    -> {
+                        viewModelStateFlow.update {
+                            it.copy(latestClientErrorMessage = null)
+                        }
+                    }
 
                     is AddRequestUseCase.Result.GptResultError -> {
                         platformRequest.showToast(result.gptError.reason.message)
@@ -325,7 +338,9 @@ class ChatViewModel(
                     }
                 }
             } catch (_: Throwable) {
-                platformRequest.showToast("エラー")
+                viewModelStateFlow.update {
+                    it.copy(latestClientErrorMessage = "クライアントエラーが発生しました")
+                }
             } finally {
                 viewModelStateFlow.update {
                     it.copy(isWorkInProgress = false)
@@ -369,7 +384,11 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.Success,
                     is AddRequestUseCase.Result.IsLastUserChat,
                     is AddRequestUseCase.Result.WorkInProgress,
-                    -> Unit
+                    -> {
+                        viewModelStateFlow.update {
+                            it.copy(latestClientErrorMessage = null)
+                        }
+                    }
 
                     is AddRequestUseCase.Result.GptResultError,
                     -> {
@@ -379,6 +398,10 @@ class ChatViewModel(
                     AddRequestUseCase.Result.ModelNotFoundError -> {
                         platformRequest.showToast("モデル: ${roomInfo.room.modelName}がありません")
                     }
+                }
+            } catch (_: Throwable) {
+                viewModelStateFlow.update {
+                    it.copy(latestClientErrorMessage = "クライアントエラーが発生しました")
                 }
             } finally {
                 viewModelStateFlow.update {
@@ -428,6 +451,7 @@ class ChatViewModel(
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
+        val latestClientErrorMessage: String? = null,
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom
