@@ -17,6 +17,8 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
 
+    env:
+      DEBUG_KEYSTORE_FILE: debug.keystore
     steps:
       - uses: actions/checkout@v6
         with:
@@ -29,6 +31,12 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
+
+      - name: Decode debug keystore
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > debug.keystore
 
       - run: ./gradlew :app-android:assembleRelease
 
