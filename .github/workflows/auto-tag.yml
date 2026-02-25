@@ -11,6 +11,8 @@ permissions:
 jobs:
   create-tag:
     runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.bump.outputs.new_tag }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -37,3 +39,10 @@ jobs:
         run: |
           git tag "${{ steps.bump.outputs.new_tag }}"
           git push origin "${{ steps.bump.outputs.new_tag }}"
+
+  release:
+    needs: create-tag
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.create-tag.outputs.new_tag }}
+    secrets: inherit

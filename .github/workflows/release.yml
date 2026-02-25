@@ -1,7 +1,14 @@
+name: Release
+
 on:
   push:
     tags:
       - 'v*'
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -12,6 +19,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-java@v5
         with:
@@ -23,10 +32,11 @@ jobs:
 
       - run: ./gradlew :app-android:assembleRelease
 
-      - env:
+      - name: Upload Release APK
+        env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" app-android/build/outputs/apk/**/*.apk --clobber
           else
