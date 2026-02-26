@@ -38,6 +38,7 @@ sealed interface SettingsScreenUiState {
     data class Loaded(
         val initialSecretKey: String,
         val initialGeminiSecretKey: String,
+        val initialGeminiBillingKey: String,
         val themeOption: ThemeOption,
         val listener: Listener,
     ) : SettingsScreenUiState {
@@ -45,6 +46,7 @@ sealed interface SettingsScreenUiState {
         interface Listener {
             fun updateSecretKey(text: String)
             fun updateGeminiSecretKey(text: String)
+            fun updateGeminiBillingKey(text: String)
             fun onClickOpenAiUsage()
             fun onClickGeminiUsage()
             fun onClickThemeOption(themeOption: ThemeOption)
@@ -152,6 +154,13 @@ private fun Loaded(
         ) {
             Text("Usage")
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        ApiKeySettingItem(
+            modifier = Modifier.fillMaxWidth(),
+            title = "Gemini Billing Key",
+            initialValue = uiState.initialGeminiBillingKey,
+            onValueChange = { uiState.listener.updateGeminiBillingKey(it) },
+        )
     }
 }
 
