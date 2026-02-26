@@ -229,12 +229,13 @@ private fun FooterTextSection(
             Icon(
                 imageVector = FeatherIcons.Image,
                 contentDescription = "add image",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
             )
         }
         Row(
             modifier = Modifier.weight(1f)
                 .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.onSecondary)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -257,6 +258,7 @@ private fun FooterTextSection(
                     modifier = Modifier.padding(4.dp),
                     imageVector = FeatherIcons.Mic,
                     contentDescription = "input voice",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -266,6 +268,7 @@ private fun FooterTextSection(
                 Icon(
                     imageVector = FeatherIcons.RotateCcw,
                     contentDescription = "retry",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
             }
         }
@@ -277,6 +280,7 @@ private fun FooterTextSection(
             Icon(
                 imageVector = FeatherIcons.ArrowUp,
                 contentDescription = "send",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
             )
         }
     }
