@@ -115,7 +115,11 @@ class ChatRequestWorker(
                     secretKey = settingDataStore.getSecretKey(),
                 )
                 ApiProvider.Gemini -> GeminiClient(
-                    apiKey = settingDataStore.getGeminiSecretKey(),
+                    apiKey = if (chatModel.requireBillingKey) {
+                        settingDataStore.getGeminiBillingKey()
+                    } else {
+                        settingDataStore.getGeminiSecretKey()
+                    },
                 )
             }
 
