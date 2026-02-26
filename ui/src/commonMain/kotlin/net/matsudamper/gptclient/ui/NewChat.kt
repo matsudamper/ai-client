@@ -382,3 +382,48 @@ private fun ProjectScreen(
         content()
     }
 }
+
+@Composable
+private fun Preview() {
+    NewChat(
+        uiState = NewChatUiState(
+            projects = listOf(
+                NewChatUiState.Project(
+                    name = "Personal",
+                    icon = NewChatUiState.Project.Icon.Favorite,
+                    listener = object : NewChatUiState.Project.Listener {
+                        override fun onClick() = Unit
+                    },
+                ),
+                NewChatUiState.Project(
+                    name = "Work",
+                    icon = NewChatUiState.Project.Icon.Card,
+                    listener = object : NewChatUiState.Project.Listener {
+                        override fun onClick() = Unit
+                    },
+                ),
+            ),
+            selectedMedia = emptyList(),
+            visibleMediaLoading = false,
+            enableSend = false,
+            models = listOf(
+                NewChatUiState.Model(
+                    name = "gpt-4o-mini",
+                    listener = object : NewChatUiState.Model.Listener {
+                        override fun onClick() = Unit
+                    },
+                ),
+            ),
+            selectedModel = "gpt-4o-mini",
+            projectNameDialog = null,
+            isLoading = false,
+            listener = object : NewChatUiState.Listener {
+                override fun send(text: String) = Unit
+                override fun onClickSelectMedia() = Unit
+                override fun onClickVoice() = Unit
+                override fun addProject() = Unit
+            },
+        ),
+        onClickMenu = {},
+    )
+}

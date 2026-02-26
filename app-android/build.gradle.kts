@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.jetbrainsCompose)
+    alias(libs.plugins.paparazzi)
 }
 
 android {
@@ -50,6 +51,18 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests.all { test ->
+            test.useJUnit {
+                if (test.name.contains("paparazzi")) {
+                    includeCategories("net.matsudamper.gptclient.app.PaparazziTestCategory")
+                } else {
+                    excludeCategories("net.matsudamper.gptclient.app.PaparazziTestCategory")
+                }
+            }
+        }
+    }
 }
 
 dependencies {
@@ -61,4 +74,9 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.ui)
     implementation(compose.runtime)
+
+    testImplementation(libs.paparazzi)
+    testImplementation(libs.androidxTestCoreKtx)
+    testImplementation(libs.composablePreviewScannerCommon)
+    testImplementation(libs.composablePreviewScannerCore)
 }
