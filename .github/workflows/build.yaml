@@ -30,7 +30,7 @@ jobs:
           echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > debug.keystore
       - name: Build debug APK
         run: ./gradlew :app-android:assembleDebug
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: debug-apk
           path: app-android/build/outputs/apk/debug/*.apk
