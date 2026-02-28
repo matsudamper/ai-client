@@ -290,7 +290,9 @@ fun ProjectScreen(
                                             .clip(MaterialTheme.shapes.small)
                                             .background(MaterialTheme.colorScheme.surfaceVariant)
                                             .padding(8.dp),
-                                        textStyle = MaterialTheme.typography.bodyMedium,
+                                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        ),
                                         state = state,
                                         enabled = uiState.systemMessage.editable,
                                     )

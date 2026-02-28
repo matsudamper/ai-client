@@ -10,6 +10,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.matsudamper.gptclient.client.openai.ChatGptClient
@@ -42,8 +43,25 @@ fun App(initialChatRoomId: ChatRoomId? = null) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
     }
+
+    val lightColors = lightColorScheme(
+        primary = Color(0xFF5A46C8),
+        surfaceVariant = Color(0xFFF1F0F8),
+        secondaryContainer = Color(0xFFE8E4F8),
+    )
+    val darkColors = darkColorScheme(
+        primary = Color(0xFFC5B7FF),
+        onPrimary = Color(0xFF2A176F),
+        surface = Color(0xFF111018),
+        onSurface = Color(0xFFF2F0FA),
+        surfaceVariant = Color(0xFF2A2835),
+        onSurfaceVariant = Color(0xFFE7E1F7),
+        secondaryContainer = Color(0xFF47435A),
+        onSecondaryContainer = Color(0xFFF2EEFF),
+    )
+
     MaterialTheme(
-        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+        colorScheme = if (isDark) darkColors else lightColors,
     ) {
         val backStack = remember {
             mutableStateListOf<Navigator>(Navigator.StartChat).apply {
