@@ -31,6 +31,18 @@ android {
                 signingConfig = signingConfigs.getByName("ci")
             }
         }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            val isCI = System.getenv("CI")?.toBoolean() == true
+            if (isCI) {
+                signingConfig = signingConfigs.getByName("ci")
+            }
+        }
     }
 
     defaultConfig {
