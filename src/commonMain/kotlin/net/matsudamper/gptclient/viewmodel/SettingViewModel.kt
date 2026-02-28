@@ -28,6 +28,10 @@ class SettingViewModel(
             saveGeminiSecretKey(text)
         }
 
+        override fun updateGeminiBillingKey(text: String) {
+            saveGeminiBillingKey(text)
+        }
+
         override fun onClickOpenAiUsage() {
             platformRequest.openLink(
                 url = "https://platform.openai.com/settings/organization/usage",
@@ -51,12 +55,14 @@ class SettingViewModel(
         viewModelScope.launch {
             val secretKey = settingDataStore.getSecretKey()
             val geminiSecretKey = settingDataStore.getGeminiSecretKey()
+            val geminiBillingKey = settingDataStore.getGeminiBillingKey()
             settingDataStore.getThemeModeFlow().collect { themeMode ->
                 uiState.update {
                     val current = it as? SettingsScreenUiState.Loaded
                     SettingsScreenUiState.Loaded(
                         initialSecretKey = current?.initialSecretKey ?: secretKey,
                         initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
+                        initialGeminiBillingKey = current?.initialGeminiBillingKey ?: geminiBillingKey,
                         themeOption = themeMode.toUiState(),
                         listener = loadedListener,
                     )
@@ -74,6 +80,12 @@ class SettingViewModel(
     private fun saveGeminiSecretKey(text: String) {
         viewModelScope.launch {
             settingDataStore.setGeminiSecretKey(text)
+        }
+    }
+
+    private fun saveGeminiBillingKey(text: String) {
+        viewModelScope.launch {
+            settingDataStore.setGeminiBillingKey(text)
         }
     }
 }
