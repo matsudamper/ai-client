@@ -18,6 +18,8 @@ ktlint = "1.6.0"
 workManager = "2.11.1"
 androidxTestRules = "1.7.0"
 nav3Ui = "1.0.0-alpha05"
+paparazzi = "2.0.0-alpha04"
+composablePreviewScanner = "0.8.1"
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -30,6 +32,7 @@ kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versio
 androidxRoom = { id = "androidx.room", version.ref = "room" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlingGradle = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
+paparazzi = { id = "app.cash.paparazzi", version.ref = "paparazzi" }
 
 [libraries]
 androidActivityActivityCompose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
@@ -93,3 +96,6 @@ androidxTestRules = { module = "androidx.test:rules", version.ref = "androidxTes
 androidxTestManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
 androidxComposeTestJunitAndroid = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "compose" }
 kotlinxCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine" }
+paparazzi = { module = "app.cash.paparazzi:paparazzi", version.ref = "paparazzi" }
+composablePreviewScannerCommon = { module = "io.github.sergio-sastre.ComposablePreviewScanner:common", version.ref = "composablePreviewScanner" }
+composablePreviewScannerCore = { module = "io.github.sergio-sastre.ComposablePreviewScanner:core", version.ref = "composablePreviewScanner" }
