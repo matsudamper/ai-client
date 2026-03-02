@@ -25,11 +25,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -68,7 +70,7 @@ object MainScreenTestTag {
     fun historyItem(index: Int) = "history_item_$index"
 }
 
-data class MainScreenUiState(val history: History, val listener: Listener) {
+data class MainScreenUiState(val history: History, val isRefreshing: Boolean, val listener: Listener) {
     sealed interface History {
         data object Loading : History
         data class Loaded(val items: List<HistoryItem>) : History
@@ -86,6 +88,7 @@ data class MainScreenUiState(val history: History, val listener: Listener) {
         fun onClickHome()
         fun onClickSettings()
         fun clearHistory()
+        fun onRefresh()
     }
 }
 
@@ -131,6 +134,8 @@ public fun MainScreen(
                     onClickSettings = { rootUiState.listener.onClickSettings() },
                     onClickHome = { rootUiState.listener.onClickHome() },
                     historyClear = { rootUiState.listener.clearHistory() },
+                    onRefresh = { rootUiState.listener.onRefresh() },
+                    isRefreshing = rootUiState.isRefreshing,
                     history = rootUiState.history,
                 )
                 Box(
@@ -230,11 +235,14 @@ private fun Navigation(
     BackHandler(enableNavigationBack.not()) { requestBack() }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SidePanel(
     onClickSettings: () -> Unit,
     onClickHome: () -> Unit,
     historyClear: () -> Unit,
+    onRefresh: () -> Unit,
+    isRefreshing: Boolean,
     history: MainScreenUiState.History,
     modifier: Modifier = Modifier,
 ) {
@@ -286,52 +294,58 @@ private fun SidePanel(
                 Text("クリア")
             }
         }
-        LazyColumn(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
             modifier = Modifier.fillMaxWidth()
                 .weight(1f),
         ) {
-            when (history) {
-                is MainScreenUiState.History.Loaded -> {
-                    items(history.items) { item ->
-                        Row(
-                            modifier = Modifier.clickable { item.listener.onClick() }
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = FeatherIcons.MessageSquare,
-                                contentDescription = null,
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.Center,
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                when (history) {
+                    is MainScreenUiState.History.Loaded -> {
+                        items(history.items) { item ->
+                            Row(
+                                modifier = Modifier.clickable { item.listener.onClick() }
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                if (item.projectName != null) {
+                                Icon(
+                                    imageVector = FeatherIcons.MessageSquare,
+                                    contentDescription = null,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.Center,
+                                ) {
+                                    if (item.projectName != null) {
+                                        Text(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            text = item.projectName,
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                    }
                                     Text(
                                         modifier = Modifier.fillMaxWidth(),
-                                        text = item.projectName,
-                                        style = MaterialTheme.typography.labelSmall,
+                                        text = item.text,
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.bodyMedium,
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
                                 }
-                                Text(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    text = item.text,
-                                    maxLines = 1,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
                             }
                         }
                     }
-                }
 
-                is MainScreenUiState.History.Loading -> {
-                    item {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator()
+                    is MainScreenUiState.History.Loading -> {
+                        item {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
                         }
                     }
                 }

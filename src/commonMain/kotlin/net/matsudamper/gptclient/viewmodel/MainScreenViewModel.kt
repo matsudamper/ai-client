@@ -28,6 +28,7 @@ class MainScreenViewModel(
     val uiStateFlow: StateFlow<MainScreenUiState> = MutableStateFlow(
         MainScreenUiState(
             history = MainScreenUiState.History.Loading,
+            isRefreshing = false,
             listener = object : MainScreenUiState.Listener {
                 override fun onClickSettings() {
                     appNavigator.navigate(Navigator.Settings)
@@ -39,6 +40,10 @@ class MainScreenViewModel(
 
                 override fun clearHistory() {
                     clearAllHistory()
+                }
+
+                override fun onRefresh() {
+                    refresh()
                 }
             },
         ),
@@ -56,6 +61,7 @@ class MainScreenViewModel(
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
                     it.copy(
+                        isRefreshing = viewModelState.isRefreshing,
                         history = if (viewModelState.rooms == null) {
                             MainScreenUiState.History.Loading
                         } else {
@@ -85,6 +91,14 @@ class MainScreenViewModel(
         }
     }
 
+    private fun refresh() {
+        viewModelScope.launch {
+            viewModelStateFlow.update { it.copy(isRefreshing = true) }
+            appDatabase.chatRoomDao().getAllChatRoomWithStartChat(isAsc = false).first()
+            viewModelStateFlow.update { it.copy(isRefreshing = false) }
+        }
+    }
+
     private fun clearAllHistory() {
         viewModelScope.launch {
             val allChatRooms = appDatabase.chatRoomDao().getAll().first()
@@ -97,5 +111,8 @@ class MainScreenViewModel(
         }
     }
 
-    private data class ViewModelState(val rooms: List<ChatRoomWithSummary>? = null)
+    private data class ViewModelState(
+        val rooms: List<ChatRoomWithSummary>? = null,
+        val isRefreshing: Boolean = false,
+    )
 }
