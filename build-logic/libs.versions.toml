@@ -37,7 +37,7 @@ paparazzi = { id = "app.cash.paparazzi", version.ref = "paparazzi" }
 [libraries]
 androidActivityActivityCompose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 androidActivityKtx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
-androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.17.0" }
+androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.18.0" }
 androidxLifecycleViewModelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidxLifecycleViewModelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidxLifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
