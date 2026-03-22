@@ -30,10 +30,33 @@ jobs:
           echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > debug.keystore
       - name: Build debug APK
         run: ./gradlew :app-android:assembleDebug
-      - uses: actions/upload-artifact@v7
+      - name: Rename debug APK
+        run: |
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          SAFE_REPO="${{ github.repository }}"
+          SAFE_REPO="${SAFE_REPO##*/}"
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          SAFE_BRANCH="${BRANCH_NAME//\//-}"
+          APK_NAME="app-${SAFE_REPO}-${SAFE_BRANCH}-${SHORT_SHA}.apk"
+          mv app-android/build/outputs/apk/debug/app-debug.apk "app-android/build/outputs/apk/debug/${APK_NAME}"
+          echo "APK_NAME=${APK_NAME}" >> "$GITHUB_ENV"
+          echo "APK_PATH=app-android/build/outputs/apk/debug/${APK_NAME}" >> "$GITHUB_ENV"
+      - id: upload_apk
+        uses: actions/upload-artifact@v7
         with:
           name: debug-apk
           path: app-android/build/outputs/apk/debug/*.apk
+      - name: Comment APK download URL
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: apk-download
+          message: |
+            ✅ Debug APK artifact is ready.
+
+            - Download URL: ${{ steps.upload_apk.outputs.artifact-url }}
+            - Artifact Name: `${{ env.APK_NAME }}`
       - name: Build release APK (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./gradlew :app-android:assembleRelease
