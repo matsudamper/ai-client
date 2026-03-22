@@ -221,8 +221,8 @@ class ChatRequestWorker(
             ?.textMessage
             ?.takeIf { it.isNotBlank() }
         val lastInstruction = chatDao.get(chatRoomId.value)
-            .lastOrNull()
-            ?.firstOrNull { it.role == Chat.Role.User }
+            .first()
+            .lastOrNull { it.role == Chat.Role.User }
             ?.textMessage
             ?.takeIf { it.isNotBlank() }
         val message = response.choices
