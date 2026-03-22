@@ -33,6 +33,7 @@ jobs:
       - name: Build debug APK
         run: ./gradlew :app-android:assembleDebug
       - name: Rename debug APK
+        id: rename_apk
         run: |
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
@@ -40,15 +41,20 @@ jobs:
           SAFE_REPO="${SAFE_REPO##*/}"
           BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
           SAFE_BRANCH="${BRANCH_NAME//\//-}"
+
           APK_NAME="app-${SAFE_REPO}-${SAFE_BRANCH}-${SHORT_SHA}.apk"
           OLD_APK=$(find app-android/build/outputs/apk/debug -name "*.apk" | head -1)
-          mv "$OLD_APK" "app-android/build/outputs/apk/debug/${APK_NAME}"
-          echo "APK_NAME=${APK_NAME}" >> "$GITHUB_ENV"
-          echo "APK_PATH=app-android/build/outputs/apk/debug/${APK_NAME}" >> "$GITHUB_ENV"
+          NEW_APK="app-android/build/outputs/apk/debug/${APK_NAME}"
+
+          mv "$OLD_APK" "$NEW_APK"
+
+          echo "apk_name=${APK_NAME}" >> "$GITHUB_OUTPUT"
+          echo "apk_path=${NEW_APK}" >> "$GITHUB_OUTPUT"
+
       - id: upload_apk
         uses: actions/upload-artifact@v7
         with:
-          name: debug-apk
+          name: ${{ steps.rename_apk.outputs.apk_name }}
           path: app-android/build/outputs/apk/debug/*.apk
       - name: Comment APK download URL
         if: github.event_name == 'pull_request'
@@ -59,7 +65,7 @@ jobs:
             ✅ Debug APK artifact is ready.
 
             - Download URL: ${{ steps.upload_apk.outputs.artifact-url }}
-            - Artifact Name: `${{ env.APK_NAME }}`
+            - Artifact Name: `${{ steps.rename_apk.outputs.apk_name }}`
       - name: Build release APK (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./gradlew :app-android:assembleRelease
