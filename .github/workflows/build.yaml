@@ -12,6 +12,8 @@ concurrency:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     env:
       GRADLE_OPTS: -Dkotlin.compiler.execution.strategy=in-process -Dkotlin.incremental=false -Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs="-Xmx4500m"
       DEBUG_KEYSTORE_FILE: debug.keystore
@@ -30,10 +32,38 @@ jobs:
           echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > debug.keystore
       - name: Build debug APK
         run: ./gradlew :app-android:assembleDebug
-      - uses: actions/upload-artifact@v7
+      - id: rename_apk
+        name: Rename APK
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          REPO_SIMPLE_NAME="${REPOSITORY##*/}"
+          SAFE_BRANCH="${BRANCH_NAME//\//-}"
+          APK_NAME="app-${REPO_SIMPLE_NAME}-${SAFE_BRANCH}-${SHORT_SHA}.apk"
+
+          APK_PATH=$(find app-android/build/outputs/apk/debug -name "*.apk" | head -1)
+          mv "$APK_PATH" "app-android/build/outputs/apk/debug/$APK_NAME"
+
+          echo "apk_name=${APK_NAME}" >> "$GITHUB_OUTPUT"
+          echo "apk_path=app-android/build/outputs/apk/debug/$APK_NAME" >> "$GITHUB_OUTPUT"
+
+      - id: upload_apk
+        uses: actions/upload-artifact@v7
         with:
-          name: debug-apk
-          path: app-android/build/outputs/apk/debug/*.apk
+          name: ${{ steps.rename_apk.outputs.apk_name }}
+          path: ${{ steps.rename_apk.outputs.apk_path }}
+      - name: Comment APK download URL
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: apk-download
+          message: |
+            ✅ Debug APK artifact is ready.
+
+            - Download URL: ${{ steps.upload_apk.outputs.artifact-url }}
+            - Artifact Name: `${{ steps.rename_apk.outputs.apk_name }}`
       - name: Build release APK (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./gradlew :app-android:assembleRelease
