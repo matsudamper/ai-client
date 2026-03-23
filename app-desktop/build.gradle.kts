@@ -7,7 +7,11 @@ plugins {
 }
 
 kotlin {
-    jvm()
+    jvm {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        }
+    }
 
     sourceSets {
         val jvmMain by getting {
@@ -25,6 +29,7 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "net.matsudamper.gptclient.MainKt"
+        jvmArgs += listOf("--enable-native-access=ALL-UNNAMED")
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
