@@ -2,7 +2,9 @@ package net.matsudamper.gptclient.datastore
 
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.okio.OkioStorage
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import okio.FileSystem
 import okio.Path.Companion.toPath
 
@@ -29,4 +31,16 @@ class SettingDataStore(
     }
 
     suspend fun getGeminiSecretKey(): String = store.data.first().geminiSecretKey
+
+    suspend fun setGeminiBillingKey(key: String) {
+        store.updateData { it.copy(geminiBillingKey = key) }
+    }
+
+    suspend fun getGeminiBillingKey(): String = store.data.first().geminiBillingKey
+
+    suspend fun setThemeMode(themeMode: ThemeMode) {
+        store.updateData { it.copy(themeMode = themeMode) }
+    }
+
+    fun getThemeModeFlow(): Flow<ThemeMode> = store.data.map { it.themeMode }
 }
