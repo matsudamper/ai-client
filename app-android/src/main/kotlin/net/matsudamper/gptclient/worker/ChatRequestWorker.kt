@@ -29,6 +29,7 @@ import net.matsudamper.gptclient.client.gemini.GeminiClient
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoomId
+import net.matsudamper.gptclient.util.Log
 import net.matsudamper.gptclient.viewmodel.GetBuiltinProjectInfoUseCase
 import org.koin.core.context.GlobalContext
 
@@ -114,9 +115,37 @@ class ChatRequestWorker(
                 ApiProvider.OpenAI -> ChatGptClient(
                     secretKey = settingDataStore.getSecretKey(),
                 )
-                ApiProvider.Gemini -> GeminiClient(
-                    apiKey = settingDataStore.getGeminiSecretKey(),
-                )
+                ApiProvider.Gemini -> {
+                    val apiKey = if (chatModel.requireBillingKey) {
+                        settingDataStore.getGeminiBillingKey()
+                    } else {
+                        settingDataStore.getGeminiSecretKey()
+                    }
+                    if (apiKey.isBlank()) {
+                        val errorMessage = if (chatModel.requireBillingKey) {
+                            "Gemini Billing Key が未設定です"
+                        } else {
+                            "Gemini API Key が未設定です"
+                        }
+                        Log.e("ChatRequestWorker", errorMessage)
+                        chatRoomDao.update(id = chatRoomId) {
+                            it.copy(
+                                workerId = null,
+                                latestErrorMessage = errorMessage,
+                            )
+                        }
+                        snowFinishNotification(
+                            title = "処理失敗",
+                            message = errorMessage,
+                            channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                            notificationId = Random.nextInt(),
+                            pendingIntent = pendingIntent,
+                        )
+                        return Result.failure()
+                    }
+
+                    GeminiClient(apiKey = apiKey)
+                }
             }
 
             val response = when (

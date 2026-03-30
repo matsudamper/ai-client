@@ -32,6 +32,12 @@ class SettingDataStore(
 
     suspend fun getGeminiSecretKey(): String = store.data.first().geminiSecretKey
 
+    suspend fun setGeminiBillingKey(key: String) {
+        store.updateData { it.copy(geminiBillingKey = key) }
+    }
+
+    suspend fun getGeminiBillingKey(): String = store.data.first().geminiBillingKey
+
     suspend fun setThemeMode(themeMode: ThemeMode) {
         store.updateData { it.copy(themeMode = themeMode) }
     }
