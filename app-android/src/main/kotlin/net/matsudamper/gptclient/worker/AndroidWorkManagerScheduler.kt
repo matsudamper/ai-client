@@ -41,7 +41,7 @@ class AndroidWorkManagerScheduler(
         return runCatching {
             val workInfo = workManager.getWorkInfoById(UUID.fromString(workId)).get()
             workInfo?.state == WorkInfo.State.RUNNING || workInfo?.state == WorkInfo.State.ENQUEUED
-        }.isSuccess
+        }.getOrDefault(false)
     }
 
     fun getChatRequestWorkerId(chatRoomId: ChatRoomId): String {

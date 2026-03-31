@@ -356,7 +356,7 @@ class ProjectViewModel(
                                 viewModelScope.launch {
                                     appDatabase.projectDao().update(
                                         info.project.copy(
-                                            modelName = model.modelName,
+                                            modelName = model.modelKey,
                                         ),
                                     )
                                 }
@@ -391,7 +391,7 @@ class ProjectViewModel(
                     systemMessage = project.systemMessage,
                     format = AiClient.Format.Text,
                     responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
-                    model = ChatGptModel.entries.firstOrNull { it.modelName == project.modelName }
+                    model = ChatGptModel.entries.firstOrNull { it.modelKey == project.modelName }
                         ?: ChatGptModel.Gpt5Nano,
                 )
             }

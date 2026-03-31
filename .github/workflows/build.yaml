@@ -12,17 +12,19 @@ concurrency:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     env:
       GRADLE_OPTS: -Dkotlin.compiler.execution.strategy=in-process -Dkotlin.incremental=false -Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs="-Xmx4500m"
       DEBUG_KEYSTORE_FILE: debug.keystore
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           distribution: 'temurin'
           java-version: '21'
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@39e147cb9de83bb9910b8ef8bd7fff0ee20fcd6f # v6.0.1
       - name: Decode debug keystore
         env:
           DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
@@ -30,14 +32,42 @@ jobs:
           echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > debug.keystore
       - name: Build debug APK
         run: ./gradlew :app-android:assembleDebug
-      - uses: actions/upload-artifact@v7
+      - id: rename_apk
+        name: Rename APK
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          REPO_SIMPLE_NAME="${REPOSITORY##*/}"
+          SAFE_BRANCH="${BRANCH_NAME//\//-}"
+          APK_NAME="app-${REPO_SIMPLE_NAME}-${SAFE_BRANCH}-${SHORT_SHA}.apk"
+
+          APK_PATH=$(find app-android/build/outputs/apk/debug -name "*.apk" | head -1)
+          mv "$APK_PATH" "app-android/build/outputs/apk/debug/$APK_NAME"
+
+          echo "apk_name=${APK_NAME}" >> "$GITHUB_OUTPUT"
+          echo "apk_path=app-android/build/outputs/apk/debug/$APK_NAME" >> "$GITHUB_OUTPUT"
+
+      - id: upload_apk
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: debug-apk
-          path: app-android/build/outputs/apk/debug/*.apk
+          name: ${{ steps.rename_apk.outputs.apk_name }}
+          path: ${{ steps.rename_apk.outputs.apk_path }}
+      - name: Comment APK download URL
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@70d2764d1a7d5d9560b100cbea0077fc8f633987 # v3.0.2
+        with:
+          header: apk-download
+          message: |
+            ✅ Debug APK artifact is ready.
+
+            - Download URL: ${{ steps.upload_apk.outputs.artifact-url }}
+            - Artifact Name: `${{ steps.rename_apk.outputs.apk_name }}`
       - name: Build release APK (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./gradlew :app-android:assembleRelease
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: release-apk

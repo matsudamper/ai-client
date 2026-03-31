@@ -146,13 +146,13 @@ class ChatViewModel(
                                 ChatGptModel.entries.map { model ->
                                     ChatListUiState.Model(
                                         modelName = model.displayName,
-                                        selected = model.modelName == roomInfo.room.modelName,
+                                        selected = model.modelKey == roomInfo.room.modelKey,
                                         listener = object : ChatListUiState.Model.Listener {
                                             override fun onClick() {
                                                 viewModelScope.launch {
                                                     appDatabase.chatRoomDao().update(
                                                         roomInfo.room.copy(
-                                                            modelName = model.modelName,
+                                                            modelKey = model.modelKey,
                                                         ),
                                                     )
                                                 }
@@ -340,7 +340,7 @@ class ChatViewModel(
         model: ChatGptModel,
     ): ChatRoom = withContext(Dispatchers.IO) {
         val room = ChatRoom(
-            modelName = model.modelName,
+            modelKey = model.modelKey,
             builtInProjectId = builtinProjectId,
             projectId = projectId,
             summary = null,
@@ -377,7 +377,7 @@ class ChatViewModel(
                     }
 
                     AddRequestUseCase.Result.ModelNotFoundError -> {
-                        platformRequest.showToast("モデル: ${roomInfo.room.modelName}がありません")
+                        platformRequest.showToast("モデル: ${roomInfo.room.modelKey}がありません")
                     }
                 }
             } finally {

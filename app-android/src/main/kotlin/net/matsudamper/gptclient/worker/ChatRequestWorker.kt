@@ -16,8 +16,6 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.random.Random
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.flow.lastOrNull
 import net.matsudamper.gptclient.MainActivity
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
@@ -29,6 +27,7 @@ import net.matsudamper.gptclient.client.gemini.GeminiClient
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoomId
+import net.matsudamper.gptclient.util.Log
 import net.matsudamper.gptclient.viewmodel.GetBuiltinProjectInfoUseCase
 import org.koin.core.context.GlobalContext
 
@@ -71,20 +70,20 @@ class ChatRequestWorker(
 
         val format: AiClient.Format
         val systemMessage: String?
-        val model: String
+        val modelKey: String
         when (val builtinProjectId = firstChatRoom.builtInProjectId) {
             null -> when (val projectId = firstChatRoom.projectId) {
                 null -> {
                     format = AiClient.Format.Text
                     systemMessage = null
-                    model = firstChatRoom.modelName
+                    modelKey = firstChatRoom.modelKey
                 }
                 else -> {
                     val projectDao = appDatabase.projectDao()
                     val project = projectDao.get(projectId.id).first()
                     format = AiClient.Format.Text
                     systemMessage = project?.systemMessage
-                    model = firstChatRoom.modelName
+                    modelKey = firstChatRoom.modelKey
                 }
             }
 
@@ -95,7 +94,7 @@ class ChatRequestWorker(
                 )
                 format = builtinProjectInfo.format
                 systemMessage = builtinProjectInfo.systemMessage
-                model = firstChatRoom.modelName
+                modelKey = firstChatRoom.modelKey
             }
         }
 
@@ -107,16 +106,44 @@ class ChatRequestWorker(
             )
             val newChatIndex = lastItem?.index?.plus(1) ?: 0
 
-            val chatModel = ChatGptModel.entries.firstOrNull { it.modelName == model }
+            val chatModel = ChatGptModel.entries.firstOrNull { it.modelKey == modelKey }
                 ?: return Result.failure()
 
             val gptClient: AiClient = when (chatModel.provider) {
                 ApiProvider.OpenAI -> ChatGptClient(
                     secretKey = settingDataStore.getSecretKey(),
                 )
-                ApiProvider.Gemini -> GeminiClient(
-                    apiKey = settingDataStore.getGeminiSecretKey(),
-                )
+                ApiProvider.Gemini -> {
+                    val apiKey = if (chatModel.requireBillingKey) {
+                        settingDataStore.getGeminiBillingKey()
+                    } else {
+                        settingDataStore.getGeminiSecretKey()
+                    }
+                    if (apiKey.isBlank()) {
+                        val errorMessage = if (chatModel.requireBillingKey) {
+                            "Gemini Billing Key が未設定です"
+                        } else {
+                            "Gemini API Key が未設定です"
+                        }
+                        Log.e("ChatRequestWorker", errorMessage)
+                        chatRoomDao.update(id = chatRoomId) {
+                            it.copy(
+                                workerId = null,
+                                latestErrorMessage = errorMessage,
+                            )
+                        }
+                        snowFinishNotification(
+                            title = "処理失敗",
+                            message = errorMessage,
+                            channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                            notificationId = Random.nextInt(),
+                            pendingIntent = pendingIntent,
+                        )
+                        return Result.failure()
+                    }
+
+                    GeminiClient(apiKey = apiKey)
+                }
             }
 
             val response = when (
@@ -221,8 +248,8 @@ class ChatRequestWorker(
             ?.textMessage
             ?.takeIf { it.isNotBlank() }
         val lastInstruction = chatDao.get(chatRoomId.value)
-            .lastOrNull()
-            ?.firstOrNull { it.role == Chat.Role.User }
+            .first()
+            .lastOrNull { it.role == Chat.Role.User }
             ?.textMessage
             ?.takeIf { it.isNotBlank() }
         val message = response.choices
