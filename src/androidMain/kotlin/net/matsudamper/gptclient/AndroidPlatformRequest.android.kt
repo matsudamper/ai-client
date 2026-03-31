@@ -15,7 +15,10 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 class AndroidPlatformRequest(private val activity: ComponentActivity) : PlatformRequest {
@@ -33,25 +36,37 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
 
     override suspend fun getMediaList(): List<String> {
         val cacheDir = activity.cacheDir
-        return mediaLauncher.launch().map { uriString ->
-            withContext(Dispatchers.IO) {
-                val uri = uriString.toUri()
-                val source = ImageDecoder.createSource(activity.contentResolver, uri)
-                val bitmap = ImageDecoder.decodeBitmap(source)
+        return coroutineScope {
+            mediaLauncher.launch().map { uriString ->
+                async(Dispatchers.IO) {
+                    val hash = MessageDigest.getInstance("SHA-256")
+                        .digest(uriString.toByteArray())
+                        .joinToString("") { "%02x".format(it) }
+                    val file = File(cacheDir, "$hash.jpg")
 
-                val hash = MessageDigest.getInstance("SHA-256")
-                    .digest(uriString.toByteArray())
-                    .joinToString("") { "%02x".format(it) }
-                val file = File(cacheDir, "$hash.png")
-
-                if (!file.exists()) {
-                    file.outputStream().use { outputStream ->
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                    if (!file.exists()) {
+                        val uri = uriString.toUri()
+                        val source = ImageDecoder.createSource(activity.contentResolver, uri)
+                        val bitmap = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                            val width = info.size.width
+                            val height = info.size.height
+                            val maxDimension = 1920
+                            if (width > maxDimension || height > maxDimension) {
+                                val scale = maxDimension.toFloat() / maxOf(width, height)
+                                decoder.setTargetSize(
+                                    (width * scale).toInt(),
+                                    (height * scale).toInt(),
+                                )
+                            }
+                        }
+                        file.outputStream().use { outputStream ->
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+                        }
                     }
-                }
 
-                file.toURI().toString()
-            }
+                    file.toURI().toString()
+                }
+            }.awaitAll()
         }
     }
 
