@@ -108,11 +108,12 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 val imageWidth = bitmap.width
                 val imageHeight = bitmap.height
 
+                // cropRectは相対座標(0.0~1.0)で渡されるので実際のピクセル座標に変換
                 val bitmapCropRect = android.graphics.RectF(
-                    cropRect.left,
-                    cropRect.top,
-                    cropRect.right,
-                    cropRect.bottom,
+                    cropRect.left * imageWidth,
+                    cropRect.top * imageHeight,
+                    cropRect.right * imageWidth,
+                    cropRect.bottom * imageHeight,
                 )
 
                 val validLeft = bitmapCropRect.left.coerceIn(0f, imageWidth.toFloat())

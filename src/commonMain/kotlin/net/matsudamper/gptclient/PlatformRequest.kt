@@ -29,6 +29,7 @@ interface PlatformRequest {
 
     /**
      * Represents a rectangle for cropping an image.
+     * All values are relative coordinates in the range 0.0 to 1.0.
      */
     data class CropRect(val left: Float, val top: Float, val right: Float, val bottom: Float)
 
