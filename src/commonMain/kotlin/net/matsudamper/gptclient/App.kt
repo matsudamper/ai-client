@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.flow.receiveAsFlow
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
@@ -106,10 +105,16 @@ fun App(
                         val viewModel = viewModel {
                             val koin = getKoin()
                             ChatViewModel(
-                                platformRequest = koin.get(),
                                 openContext = navigator.openContext,
                                 insertDataAndAddRequestUseCase = createInsertDataAndAddRequestUseCase(),
                                 appDatabase = koin.get(),
+                            )
+                        }
+                        LaunchedEffect(viewModel, providePlatformRequest) {
+                            viewModel.eventHandler.collect(
+                                object : ChatViewModel.Event {
+                                    override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                },
                             )
                         }
                         return viewModel.uiStateFlow.collectAsState().value
@@ -121,7 +126,13 @@ fun App(
                             val koin = getKoin()
                             SettingViewModel(
                                 settingDataStore = koin.get(),
-                                platformRequest = koin.get(),
+                            )
+                        }
+                        LaunchedEffect(viewModel, providePlatformRequest) {
+                            viewModel.eventHandler.collect(
+                                object : SettingViewModel.Event {
+                                    override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                },
                             )
                         }
                         return viewModel.uiStateFlow.collectAsState().value
@@ -133,11 +144,16 @@ fun App(
                             MainScreenViewModel(
                                 appNavigator = appNavigator,
                                 appDatabase = getKoin().get(),
-                                platformRequest = getKoin().get(),
                                 deleteChatRoomUseCase = DeleteChatRoomUseCase(
                                     appDatabase = getKoin().get(),
-                                    platformRequest = getKoin().get(),
                                 ),
+                            )
+                        }
+                        LaunchedEffect(viewModel, providePlatformRequest) {
+                            viewModel.eventHandler.collect(
+                                object : MainScreenViewModel.Event {
+                                    override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                },
                             )
                         }
 
@@ -155,8 +171,14 @@ fun App(
                             ProjectViewModel(
                                 appNavigator = appNavigator,
                                 navigator = navigator,
-                                platformRequest = getKoin().get(),
                                 appDatabase = getKoin().get(),
+                            )
+                        }
+                        LaunchedEffect(viewModel, providePlatformRequest) {
+                            viewModel.eventHandler.collect(
+                                object : ProjectViewModel.Event {
+                                    override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                },
                             )
                         }
 
@@ -167,7 +189,6 @@ fun App(
                         val koin = getKoin()
                         return AddRequestUseCase(
                             appDatabase = koin.get(),
-                            platformRequest = koin.get(),
                             gptClientProvider = { secretKey -> ChatGptClient(secretKey) },
                             settingDataStore = koin.get(),
                             workManagerScheduler = koin.get(),

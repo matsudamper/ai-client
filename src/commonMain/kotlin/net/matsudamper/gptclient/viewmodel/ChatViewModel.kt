@@ -4,7 +4,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -30,13 +29,20 @@ import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.chat.ChatErrorMessageRetryComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.util.EventSender
 
 class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
-    private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
     private val insertDataAndAddRequestUseCase: AddRequestUseCase,
 ) : ViewModel() {
+    private val eventSender = EventSender<Event>()
+    val eventHandler = eventSender.asHandler()
+
+    interface Event {
+        fun providePlatformRequest(): PlatformRequest
+    }
+
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val listener = object : ChatListUiState.Listener {
         override fun onClickImage() {
@@ -45,7 +51,9 @@ class ChatViewModel(
                     viewModelStateFlow.update {
                         it.copy(isMediaLoading = true)
                     }
-                    val images = platformRequest.getMediaList()
+                    val images = withPlatformRequest {
+                        getMediaList()
+                    }
                     viewModelStateFlow.update { viewModelState ->
                         viewModelState.copy(
                             selectedMedia = images.map { image ->
@@ -81,10 +89,12 @@ class ChatViewModel(
                             bottom = rect.bottom,
                         )
 
-                        platformRequest.cropImage(
-                            uri = it.imageUri,
-                            cropRect = platformCropRect,
-                        )
+                        withPlatformRequest {
+                            cropImage(
+                                uri = it.imageUri,
+                                cropRect = platformCropRect,
+                            )
+                        }
                     },
                 )
             }
@@ -243,10 +253,7 @@ class ChatViewModel(
                             ViewModelState.RoomInfo.BuiltinProject(
                                 room = room,
                                 builtinProjectId = chatType.builtinProjectId,
-                                builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
-                                    chatType.builtinProjectId,
-                                    platformRequest = platformRequest,
-                                ),
+                                builtinProjectInfo = createBuiltinProjectInfo(chatType.builtinProjectId),
                             )
                         }
 
@@ -284,10 +291,7 @@ class ChatViewModel(
                                 ViewModelState.RoomInfo.BuiltinProject(
                                     room = room,
                                     builtinProjectId = builtInProjectId,
-                                    builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
-                                        builtInProjectId,
-                                        platformRequest = platformRequest,
-                                    ),
+                                    builtinProjectInfo = createBuiltinProjectInfo(builtInProjectId),
                                 )
                             } else {
                                 ViewModelState.RoomInfo.Normal(room = room)
@@ -317,21 +321,40 @@ class ChatViewModel(
                     -> Unit
 
                     is AddRequestUseCase.Result.GptResultError -> {
-                        platformRequest.showToast(result.gptError.reason.message)
+                        withPlatformRequest {
+                            showToast(result.gptError.reason.message)
+                        }
                     }
 
                     is AddRequestUseCase.Result.ModelNotFoundError -> {
-                        platformRequest.showToast("モデルが見つかりません")
+                        withPlatformRequest {
+                            showToast("モデルが見つかりません")
+                        }
                     }
                 }
             } catch (_: Throwable) {
-                platformRequest.showToast("エラー")
+                withPlatformRequest {
+                    showToast("エラー")
+                }
             } finally {
                 viewModelStateFlow.update {
                     it.copy(isWorkInProgress = false)
                 }
             }
         }
+    }
+
+    private fun createBuiltinProjectInfo(
+        builtinProjectId: BuiltinProjectId,
+    ): GetBuiltinProjectInfoUseCase.Info {
+        return GetBuiltinProjectInfoUseCase().exec(
+            builtinProjectId = builtinProjectId,
+            onCopyEmoji = { emoji ->
+                launchWithPlatformRequest {
+                    copyToClipboard(emoji)
+                }
+            },
+        )
     }
 
     private suspend fun createRoom(
@@ -373,11 +396,15 @@ class ChatViewModel(
 
                     is AddRequestUseCase.Result.GptResultError,
                     -> {
-                        platformRequest.showToast("エラーが発生しました")
+                        withPlatformRequest {
+                            showToast("エラーが発生しました")
+                        }
                     }
 
                     AddRequestUseCase.Result.ModelNotFoundError -> {
-                        platformRequest.showToast("モデル: ${roomInfo.room.modelKey}がありません")
+                        withPlatformRequest {
+                            showToast("モデル: ${roomInfo.room.modelKey}がありません")
+                        }
                     }
                 }
             } finally {
@@ -385,6 +412,22 @@ class ChatViewModel(
                     it.copy(isChatLoading = false)
                 }
             }
+        }
+    }
+
+    private suspend fun <R> withPlatformRequest(
+        block: suspend PlatformRequest.() -> R,
+    ): R {
+        return eventSender.send { event ->
+            event.providePlatformRequest().block()
+        }
+    }
+
+    private fun launchWithPlatformRequest(
+        block: suspend PlatformRequest.() -> Unit,
+    ) {
+        viewModelScope.launch {
+            withPlatformRequest(block)
         }
     }
 
