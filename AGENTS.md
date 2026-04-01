@@ -31,11 +31,6 @@ ai-client/
 ├── room/                 # Room データベースモジュール
 ```
 
-## Agent固有
-### Claude Code Web
-Claude Code WebではGradleの依存がダウンロードでエラーになります。
-https://github.com/anthropics/claude-code/issues/13372
-
 ## アーキテクチャ
 ### UI + ViewModel
 ComposeとViewModelのやり取りはUiStateを介して行う。
