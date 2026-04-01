@@ -143,16 +143,16 @@ internal fun ChatFooter(
             items(selectedMedia) { media ->
                 var showMenu by remember { mutableStateOf(false) }
                 Box {
-                    AsyncImage(
+                    CroppedImageView(
+                        imageUri = media.imageUri,
+                        cropRect = media.rect,
                         modifier = Modifier
                             .combinedClickable(
                                 onLongClick = { showMenu = true },
                                 onClick = { showMenu = true },
                             )
-                            .then(imageModifier),
-                        model = media.imageUri,
-                        contentScale = ContentScale.Crop,
-                        contentDescription = null,
+                            .then(imageModifier)
+                            .clipToBounds(),
                     )
 
                     androidx.compose.material3.DropdownMenu(
@@ -311,10 +311,12 @@ private fun CroppedImageView(
                 Canvas(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    val imageLeft = cropRect?.left ?: 0f
-                    val imageTop = cropRect?.top ?: 0f
-                    val imageRight = cropRect?.right ?: state.painter.intrinsicSize.width
-                    val imageBottom = cropRect?.bottom ?: state.painter.intrinsicSize.height
+                    val intrinsicWidth = state.painter.intrinsicSize.width
+                    val intrinsicHeight = state.painter.intrinsicSize.height
+                    val imageLeft = (cropRect?.left ?: 0f) * intrinsicWidth
+                    val imageTop = (cropRect?.top ?: 0f) * intrinsicHeight
+                    val imageRight = (cropRect?.right ?: 1f) * intrinsicWidth
+                    val imageBottom = (cropRect?.bottom ?: 1f) * intrinsicHeight
 
                     val imageWidth = imageRight - imageLeft
                     val imageHeight = imageBottom - imageTop
