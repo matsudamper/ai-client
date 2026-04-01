@@ -6,9 +6,13 @@
       "WebFetch(domain:www.jetbrains.com)",
       "Bash(./gradlew:*)",
       "Bash(mkdir:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
-    "deny": [],
+    "deny": [
+      "Bash(git push:*)"
+    ],
     "ask": []
   }
 }

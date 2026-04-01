@@ -27,6 +27,7 @@ class GeminiClient(
         format: AiClient.Format,
         model: ChatGptModel,
     ): AiClient.GptResult {
+        model as ChatGptModel.Gemini
         val systemInstruction = messages
             .filter { it.role == AiClient.GptMessage.Role.System }
             .flatMap { message ->
@@ -80,6 +81,7 @@ class GeminiClient(
                 }
                 GeminiRequest.Content(role = role, parts = parts)
             }
+
 
         val thinkingConfig = model.thinkingLevel?.let { level ->
             GeminiRequest.ThinkingConfig(thinkingLevel = level)
