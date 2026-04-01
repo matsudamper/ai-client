@@ -47,7 +47,10 @@ class MainActivity : ComponentActivity() {
         val chatRoomId = getChatRoomIdFromIntent(intent)
 
         setContent {
-            App(initialChatRoomId = chatRoomId)
+            App(
+                initialChatRoomId = chatRoomId,
+                providePlatformRequest = { platformRequest },
+            )
         }
     }
 

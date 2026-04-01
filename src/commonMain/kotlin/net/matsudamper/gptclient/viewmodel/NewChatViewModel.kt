@@ -20,12 +20,18 @@ import net.matsudamper.gptclient.room.entity.Project
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.util.EventSender
 
 class NewChatViewModel(
-    private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
     private val appNavigator: AppNavigator,
 ) : ViewModel() {
+    private val eventSender = EventSender<Event>()
+    val eventHandler = eventSender.asHandler()
+
+    interface Event {
+        fun providePlatformRequest(): PlatformRequest
+    }
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val builtinProjects = listOf(
         NewChatUiState.Project(
@@ -112,15 +118,17 @@ class NewChatViewModel(
                                     initialMessage = text,
                                     uriList = viewModelStateFlow.value.mediaList.mapNotNull map@{
                                         val rect = it.rect ?: return@map it.imageUri
-                                        platformRequest.cropImage(
-                                            uri = it.imageUri,
-                                            cropRect = PlatformRequest.CropRect(
-                                                left = rect.left,
-                                                top = rect.top,
-                                                right = rect.right,
-                                                bottom = rect.bottom,
-                                            ),
-                                        )
+                                        eventSender.send { event ->
+                                            event.providePlatformRequest().cropImage(
+                                                uri = it.imageUri,
+                                                cropRect = PlatformRequest.CropRect(
+                                                    left = rect.left,
+                                                    top = rect.top,
+                                                    right = rect.right,
+                                                    bottom = rect.bottom,
+                                                ),
+                                            )
+                                        }
                                     },
                                     chatType = Navigator.Chat.ChatType.Normal,
                                     model = viewModelStateFlow.value.selectedModel,
@@ -141,7 +149,7 @@ class NewChatViewModel(
                             viewModelStateFlow.update {
                                 it.copy(mediaLoading = true)
                             }
-                            val imageUrlList = platformRequest.getMediaList()
+                            val imageUrlList = eventSender.send { it.providePlatformRequest().getMediaList() }
                             viewModelStateFlow.update {
                                 it.copy(
                                     mediaList = imageUrlList.map { imageUrl ->

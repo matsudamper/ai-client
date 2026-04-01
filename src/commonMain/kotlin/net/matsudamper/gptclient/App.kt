@@ -6,12 +6,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.receiveAsFlow
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
@@ -32,7 +34,10 @@ import net.matsudamper.gptclient.viewmodel.SettingViewModel
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
-fun App(initialChatRoomId: ChatRoomId? = null) {
+fun App(
+    initialChatRoomId: ChatRoomId? = null,
+    providePlatformRequest: () -> PlatformRequest,
+) {
     val settingDataStore: SettingDataStore = remember { getKoin().get() }
     val themeMode = settingDataStore.getThemeModeFlow()
         .collectAsState(initial = ThemeMode.SYSTEM).value
@@ -81,8 +86,14 @@ fun App(initialChatRoomId: ChatRoomId? = null) {
                         val viewModel = viewModel {
                             NewChatViewModel(
                                 appNavigator = appNavigator,
-                                platformRequest = getKoin().get(),
                                 appDatabase = getKoin().get(),
+                            )
+                        }
+                        LaunchedEffect(viewModel, providePlatformRequest) {
+                            viewModel.eventHandler.collect(
+                                object : NewChatViewModel.Event {
+                                    override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                },
                             )
                         }
                         return viewModel.uiState.collectAsState().value
