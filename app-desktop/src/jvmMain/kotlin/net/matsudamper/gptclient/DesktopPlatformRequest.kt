@@ -1,32 +1,39 @@
 package net.matsudamper.gptclient
 
 import java.awt.Desktop
+import java.awt.EventQueue
+import java.awt.FileDialog
+import java.awt.Frame
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FilenameFilter
 import java.net.URI
 import javax.imageio.ImageIO
-import javax.swing.JFileChooser
-import javax.swing.SwingUtilities
-import javax.swing.filechooser.FileNameExtensionFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class DesktopPlatformRequest : PlatformRequest {
     override suspend fun getMediaList(): List<String> = withContext(Dispatchers.IO) {
         var result: List<String> = emptyList()
-        SwingUtilities.invokeAndWait {
-            val chooser = JFileChooser().apply {
-                isMultiSelectionEnabled = true
-                fileFilter = FileNameExtensionFilter(
-                    "Images",
-                    "jpg", "jpeg", "png", "gif", "bmp", "webp",
-                )
-            }
-            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                result = chooser.selectedFiles.map { it.toURI().toString() }
+        EventQueue.invokeAndWait {
+            val owner = Frame()
+            try {
+                val dialog = FileDialog(owner, "画像を選択", FileDialog.LOAD).apply {
+                    isMultipleMode = true
+                    filenameFilter = FilenameFilter { _, name ->
+                        supportedImageExtensions.any { extension ->
+                            name.endsWith(".$extension", ignoreCase = true)
+                        }
+                    }
+                }
+                dialog.isVisible = true
+                result = dialog.files
+                    .map { it.toURI().toString() }
+            } finally {
+                owner.dispose()
             }
         }
         result
@@ -109,5 +116,6 @@ class DesktopPlatformRequest : PlatformRequest {
 
     private companion object {
         private const val COMPRESSED_IMAGE_MIME_TYPE = "image/jpeg"
+        private val supportedImageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp", "webp")
     }
 }
