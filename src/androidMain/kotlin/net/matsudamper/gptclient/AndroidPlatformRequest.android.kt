@@ -42,12 +42,10 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 val hash = MessageDigest.getInstance("SHA-256")
                     .digest(uriString.toByteArray())
                     .joinToString("") { "%02x".format(it) }
-                val file = File(cacheDir, "$hash.png")
+                val file = File(cacheDir, "$hash.webp")
 
                 if (!file.exists()) {
-                    file.outputStream().use { outputStream ->
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                    }
+                    file.writeLossyWebp(bitmap)
                 }
 
                 file.toURI().toString()
@@ -64,10 +62,10 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 return@withContext null
             }
 
-            ByteArrayOutputStream().use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                outputStream.toByteArray()
-            }
+            PlatformRequest.ImageData(
+                bytes = bitmap.toLossyWebpByteArray(),
+                mimeType = COMPRESSED_IMAGE_MIME_TYPE,
+            )
         }
     }
 
@@ -132,11 +130,9 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
 
                 // Save the cropped bitmap to a file
                 val hash = croppedBitmap.hashCode().toString()
-                val file = File(activity.cacheDir, "cropped_$hash.png")
+                val file = File(context.cacheDir, "cropped_$hash.webp")
 
-                file.outputStream().use { outputStream ->
-                    croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                }
+                file.writeLossyWebp(croppedBitmap)
 
                 return@withContext file.toURI().toString()
             } catch (e: Exception) {
@@ -156,5 +152,23 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         val notificationManager: NotificationManager =
             activity.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun Bitmap.toLossyWebpByteArray(): ByteArray {
+        return ByteArrayOutputStream().use { outputStream ->
+            compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, outputStream)
+            outputStream.toByteArray()
+        }
+    }
+
+    private fun File.writeLossyWebp(bitmap: Bitmap) {
+        outputStream().use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, outputStream)
+        }
+    }
+
+    private companion object {
+        private const val COMPRESSED_IMAGE_MIME_TYPE = "image/webp"
+        private const val WEBP_QUALITY = 75
     }
 }

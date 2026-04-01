@@ -38,7 +38,7 @@ class ChatGptClient(
                     is AiClient.GptMessage.Content.Base64Image -> {
                         GptRequest.Content(
                             type = "image_url",
-                            imageUrl = GptRequest.ImageUrl("data:image/png;base64,${content.base64}"),
+                            imageUrl = GptRequest.ImageUrl("data:${content.mimeType};base64,${content.base64}"),
                         )
                     }
 

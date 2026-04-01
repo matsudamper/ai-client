@@ -5,7 +5,7 @@ interface PlatformRequest {
      * @return URI
      */
     suspend fun getMediaList(): List<String>
-    suspend fun readPngByteArray(uri: String): ByteArray?
+    suspend fun readImageData(uri: String): ImageData?
     fun openLink(url: String)
 
     /**
@@ -32,6 +32,11 @@ interface PlatformRequest {
      * All values are relative coordinates in the range 0.0 to 1.0.
      */
     data class CropRect(val left: Float, val top: Float, val right: Float, val bottom: Float)
+
+    data class ImageData(
+        val bytes: ByteArray,
+        val mimeType: String,
+    )
 
     fun createNotificationChannel(channelId: String)
 }

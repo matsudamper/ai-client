@@ -310,14 +310,15 @@ class ChatRequestWorker(
                 }
                 val imageMessage = it.imageUri
                 if (imageMessage != null) {
-                    val byteArray = platformRequest.readPngByteArray(uri = imageMessage)
-                    if (byteArray == null) {
+                    val imageData = platformRequest.readImageData(uri = imageMessage)
+                    if (imageData == null) {
                         return listOf()
                     }
                     add(
                         AiClient.GptMessage.Content.Base64Image(
                             @OptIn(ExperimentalEncodingApi::class)
-                            Base64.encode(byteArray),
+                            Base64.encode(imageData.bytes),
+                            mimeType = imageData.mimeType,
                         ),
                     )
                 }

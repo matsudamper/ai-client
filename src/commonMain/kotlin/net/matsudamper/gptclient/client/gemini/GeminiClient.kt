@@ -58,7 +58,7 @@ class GeminiClient(
                         is AiClient.GptMessage.Content.Base64Image -> {
                             GeminiRequest.Part(
                                 inlineData = GeminiRequest.InlineData(
-                                    mimeType = "image/png",
+                                    mimeType = content.mimeType,
                                     data = content.base64,
                                 ),
                             )
