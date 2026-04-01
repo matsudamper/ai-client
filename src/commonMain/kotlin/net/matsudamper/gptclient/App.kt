@@ -160,8 +160,14 @@ fun App(
                             ProjectViewModel(
                                 appNavigator = appNavigator,
                                 navigator = navigator,
-                                platformRequest = getKoin().get(),
                                 appDatabase = getKoin().get(),
+                            )
+                        }
+                        LaunchedEffect(viewModel, providePlatformRequest) {
+                            viewModel.eventHandler.collect(
+                                object : ProjectViewModel.Event {
+                                    override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                },
                             )
                         }
 

@@ -23,13 +23,20 @@ import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.util.EventSender
 
 class ProjectViewModel(
     private val navigator: Navigator.Project,
-    private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
     private val appNavigator: AppNavigator,
 ) : ViewModel() {
+    private val eventSender = EventSender<Event>()
+    val eventHandler = eventSender.asHandler()
+
+    interface Event {
+        fun providePlatformRequest(): PlatformRequest
+    }
+
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val systemMessageListener = object : ProjectUiState.SystemMessage.Listener {
         override fun onChange(text: String) {
@@ -92,7 +99,9 @@ class ProjectViewModel(
                     viewModelStateFlow.update {
                         it.copy(mediaLoading = true)
                     }
-                    val uriList = platformRequest.getMediaList()
+                    val uriList = withPlatformRequest {
+                        getMediaList()
+                    }
                     viewModelStateFlow.update {
                         it.copy(
                             uriList = uriList.map { imageUrl ->
@@ -140,15 +149,17 @@ class ProjectViewModel(
                             uriList = viewModelStateFlow.value.uriList.mapNotNull map@{
                                 val rect = it.rect ?: return@map it.imageUri
 
-                                platformRequest.cropImage(
-                                    it.imageUri,
-                                    PlatformRequest.CropRect(
-                                        left = rect.left,
-                                        top = rect.top,
-                                        right = rect.right,
-                                        bottom = rect.bottom,
-                                    ),
-                                )
+                                withPlatformRequest {
+                                    cropImage(
+                                        it.imageUri,
+                                        PlatformRequest.CropRect(
+                                            left = rect.left,
+                                            top = rect.top,
+                                            right = rect.right,
+                                            bottom = rect.bottom,
+                                        ),
+                                    )
+                                }
                             },
                             chatType = chatType,
                             model = viewModelStateFlow.value.overwriteModel ?: systemInfo.getInfo().model,
@@ -268,14 +279,11 @@ class ProjectViewModel(
         viewModelScope.launch {
             when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
-                    val systemInfo = GetBuiltinProjectInfoUseCase().exec(
-                        navigator.type.builtinProjectId,
-                        platformRequest = platformRequest,
-                    )
-
                     viewModelStateFlow.update {
                         it.copy(
-                            systemInfo = ViewModelState.SystemInfoType.BuiltinInfo(systemInfo),
+                            systemInfo = ViewModelState.SystemInfoType.BuiltinInfo(
+                                createBuiltinProjectInfo(navigator.type.builtinProjectId),
+                            ),
                         )
                     }
                 }
@@ -292,6 +300,35 @@ class ProjectViewModel(
                         }
                 }
             }
+        }
+    }
+
+    private fun createBuiltinProjectInfo(
+        builtinProjectId: net.matsudamper.gptclient.room.entity.BuiltinProjectId,
+    ): GetBuiltinProjectInfoUseCase.Info {
+        return GetBuiltinProjectInfoUseCase().exec(
+            builtinProjectId = builtinProjectId,
+            onCopyEmoji = { emoji ->
+                launchWithPlatformRequest {
+                    copyToClipboard(emoji)
+                }
+            },
+        )
+    }
+
+    private suspend fun <R> withPlatformRequest(
+        block: suspend PlatformRequest.() -> R,
+    ): R {
+        return eventSender.send { event ->
+            event.providePlatformRequest().block()
+        }
+    }
+
+    private fun launchWithPlatformRequest(
+        block: suspend PlatformRequest.() -> Unit,
+    ) {
+        viewModelScope.launch {
+            withPlatformRequest(block)
         }
     }
 
