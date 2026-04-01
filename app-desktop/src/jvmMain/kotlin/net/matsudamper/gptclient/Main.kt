@@ -1,5 +1,6 @@
 package net.matsudamper.gptclient
 
+import androidx.compose.runtime.remember
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlin.system.exitProcess
@@ -38,7 +39,11 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
     }
     application {
         Window(onCloseRequest = { exitProcess(0) }) {
-            App()
+            App(
+                providePlatformRequest = remember {
+                    { DesktopPlatformRequest() }
+                },
+            )
         }
     }
 }
