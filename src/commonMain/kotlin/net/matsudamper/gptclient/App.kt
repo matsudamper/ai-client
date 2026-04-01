@@ -126,7 +126,13 @@ fun App(
                             val koin = getKoin()
                             SettingViewModel(
                                 settingDataStore = koin.get(),
-                                platformRequest = koin.get(),
+                            )
+                        }
+                        LaunchedEffect(viewModel, providePlatformRequest) {
+                            viewModel.eventHandler.collect(
+                                object : SettingViewModel.Event {
+                                    override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                },
                             )
                         }
                         return viewModel.uiStateFlow.collectAsState().value

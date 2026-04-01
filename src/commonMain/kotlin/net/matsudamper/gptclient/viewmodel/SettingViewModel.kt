@@ -10,11 +10,18 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
+import net.matsudamper.gptclient.util.EventSender
 
 class SettingViewModel(
     private val settingDataStore: SettingDataStore,
-    private val platformRequest: PlatformRequest,
 ) : ViewModel() {
+    private val eventSender = EventSender<Event>()
+    val eventHandler = eventSender.asHandler()
+
+    interface Event {
+        fun providePlatformRequest(): PlatformRequest
+    }
+
     private val _uiStateFlow = MutableStateFlow<SettingsScreenUiState>(
         SettingsScreenUiState.Loading,
     )
@@ -33,15 +40,19 @@ class SettingViewModel(
         }
 
         override fun onClickOpenAiUsage() {
-            platformRequest.openLink(
-                url = "https://platform.openai.com/settings/organization/usage",
-            )
+            launchWithPlatformRequest {
+                openLink(
+                    url = "https://platform.openai.com/settings/organization/usage",
+                )
+            }
         }
 
         override fun onClickGeminiUsage() {
-            platformRequest.openLink(
-                url = "https://aistudio.google.com/usagecontinue",
-            )
+            launchWithPlatformRequest {
+                openLink(
+                    url = "https://aistudio.google.com/usagecontinue",
+                )
+            }
         }
 
         override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) {
@@ -86,6 +97,16 @@ class SettingViewModel(
     private fun saveGeminiBillingKey(text: String) {
         viewModelScope.launch {
             settingDataStore.setGeminiBillingKey(text)
+        }
+    }
+
+    private fun launchWithPlatformRequest(
+        block: suspend PlatformRequest.() -> Unit,
+    ) {
+        viewModelScope.launch {
+            eventSender.send { event ->
+                event.providePlatformRequest().block()
+            }
         }
     }
 }
