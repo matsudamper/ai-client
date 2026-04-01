@@ -11,6 +11,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FilenameFilter
 import java.net.URI
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import javax.imageio.ImageIO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -91,12 +93,30 @@ class DesktopPlatformRequest : PlatformRequest {
                 val top = (cropRect.top * imageHeight).toInt().coerceIn(0, imageHeight)
                 val right = (cropRect.right * imageWidth).toInt().coerceIn(0, imageWidth)
                 val bottom = (cropRect.bottom * imageHeight).toInt().coerceIn(0, imageHeight)
+                val cropWidth = right - left
+                val cropHeight = bottom - top
 
-                val cropped = image.getSubimage(left, top, right - left, bottom - top)
+                val cropped = image.getSubimage(left, top, cropWidth, cropHeight)
 
-                val hash = cropped.hashCode().toString()
+                val hash = buildString {
+                    append(file.toURI())
+                    append('|')
+                    append(left)
+                    append(',')
+                    append(top)
+                    append(',')
+                    append(cropWidth)
+                    append(',')
+                    append(cropHeight)
+                    append('|')
+                    append(file.lastModified())
+                    append('|')
+                    append(file.sha256Hex())
+                }.sha256Hex()
                 val outputFile = File(System.getProperty("java.io.tmpdir"), "cropped_$hash.jpg")
-                ImageIO.write(cropped, "jpg", outputFile)
+                if (!outputFile.exists()) {
+                    ImageIO.write(cropped, "jpg", outputFile)
+                }
 
                 outputFile.absolutePath
             }.getOrNull()
@@ -112,6 +132,30 @@ class DesktopPlatformRequest : PlatformRequest {
             ImageIO.write(this, "jpg", outputStream)
             outputStream.toByteArray()
         }
+    }
+
+    private fun File.sha256Hex(): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        inputStream().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read <= 0) {
+                    break
+                }
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().toHexString()
+    }
+
+    private fun String.sha256Hex(): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        return digest.digest(toByteArray(StandardCharsets.UTF_8)).toHexString()
+    }
+
+    private fun ByteArray.toHexString(): String {
+        return joinToString(separator = "") { byte -> "%02x".format(byte.toInt() and 0xff) }
     }
 
     private companion object {
