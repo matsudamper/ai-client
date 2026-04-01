@@ -53,7 +53,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         }
     }
 
-    override suspend fun readPngByteArray(uri: String): ByteArray? {
+    override suspend fun readImageData(uri: String): PlatformRequest.ImageData? {
         return withContext(Dispatchers.IO) {
             val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
             val bitmap = try {
@@ -130,7 +130,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
 
                 // Save the cropped bitmap to a file
                 val hash = croppedBitmap.hashCode().toString()
-                val file = File(context.cacheDir, "cropped_$hash.webp")
+                val file = File(activity.cacheDir, "cropped_$hash.webp")
 
                 file.writeLossyWebp(croppedBitmap)
 
