@@ -198,6 +198,7 @@ class ChatRequestWorker(
             chatRoomDao.update(id = chatRoomId) {
                 it.copy(
                     workerId = null,
+                    latestErrorMessage = null,
                 )
             }
 
@@ -216,16 +217,18 @@ class ChatRequestWorker(
         } catch (e: Throwable) {
             e.printStackTrace()
             val chatRoomDao = appDatabase.chatRoomDao()
+            val errorMessage = e.message?.takeIf { it.isNotBlank() } ?: "エラーが発生しました"
 
             chatRoomDao.update(id = chatRoomId) {
                 it.copy(
                     workerId = null,
+                    latestErrorMessage = errorMessage,
                 )
             }
 
             snowFinishNotification(
                 title = "処理失敗",
-                message = e.message.orEmpty(),
+                message = errorMessage,
                 channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
                 notificationId = Random.nextInt(),
                 pendingIntent = pendingIntent,
