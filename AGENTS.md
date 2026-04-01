@@ -41,10 +41,6 @@ https://github.com/anthropics/claude-code/issues/13372
 ComposeとViewModelのやり取りはUiStateを介して行う。
 UiStateはViewModelStateFlowからのみの情報で構成されるべき。
 
-## Pull Request
-
-Pull Requestを作成する際、タイトルと説明文は日本語で記述してください。
-
 ## AI 応答ルール
 
 **質問への対応:**
