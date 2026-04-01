@@ -7,7 +7,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,7 +15,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
-import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.ui.ChatListUiState
@@ -25,6 +23,7 @@ import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.usecase.DeleteChatRoomUseCase
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
+import net.matsudamper.gptclient.viewmodel.AppNavigationViewModel
 import net.matsudamper.gptclient.viewmodel.ChatViewModel
 import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
 import net.matsudamper.gptclient.viewmodel.NewChatViewModel
@@ -63,21 +62,14 @@ fun App(initialChatRoomId: ChatRoomId? = null) {
     MaterialTheme(
         colorScheme = if (isDark) darkColors else lightColors,
     ) {
-        val backStack = remember {
-            mutableStateListOf<Navigator>(Navigator.StartChat).apply {
-                if (initialChatRoomId != null) {
-                    add(
-                        Navigator.Chat(
-                            openContext = Navigator.Chat.ChatOpenContext.OpenChat(initialChatRoomId),
-                        ),
-                    )
-                }
-            }
-        }
-        val appNavigator = remember(backStack) { AppNavigator(backStack) }
         val viewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         }
+        val appNavigationViewModel = viewModel(viewModelStoreOwner) {
+            AppNavigationViewModel(initialChatRoomId = initialChatRoomId)
+        }
+        val backStack = appNavigationViewModel.backStack
+        val appNavigator = appNavigationViewModel.appNavigator
 
         MainScreen(
             modifier = Modifier.fillMaxSize(),
