@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import net.matsudamper.gptclient.MainActivity
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
-import net.matsudamper.gptclient.entity.ApiProvider
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.client.AiClient
@@ -109,11 +108,11 @@ class ChatRequestWorker(
             val chatModel = ChatGptModel.entries.firstOrNull { it.modelKey == modelKey }
                 ?: return Result.failure()
 
-            val gptClient: AiClient = when (chatModel.provider) {
-                ApiProvider.OpenAI -> ChatGptClient(
+            val gptClient: AiClient = when (chatModel) {
+                is ChatGptModel.Gpt -> ChatGptClient(
                     secretKey = settingDataStore.getSecretKey(),
                 )
-                ApiProvider.Gemini -> {
+                is ChatGptModel.Gemini -> {
                     val apiKey = if (chatModel.requireBillingKey) {
                         settingDataStore.getGeminiBillingKey()
                     } else {

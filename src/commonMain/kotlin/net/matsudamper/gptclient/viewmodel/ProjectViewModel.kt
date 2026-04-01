@@ -176,7 +176,7 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            modelState = createModelState(ChatGptModel.Gpt5Nano),
+            modelState = createModelState(ChatGptModel.Gpt.Gpt5Nano),
             enableSend = false,
             listener = listener,
         ),
@@ -256,7 +256,7 @@ class ProjectViewModel(
                         modelState = createModelState(
                             viewModelState.overwriteModel
                                 ?: viewModelState.systemInfo?.getInfo()?.model
-                                ?: ChatGptModel.Gpt5Nano,
+                                ?: ChatGptModel.Gpt.Gpt5Nano,
                         ),
                     )
                 }
@@ -392,7 +392,7 @@ class ProjectViewModel(
                     format = AiClient.Format.Text,
                     responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
                     model = ChatGptModel.entries.firstOrNull { it.modelKey == project.modelName }
-                        ?: ChatGptModel.Gpt5Nano,
+                        ?: ChatGptModel.Gpt.Gpt5Nano,
                 )
             }
 

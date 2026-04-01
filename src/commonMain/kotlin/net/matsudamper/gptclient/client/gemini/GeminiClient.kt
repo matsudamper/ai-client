@@ -81,7 +81,8 @@ class GeminiClient(
                 GeminiRequest.Content(role = role, parts = parts)
             }
 
-        val thinkingConfig = model.thinkingLevel?.let { level ->
+        val geminiModel = model as net.matsudamper.gptclient.entity.ChatGptModel.Gemini
+        val thinkingConfig = geminiModel.thinkingLevel?.let { level ->
             GeminiRequest.ThinkingConfig(thinkingLevel = level)
         }
 
