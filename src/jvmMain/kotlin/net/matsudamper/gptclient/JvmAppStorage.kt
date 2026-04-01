@@ -27,8 +27,15 @@ object JvmAppStorage {
             }
         }
         return baseDirectory.resolve(appDirectoryName).also { directory ->
-            check(directory.exists() || directory.mkdirs()) {
-                "Failed to create app storage directory: ${directory.absolutePath}"
+            if (!directory.isDirectory) {
+                if (directory.isFile) {
+                    error("App storage path already exists as a file: ${directory.absolutePath}")
+                }
+
+                directory.mkdirs()
+                check(directory.isDirectory) {
+                    "Failed to create app storage directory: ${directory.absolutePath}"
+                }
             }
         }
     }
