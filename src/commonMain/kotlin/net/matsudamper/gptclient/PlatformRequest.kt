@@ -16,11 +16,11 @@ interface PlatformRequest {
     fun copyToClipboard(text: String)
 
     /**
-     * Crops an image and returns the platform-specific reference of the cropped image.
+     * 画像を切り抜き、切り抜き後画像のプラットフォーム依存参照文字列を返します。
      *
-     * @param uri The platform-specific reference of the image to crop
-     * @param cropRect The rectangle to crop (in the coordinate space of the image view)
-     * @return The platform-specific reference of the cropped image, or null if cropping failed
+     * @param uri 切り抜き対象画像のプラットフォーム依存参照文字列
+     * @param cropRect 切り抜き範囲（画像ビューの座標系）
+     * @return 切り抜き後画像のプラットフォーム依存参照文字列。切り抜きに失敗した場合は null
      */
     suspend fun cropImage(
         uri: String,
@@ -28,8 +28,8 @@ interface PlatformRequest {
     ): String?
 
     /**
-     * Represents a rectangle for cropping an image.
-     * All values are relative coordinates in the range 0.0 to 1.0.
+     * 画像切り抜き用の矩形を表します。
+     * すべての値は 0.0 から 1.0 の相対座標です。
      */
     data class CropRect(val left: Float, val top: Float, val right: Float, val bottom: Float)
 

@@ -104,7 +104,7 @@ class DesktopPlatformRequest : PlatformRequest {
     }
 
     override fun createNotificationChannel(channelId: String) {
-        // No-op on desktop
+        // デスクトップでは何もしない
     }
 
     private fun BufferedImage.toJpegByteArray(): ByteArray {
