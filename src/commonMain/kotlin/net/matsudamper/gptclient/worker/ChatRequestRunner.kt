@@ -138,7 +138,7 @@ class ChatRequestRunner(
         val roomChats = response.choices.mapIndexed { index, choice ->
             Chat(
                 chatRoomId = chatRoomId,
-                index = newChatIndex + 1 + index,
+                index = newChatIndex + index,
                 textMessage = choice.message.content,
                 imageUri = null,
                 role = when (choice.message.role) {
