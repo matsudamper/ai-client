@@ -21,6 +21,16 @@ class GetBuiltinProjectInfoUseCase {
         builtinProjectId: BuiltinProjectId,
         platformRequest: PlatformRequest,
     ): Info {
+        return exec(
+            builtinProjectId = builtinProjectId,
+            onCopyEmoji = platformRequest::copyToClipboard,
+        )
+    }
+
+    fun exec(
+        builtinProjectId: BuiltinProjectId,
+        onCopyEmoji: (String) -> Unit = {},
+    ): Info {
         val date = DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd")
             .toFormatter()
@@ -115,9 +125,7 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = AiClient.Format.Json,
                     responseTransformer = {
-                        EmojiResponseParser().getEmojiList(it) { emoji ->
-                            platformRequest.copyToClipboard(emoji)
-                        }
+                        EmojiResponseParser().getEmojiList(it, onCopyEmoji)
                     },
                     model = ChatGptModel.Gemini.Gemini3FlashLiteLatestLow,
                     summaryProvider = { _, lastInstruction, response ->

@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.room.AppDatabase
@@ -13,7 +12,6 @@ import net.matsudamper.gptclient.room.entity.ChatRoomId
 
 class AddRequestUseCase(
     private val appDatabase: AppDatabase,
-    private val platformRequest: PlatformRequest,
     private val gptClientProvider: (secretKey: String) -> AiClient,
     private val settingDataStore: SettingDataStore,
     private val workManagerScheduler: WorkManagerScheduler,
