@@ -17,7 +17,7 @@ ktlintGradle = "14.2.0"
 ktlint = "1.6.0"
 workManager = "2.11.2"
 androidxTestRules = "1.7.0"
-nav3Ui = "1.0.0-alpha05"
+nav3Ui = "1.0.0-SNAPSHOT+release-1-10"
 paparazzi = "2.0.0-alpha04"
 composablePreviewScanner = "0.8.2"
 
