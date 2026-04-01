@@ -119,7 +119,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 val validRight = bitmapCropRect.right.coerceIn(0f, imageWidth.toFloat())
                 val validBottom = bitmapCropRect.bottom.coerceIn(0f, imageHeight.toFloat())
 
-                // Create the cropped bitmap
+                // 切り抜き後のビットマップを生成
                 val croppedBitmap = Bitmap.createBitmap(
                     bitmap,
                     validLeft.toInt(),
@@ -128,7 +128,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                     (validBottom - validTop).toInt(),
                 )
 
-                // Save the cropped bitmap to a file
+                // 切り抜き後のビットマップをファイルに保存
                 val hash = croppedBitmap.hashCode().toString()
                 val file = File(activity.cacheDir, "cropped_$hash.webp")
 

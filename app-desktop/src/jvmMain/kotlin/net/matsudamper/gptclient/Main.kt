@@ -16,23 +16,34 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
 fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
+    val appDatabasePath = JvmAppStorage.resolve("app-database").absolutePath
+    val settingDataStorePath = JvmAppStorage.resolve("setting.pb").absolutePath
+    val desktopPlatformRequest = DesktopPlatformRequest()
+
     startKoin {
         loadKoinModules(
             module = module {
                 single<AppDatabase> {
-                    RoomPlatformBuilder.create()
+                    RoomPlatformBuilder.create(appDatabasePath)
                 }
                 single<SettingsEncryptor> {
                     NoopSettingsEncryptor()
                 }
                 single<SettingDataStore> {
                     SettingDataStore(
-                        filename = "setting",
+                        storagePath = settingDataStorePath,
                         encryptor = get(),
                     )
                 }
+                single<PlatformRequest> {
+                    desktopPlatformRequest
+                }
                 single<AddRequestUseCase.WorkManagerScheduler> {
-                    JvmWorkManagerScheduler()
+                    JvmWorkManagerScheduler(
+                        appDatabase = get(),
+                        platformRequest = get(),
+                        settingDataStore = get(),
+                    )
                 }
             },
         )
@@ -41,7 +52,7 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
         Window(onCloseRequest = { exitProcess(0) }) {
             App(
                 providePlatformRequest = remember {
-                    { DesktopPlatformRequest() }
+                    { desktopPlatformRequest }
                 },
             )
         }

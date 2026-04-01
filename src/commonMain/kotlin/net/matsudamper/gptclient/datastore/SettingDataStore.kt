@@ -6,17 +6,20 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import okio.FileSystem
+import okio.Path
 import okio.Path.Companion.toPath
 
 class SettingDataStore(
-    private val filename: String,
+    storagePath: String,
     encryptor: SettingsEncryptor,
 ) {
+    private val dataStorePath: Path = storagePath.toPath(normalize = true)
+
     private val store = DataStoreFactory.create(
         storage = OkioStorage(
             fileSystem = FileSystem.SYSTEM,
             serializer = SettingsSerializer(encryptor),
-            producePath = { "$filename.pb".toPath() },
+            producePath = { dataStorePath },
         ),
     )
 
