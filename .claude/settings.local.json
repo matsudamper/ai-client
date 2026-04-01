@@ -11,7 +11,7 @@
       "Bash(git commit:*)"
     ],
     "deny": [
-      "Bash(git push:*)"s
+      "Bash(git push:*)"
     ],
     "ask": []
   }
