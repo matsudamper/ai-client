@@ -17,13 +17,20 @@ import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
 import net.matsudamper.gptclient.usecase.DeleteChatRoomUseCase
+import net.matsudamper.gptclient.util.EventSender
 
 class MainScreenViewModel(
     private val appDatabase: AppDatabase,
-    private val platformRequest: PlatformRequest,
     private val deleteChatRoomUseCase: DeleteChatRoomUseCase,
     private val appNavigator: AppNavigator,
 ) : ViewModel() {
+    private val eventSender = EventSender<Event>()
+    val eventHandler = eventSender.asHandler()
+
+    interface Event {
+        fun providePlatformRequest(): PlatformRequest
+    }
+
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     val uiStateFlow: StateFlow<MainScreenUiState> = MutableStateFlow(
         MainScreenUiState(
@@ -92,8 +99,21 @@ class MainScreenViewModel(
             for (chatRoom in allChatRooms) {
                 deleteChatRoomUseCase.deleteChatRoom(
                     chatRoomId = chatRoom.id,
+                    deleteFile = { uri ->
+                        withPlatformRequest {
+                            deleteFile(uri)
+                        }
+                    },
                 )
             }
+        }
+    }
+
+    private suspend fun <R> withPlatformRequest(
+        block: suspend PlatformRequest.() -> R,
+    ): R {
+        return eventSender.send { event ->
+            event.providePlatformRequest().block()
         }
     }
 

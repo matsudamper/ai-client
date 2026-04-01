@@ -144,11 +144,16 @@ fun App(
                             MainScreenViewModel(
                                 appNavigator = appNavigator,
                                 appDatabase = getKoin().get(),
-                                platformRequest = getKoin().get(),
                                 deleteChatRoomUseCase = DeleteChatRoomUseCase(
                                     appDatabase = getKoin().get(),
-                                    platformRequest = getKoin().get(),
                                 ),
+                            )
+                        }
+                        LaunchedEffect(viewModel, providePlatformRequest) {
+                            viewModel.eventHandler.collect(
+                                object : MainScreenViewModel.Event {
+                                    override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                },
                             )
                         }
 
