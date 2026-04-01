@@ -13,7 +13,6 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(project(":"))
-                implementation(libs.coil3Compose)
                 implementation(compose.desktop.currentOs)
                 implementation(compose.ui)
                 implementation(compose.material3)

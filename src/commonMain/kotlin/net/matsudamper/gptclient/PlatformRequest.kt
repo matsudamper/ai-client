@@ -2,7 +2,7 @@ package net.matsudamper.gptclient
 
 interface PlatformRequest {
     /**
-     * @return URI
+     * @return プラットフォーム依存の画像参照文字列
      */
     suspend fun getMediaList(): List<String>
     suspend fun readImageData(uri: String): ImageData?
@@ -16,11 +16,11 @@ interface PlatformRequest {
     fun copyToClipboard(text: String)
 
     /**
-     * Crops an image and returns the URI of the cropped image.
+     * Crops an image and returns the platform-specific reference of the cropped image.
      *
-     * @param uri The URI of the image to crop
+     * @param uri The platform-specific reference of the image to crop
      * @param cropRect The rectangle to crop (in the coordinate space of the image view)
-     * @return The URI of the cropped image, or null if cropping failed
+     * @return The platform-specific reference of the cropped image, or null if cropping failed
      */
     suspend fun cropImage(
         uri: String,

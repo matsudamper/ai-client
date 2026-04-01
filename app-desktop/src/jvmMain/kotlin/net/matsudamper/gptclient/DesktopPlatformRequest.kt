@@ -31,7 +31,7 @@ class DesktopPlatformRequest : PlatformRequest {
                 }
                 dialog.isVisible = true
                 result = dialog.files
-                    .map { it.toURI().toString() }
+                    .map { it.absolutePath }
             } finally {
                 owner.dispose()
             }
@@ -42,7 +42,7 @@ class DesktopPlatformRequest : PlatformRequest {
     override suspend fun readImageData(uri: String): PlatformRequest.ImageData? {
         return withContext(Dispatchers.IO) {
             runCatching {
-                val file = File(URI(uri))
+                val file = File(uri)
                 val image = ImageIO.read(file) ?: return@withContext null
                 PlatformRequest.ImageData(
                     bytes = image.toJpegByteArray(),
@@ -61,7 +61,7 @@ class DesktopPlatformRequest : PlatformRequest {
     override suspend fun deleteFile(uri: String): Boolean {
         return withContext(Dispatchers.IO) {
             runCatching {
-                File(URI(uri)).delete()
+                File(uri).delete()
             }.getOrNull() == true
         }
     }
@@ -81,7 +81,7 @@ class DesktopPlatformRequest : PlatformRequest {
     ): String? {
         return withContext(Dispatchers.IO) {
             runCatching {
-                val file = File(URI(uri))
+                val file = File(uri)
                 val image = ImageIO.read(file) ?: return@withContext null
 
                 val imageWidth = image.width
@@ -98,7 +98,7 @@ class DesktopPlatformRequest : PlatformRequest {
                 val outputFile = File(System.getProperty("java.io.tmpdir"), "cropped_$hash.jpg")
                 ImageIO.write(cropped, "jpg", outputFile)
 
-                outputFile.toURI().toString()
+                outputFile.absolutePath
             }.getOrNull()
         }
     }
