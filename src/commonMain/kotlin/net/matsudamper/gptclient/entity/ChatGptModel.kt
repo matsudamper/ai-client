@@ -7,24 +7,24 @@ enum class ApiProvider(val displayName: String) {
 
 enum class ChatGptModel {
     Gpt5 {
-        override val modelKey: String = "gpt-5"
-        override val displayName: String = "GPT-5"
+        override val modelKey: String = "gpt-5.4"
+        override val displayName: String = "GPT-5.4"
         override val enableImage: Boolean = true
         override val defaultToken = 5000
         override val requireTemperature = 1.0
         override val provider = ApiProvider.OpenAI
     },
     Gpt5Mini {
-        override val modelKey: String = "gpt-5-mini"
-        override val displayName: String = "GPT-5 Mini"
+        override val modelKey: String = "gpt-5.4-mini"
+        override val displayName: String = "GPT-5.4 Mini"
         override val enableImage: Boolean = true
         override val defaultToken = 5000
         override val requireTemperature = 1.0
         override val provider = ApiProvider.OpenAI
     },
     Gpt5Nano {
-        override val modelKey: String = "gpt-5-nano"
-        override val displayName: String = "GPT-5 Nano"
+        override val modelKey: String = "gpt-5.4-nano"
+        override val displayName: String = "GPT-5.4 Nano"
         override val enableImage: Boolean = true
         override val defaultToken = 5000
         override val requireTemperature = 1.0
