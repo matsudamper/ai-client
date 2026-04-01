@@ -28,7 +28,7 @@ class Application : Application() {
                     }
                     single<SettingDataStore> {
                         SettingDataStore(
-                            filename = filesDir.resolve("setting").absolutePath,
+                            storagePath = filesDir.resolve("setting.pb").absolutePath,
                             encryptor = get(),
                         )
                     }
