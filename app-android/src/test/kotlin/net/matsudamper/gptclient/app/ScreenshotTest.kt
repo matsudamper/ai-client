@@ -27,6 +27,7 @@ class ScreenshotTest(
         fun previews(): List<ComposablePreview<AndroidPreviewInfo>> =
             AndroidComposablePreviewScanner()
                 .scanPackageTrees("net.matsudamper.gptclient.ui")
+                .includePrivatePreviews()
                 .getPreviews()
     }
 
