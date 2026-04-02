@@ -63,9 +63,13 @@ android {
     }
 
     testOptions {
+        val isPaparazziRequested =
+            gradle.startParameter.taskNames.any { taskName ->
+                taskName.contains("Paparazzi", ignoreCase = true)
+            }
         unitTests.all { test ->
             test.useJUnit {
-                if (test.name.contains("paparazzi")) {
+                if (isPaparazziRequested) {
                     includeCategories("net.matsudamper.gptclient.app.PaparazziTestCategory")
                 } else {
                     excludeCategories("net.matsudamper.gptclient.app.PaparazziTestCategory")
