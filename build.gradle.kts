@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.ktlingGradle) apply false
-    id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.composeCompiler)
 }
 
 allprojects {
