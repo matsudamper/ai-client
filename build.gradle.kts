@@ -35,8 +35,8 @@ version = "1.0-SNAPSHOT"
 kotlin {
     androidLibrary {
         namespace = "net.matsudamper.gptclient"
-        compileSdk = 36
-        minSdk = 34
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
+        minSdk = libs.versions.androidMinSdk.get().toInt()
     }
 
     jvm()

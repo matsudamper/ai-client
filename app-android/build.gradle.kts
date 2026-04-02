@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "net.matsudamper.gptclient.app"
-    compileSdk = 36
+    compileSdk = libs.versions.androidCompileSdk.get().toInt()
 
     signingConfigs {
         val isCI = System.getenv("CI")?.toBoolean() == true
@@ -46,8 +46,8 @@ android {
 
     defaultConfig {
         applicationId = "net.matsudamper.gptclient"
-        minSdk = 34
-        targetSdk = 36
+        minSdk = libs.versions.androidMinSdk.get().toInt()
+        targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
