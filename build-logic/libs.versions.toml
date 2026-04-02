@@ -1,6 +1,9 @@
 [versions]
 kotlin = "2.3.0"
 agp = "9.0.0-alpha06"
+androidCompileSdk = "36"
+androidMinSdk = "34"
+androidTargetSdk = "36"
 compose = "1.11.0-SNAPSHOT+ok-check-kotlin-2-3-20"
 androidxComposeUiToolingPreview = "1.10.6"
 jetbrainsComposeUiToolingPreview = "1.10.3"

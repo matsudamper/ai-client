@@ -8,9 +8,9 @@ plugins {
 
 kotlin {
     androidLibrary {
-        compileSdk = 36
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
         namespace = "net.matsudamper.gptclient.room"
-        minSdk = 34
+        minSdk = libs.versions.androidMinSdk.get().toInt()
     }
 
     jvm()
