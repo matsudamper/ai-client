@@ -3,8 +3,7 @@
 Kotlin Multiplatform で作られた AI クライアントです。Android と Desktop (JVM) に対応しています。
 
 ## ホーム画面
-
-![ホーム画面](README/home.png)
+<img src="README/home.png" height="500" />
 
 ホームではプロジェクトを選んでチャットを開始できます。下部の入力欄からそのままメッセージや画像を送れます。
 
