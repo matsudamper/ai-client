@@ -2,6 +2,8 @@
 kotlin = "2.3.0"
 agp = "9.0.0-alpha06"
 compose = "1.11.0-SNAPSHOT+ok-check-kotlin-2-3-20"
+androidxComposeUiToolingPreview = "1.10.6"
+jetbrainsComposeUiToolingPreview = "1.10.3"
 composeIcons = "1.7.3"
 activity = "1.13.0"
 lifecycle = "2.10.0"
@@ -89,13 +91,16 @@ composeMaterial = { module = "org.jetbrains.compose.material:material", version.
 composeMaterialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeIcons" }
 composeUiUtil = { module = "org.jetbrains.compose.ui:ui-util", version.ref = "compose" }
 composeComponentsResources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
+jetbrainsComposeUiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "jetbrainsComposeUiToolingPreview" }
 
 # Test
 androidxTestCoreKtx = { module = "androidx.test:core-ktx", version.require = "1.7.0" }
 androidxTestRules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
 androidxTestManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
 androidxComposeTestJunitAndroid = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "compose" }
+androidxComposeUiToolingPreview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidxComposeUiToolingPreview" }
 kotlinxCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine" }
 paparazzi = { module = "app.cash.paparazzi:paparazzi", version.ref = "paparazzi" }
+composablePreviewScannerAndroid = { module = "io.github.sergio-sastre.ComposablePreviewScanner:android", version.ref = "composablePreviewScanner" }
 composablePreviewScannerCommon = { module = "io.github.sergio-sastre.ComposablePreviewScanner:common", version.ref = "composablePreviewScanner" }
 composablePreviewScannerCore = { module = "io.github.sergio-sastre.ComposablePreviewScanner:core", version.ref = "composablePreviewScanner" }
