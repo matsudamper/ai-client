@@ -63,9 +63,13 @@ android {
     }
 
     testOptions {
+        val isPaparazziRequested =
+            gradle.startParameter.taskNames.any { taskName ->
+                taskName.contains("Paparazzi", ignoreCase = true)
+            }
         unitTests.all { test ->
             test.useJUnit {
-                if (test.name.contains("paparazzi")) {
+                if (isPaparazziRequested) {
                     includeCategories("net.matsudamper.gptclient.app.PaparazziTestCategory")
                 } else {
                     excludeCategories("net.matsudamper.gptclient.app.PaparazziTestCategory")
@@ -84,9 +88,10 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.ui)
     implementation(compose.runtime)
+    implementation(libs.androidxComposeUiToolingPreview)
 
     testImplementation(libs.paparazzi)
     testImplementation(libs.androidxTestCoreKtx)
-    testImplementation(libs.composablePreviewScannerCommon)
-    testImplementation(libs.composablePreviewScannerCore)
+    testImplementation(libs.composablePreviewScannerAndroid)
+//    testImplementation(files(rootProject.file("ui/build/classes/kotlin/android/main")))
 }
