@@ -35,6 +35,7 @@ class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
     private val appDatabase: AppDatabase,
     private val insertDataAndAddRequestUseCase: AddRequestUseCase,
+    private val settingDataStore: net.matsudamper.gptclient.datastore.SettingDataStore,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
@@ -120,6 +121,11 @@ class ChatViewModel(
         ),
     ).also { uiState ->
         viewModelScope.launch {
+            settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
+                viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
+            }
+        }
+        viewModelScope.launch {
             viewModelStateFlow.map { it.roomInfo?.room?.id }
                 .filterNotNull()
                 .stateIn(this)
@@ -152,8 +158,11 @@ class ChatViewModel(
                         },
                         modelLoadingState = run {
                             val roomInfo = viewModelState.roomInfo ?: return@run ChatListUiState.ModelLoadingState.Loading
+                            val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.map { key ->
+                                ChatGptModel.Local(modelKey = key)
+                            }
                             ChatListUiState.ModelLoadingState.Loaded(
-                                ChatGptModel.entries.map { model ->
+                                allModels.map { model ->
                                     ChatListUiState.Model(
                                         modelName = model.displayName,
                                         selected = model.modelKey == roomInfo.room.modelKey,
@@ -471,6 +480,7 @@ class ChatViewModel(
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
+        val activeLocalModelKeys: Set<String> = emptySet(),
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom

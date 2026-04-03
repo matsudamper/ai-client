@@ -46,4 +46,14 @@ class SettingDataStore(
     }
 
     fun getThemeModeFlow(): Flow<ThemeMode> = store.data.map { it.themeMode }
+
+    suspend fun addActiveLocalModelKey(key: String) {
+        store.updateData { it.copy(activeLocalModelKeys = it.activeLocalModelKeys + key) }
+    }
+
+    suspend fun removeActiveLocalModelKey(key: String) {
+        store.updateData { it.copy(activeLocalModelKeys = it.activeLocalModelKeys - key) }
+    }
+
+    fun getActiveLocalModelKeysFlow(): Flow<Set<String>> = store.data.map { it.activeLocalModelKeys }
 }

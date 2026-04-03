@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Emoji
@@ -25,6 +26,7 @@ import net.matsudamper.gptclient.util.EventSender
 class NewChatViewModel(
     private val appDatabase: AppDatabase,
     private val appNavigator: AppNavigator,
+    private val settingDataStore: SettingDataStore,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
@@ -218,8 +220,16 @@ class NewChatViewModel(
             }
         }
         viewModelScope.launch {
+            settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
+                viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
+            }
+        }
+        viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
+                    val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.map { key ->
+                        ChatGptModel.Local(modelKey = key)
+                    }
                     it.copy(
                         selectedMedia = viewModelState.mediaList,
                         visibleMediaLoading = viewModelState.mediaLoading,
@@ -227,6 +237,18 @@ class NewChatViewModel(
                         projectNameDialog = viewModelState.projectNameDialog,
                         isLoading = viewModelState.isLoading,
                         enableSend = !viewModelState.mediaLoading,
+                        models = allModels.map { gptModel ->
+                            NewChatUiState.Model(
+                                name = gptModel.displayName,
+                                listener = object : NewChatUiState.Model.Listener {
+                                    override fun onClick() {
+                                        viewModelStateFlow.update { viewModelState ->
+                                            viewModelState.copy(selectedModel = gptModel)
+                                        }
+                                    }
+                                },
+                            )
+                        },
                         projects = builtinProjects.plus(
                             viewModelState.projects.orEmpty().map { project ->
                                 NewChatUiState.Project(
@@ -283,9 +305,10 @@ class NewChatViewModel(
     private data class ViewModelState(
         val mediaList: List<ChatFooterImage> = listOf(),
         val mediaLoading: Boolean = false,
-        val selectedModel: ChatGptModel = ChatGptModel.Gpt.Gpt5Nano,
+        val selectedModel: ChatGptModel = ChatGptModel.Remote.Gpt.Gpt5Nano,
         val projectNameDialog: NewChatUiState.ProjectNameDialog? = null,
         val projects: List<Project>? = null,
         val isLoading: Boolean = false,
+        val activeLocalModelKeys: Set<String> = emptySet(),
     )
 }

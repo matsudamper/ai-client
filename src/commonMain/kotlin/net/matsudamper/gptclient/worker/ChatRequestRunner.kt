@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.client.gemini.GeminiClient
+import net.matsudamper.gptclient.client.local.createLocalAiClient
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
@@ -31,14 +32,15 @@ class ChatRequestRunner(
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val requestInfo = createRequestInfo(room)
             val chatModel = ChatGptModel.entries.firstOrNull { it.modelKey == requestInfo.modelKey }
-                ?: return fail(chatRoomId = chatRoomId, errorMessage = "モデルが見つかりません")
+                ?: if (requestInfo.modelKey.startsWith("local-")) ChatGptModel.Local(modelKey = requestInfo.modelKey)
+                else return fail(chatRoomId = chatRoomId, errorMessage = "モデルが見つかりません")
 
             val gptClient = createClient(chatModel)
                 ?: return fail(
                     chatRoomId = chatRoomId,
                     errorMessage = when {
-                        chatModel is ChatGptModel.Gemini && chatModel.requireBillingKey -> "Gemini Billing Key が未設定です"
-                        chatModel is ChatGptModel.Gemini -> "Gemini API Key が未設定です"
+                        chatModel is ChatGptModel.Remote.Gemini && chatModel.requireBillingKey -> "Gemini Billing Key が未設定です"
+                        chatModel is ChatGptModel.Remote.Gemini -> "Gemini API Key が未設定です"
                         else -> "APIキーが未設定です"
                     },
                 )
@@ -110,11 +112,11 @@ class ChatRequestRunner(
 
     private suspend fun createClient(chatModel: ChatGptModel): AiClient? {
         return when (chatModel) {
-            is ChatGptModel.Gpt -> ChatGptClient(
+            is ChatGptModel.Remote.Gpt -> ChatGptClient(
                 secretKey = settingDataStore.getSecretKey(),
             )
 
-            is ChatGptModel.Gemini -> {
+            is ChatGptModel.Remote.Gemini -> {
                 val apiKey = if (chatModel.requireBillingKey) {
                     settingDataStore.getGeminiBillingKey()
                 } else {
@@ -122,6 +124,9 @@ class ChatRequestRunner(
                 }
                 apiKey.takeIf { it.isNotBlank() }?.let { GeminiClient(apiKey = it) }
             }
+
+            is ChatGptModel.Local -> createLocalAiClient()
+            else -> null
         }
     }
 

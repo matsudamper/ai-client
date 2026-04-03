@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
+import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
@@ -29,6 +30,7 @@ class ProjectViewModel(
     private val navigator: Navigator.Project,
     private val appDatabase: AppDatabase,
     private val appNavigator: AppNavigator,
+    private val settingDataStore: SettingDataStore,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
@@ -187,11 +189,16 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            modelState = createModelState(ChatGptModel.Gpt.Gpt5Nano),
+            modelState = createModelState(ChatGptModel.Remote.Gpt.Gpt5Nano),
             enableSend = false,
             listener = listener,
         ),
     ).also { uiStateFlow ->
+        viewModelScope.launch {
+            settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
+                viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
+            }
+        }
         viewModelScope.launch {
             when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
@@ -267,7 +274,7 @@ class ProjectViewModel(
                         modelState = createModelState(
                             viewModelState.overwriteModel
                                 ?: viewModelState.systemInfo?.getInfo()?.model
-                                ?: ChatGptModel.Gpt.Gpt5Nano,
+                                ?: ChatGptModel.Remote.Gpt.Gpt5Nano,
                         ),
                     )
                 }
@@ -370,9 +377,13 @@ class ProjectViewModel(
         }
     }
 
-    private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState = ProjectUiState.ModelState(
+    private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState {
+        val allModels = ChatGptModel.entries + viewModelStateFlow.value.activeLocalModelKeys.map { key ->
+            ChatGptModel.Local(modelKey = key)
+        }
+        return ProjectUiState.ModelState(
         selectedModel = selectedModel.displayName,
-        models = ChatGptModel.entries.map { model ->
+        models = allModels.map { model ->
             ProjectUiState.ModelState.Item(
                 modelName = model.displayName,
                 selected = model == selectedModel,
@@ -404,6 +415,7 @@ class ProjectViewModel(
             )
         },
     )
+    }
 
     private data class ViewModelState(
         val uriList: List<ChatFooterImage> = listOf(),
@@ -411,6 +423,7 @@ class ProjectViewModel(
         val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: SystemInfoType? = null,
         val overwriteModel: ChatGptModel? = null,
+        val activeLocalModelKeys: Set<String> = emptySet(),
         val isLoading: Boolean = false,
     ) {
         sealed interface SystemInfoType {
@@ -429,7 +442,7 @@ class ProjectViewModel(
                     format = AiClient.Format.Text,
                     responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
                     model = ChatGptModel.entries.firstOrNull { it.modelKey == project.modelName }
-                        ?: ChatGptModel.Gpt.Gpt5Nano,
+                        ?: ChatGptModel.Remote.Gpt.Gpt5Nano,
                 )
             }
 

@@ -4,16 +4,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
+import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.DownloadProgress
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.LocalModelStatus
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
 import net.matsudamper.gptclient.util.EventSender
 
 class SettingViewModel(
     private val settingDataStore: SettingDataStore,
+    private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
@@ -25,6 +32,37 @@ class SettingViewModel(
     private val _uiStateFlow = MutableStateFlow<SettingsScreenUiState>(
         SettingsScreenUiState.Loading,
     )
+
+    private val localModelStatusFlow = MutableStateFlow<LocalModelStatus?>(null)
+    private val localModelKey = ChatGptModel.Local().modelKey
+
+    private val localModelListener = object : SettingsScreenUiState.LocalModelUiState.Available.Listener {
+        override fun onClickDownload() {
+            viewModelScope.launch {
+                localModelStatusFlow.value = LocalModelStatus.DOWNLOADING
+                localModelRepository.download().collectLatest { progress ->
+                    when (progress) {
+                        is DownloadProgress.Started,
+                        is DownloadProgress.InProgress,
+                        -> localModelStatusFlow.value = LocalModelStatus.DOWNLOADING
+
+                        is DownloadProgress.Completed -> localModelStatusFlow.value = LocalModelStatus.AVAILABLE
+                        is DownloadProgress.Failed -> localModelStatusFlow.value = LocalModelStatus.DOWNLOADABLE
+                    }
+                }
+            }
+        }
+
+        override fun onToggleActive(active: Boolean) {
+            viewModelScope.launch {
+                if (active) {
+                    settingDataStore.addActiveLocalModelKey(localModelKey)
+                } else {
+                    settingDataStore.removeActiveLocalModelKey(localModelKey)
+                }
+            }
+        }
+    }
 
     private val loadedListener = object : SettingsScreenUiState.Loaded.Listener {
         override fun updateSecretKey(text: String) {
@@ -64,10 +102,19 @@ class SettingViewModel(
 
     val uiStateFlow: StateFlow<SettingsScreenUiState> = _uiStateFlow.also { uiState ->
         viewModelScope.launch {
+            localModelStatusFlow.value = localModelRepository.checkStatus()
+        }
+        viewModelScope.launch {
             val secretKey = settingDataStore.getSecretKey()
             val geminiSecretKey = settingDataStore.getGeminiSecretKey()
             val geminiBillingKey = settingDataStore.getGeminiBillingKey()
-            settingDataStore.getThemeModeFlow().collect { themeMode ->
+            combine(
+                settingDataStore.getThemeModeFlow(),
+                localModelStatusFlow,
+                settingDataStore.getActiveLocalModelKeysFlow(),
+            ) { themeMode, localStatus, activeKeys ->
+                Triple(themeMode, localStatus, activeKeys)
+            }.collect { (themeMode, localStatus, activeKeys) ->
                 uiState.update {
                     val current = it as? SettingsScreenUiState.Loaded
                     SettingsScreenUiState.Loaded(
@@ -75,6 +122,7 @@ class SettingViewModel(
                         initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
                         initialGeminiBillingKey = current?.initialGeminiBillingKey ?: geminiBillingKey,
                         themeOption = themeMode.toUiState(),
+                        localModel = localStatus.toLocalModelUiState(activeKeys),
                         listener = loadedListener,
                     )
                 }
@@ -107,6 +155,31 @@ class SettingViewModel(
             eventSender.send { event ->
                 event.providePlatformRequest().block()
             }
+        }
+    }
+
+    private fun LocalModelStatus?.toLocalModelUiState(
+        activeKeys: Set<String>,
+    ): SettingsScreenUiState.LocalModelUiState {
+        return when (this) {
+            null, LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelUiState.Unavailable
+            LocalModelStatus.DOWNLOADABLE -> SettingsScreenUiState.LocalModelUiState.Available(
+                status = SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADABLE,
+                isActive = false,
+                listener = localModelListener,
+            )
+
+            LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelUiState.Available(
+                status = SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADING,
+                isActive = false,
+                listener = localModelListener,
+            )
+
+            LocalModelStatus.AVAILABLE -> SettingsScreenUiState.LocalModelUiState.Available(
+                status = SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADED,
+                isActive = localModelKey in activeKeys,
+                listener = localModelListener,
+            )
         }
     }
 }

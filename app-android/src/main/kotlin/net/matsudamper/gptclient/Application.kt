@@ -5,6 +5,7 @@ import androidx.work.WorkManager
 import net.matsudamper.gptclient.datastore.AndroidSettingsEncryptor
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.SettingsEncryptor
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.RoomPlatformBuilder
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
@@ -34,6 +35,9 @@ class Application : Application() {
                     }
                     single<AddRequestUseCase.WorkManagerScheduler> {
                         AndroidWorkManagerScheduler(WorkManager.getInstance(applicationContext))
+                    }
+                    single<LocalModelRepository> {
+                        LocalModelRepository()
                     }
                 },
             )
