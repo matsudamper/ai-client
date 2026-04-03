@@ -1,50 +1,60 @@
 package net.matsudamper.gptclient.localmodel
 
-import com.google.mlkit.genai.common.DownloadCallback
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.prompt.Generation
-import com.google.mlkit.genai.prompt.GenerationConfig
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 actual class LocalModelRepository actual constructor() {
-    private val generativeModel by lazy {
-        Generation.getClient(GenerationConfig.Builder().build())
-    }
+    private fun getClient() = Generation.getClient()
 
     actual suspend fun checkStatus(): LocalModelStatus {
         return try {
-            when (generativeModel.checkStatus()) {
+            val client = getClient()
+            when (client.checkStatus()) {
+                FeatureStatus.AVAILABLE -> LocalModelStatus.AVAILABLE
                 FeatureStatus.DOWNLOADABLE -> LocalModelStatus.DOWNLOADABLE
                 FeatureStatus.DOWNLOADING -> LocalModelStatus.DOWNLOADING
-                FeatureStatus.AVAILABLE -> LocalModelStatus.AVAILABLE
                 else -> LocalModelStatus.UNAVAILABLE
             }
         } catch (e: GenAiException) {
-            // ErrorCode 606 (FEATURE_NOT_FOUND) はモデル未ダウンロード状態で発生しうる
             LocalModelStatus.DOWNLOADABLE
         }
     }
 
-    actual fun download(): Flow<DownloadProgress> = callbackFlow {
-        trySend(DownloadProgress.Started)
-        generativeModel.download().collect { status ->
-            when (status) {
-                is DownloadStatus.DownloadStarted -> trySend(DownloadProgress.Started)
-                is DownloadStatus.DownloadProgress -> trySend(DownloadProgress.InProgress(0f))
-                is DownloadStatus.DownloadCompleted -> {
-                    trySend(DownloadProgress.Completed)
-                    close()
-                }
-                is DownloadStatus.DownloadFailed -> {
-                    trySend(DownloadProgress.Failed("ダウンロードに失敗しました"))
-                    close()
+    actual fun download(): Flow<DownloadProgress> {
+        return try {
+            val client = getClient()
+            var totalBytes = 0L
+            client.download().map { status ->
+                when (status) {
+                    is DownloadStatus.DownloadStarted -> {
+                        totalBytes = status.bytesToDownload
+                        DownloadProgress.Started
+                    }
+
+                    is DownloadStatus.DownloadProgress -> {
+                        val progress = if (totalBytes > 0) {
+                            status.totalBytesDownloaded.toFloat() / totalBytes
+                        } else {
+                            0f
+                        }
+                        DownloadProgress.InProgress(progress)
+                    }
+
+                    is DownloadStatus.DownloadCompleted -> DownloadProgress.Completed
+                    is DownloadStatus.DownloadFailed -> DownloadProgress.Failed(
+                        status.e.message ?: "ダウンロードに失敗しました",
+                    )
+
+                    else -> DownloadProgress.Failed("不明なステータス")
                 }
             }
+        } catch (e: GenAiException) {
+            flow { emit(DownloadProgress.Failed(e.message ?: "ダウンロードを開始できません")) }
         }
-        awaitClose()
     }
 }

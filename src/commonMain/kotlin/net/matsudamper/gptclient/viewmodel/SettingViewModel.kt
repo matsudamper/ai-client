@@ -40,15 +40,19 @@ class SettingViewModel(
         override fun onClickDownload() {
             viewModelScope.launch {
                 localModelStatusFlow.value = LocalModelStatus.DOWNLOADING
-                localModelRepository.download().collectLatest { progress ->
-                    when (progress) {
-                        is DownloadProgress.Started,
-                        is DownloadProgress.InProgress,
-                        -> localModelStatusFlow.value = LocalModelStatus.DOWNLOADING
+                try {
+                    localModelRepository.download().collectLatest { progress ->
+                        when (progress) {
+                            is DownloadProgress.Started,
+                            is DownloadProgress.InProgress,
+                            -> localModelStatusFlow.value = LocalModelStatus.DOWNLOADING
 
-                        is DownloadProgress.Completed -> localModelStatusFlow.value = LocalModelStatus.AVAILABLE
-                        is DownloadProgress.Failed -> localModelStatusFlow.value = LocalModelStatus.DOWNLOADABLE
+                            is DownloadProgress.Completed -> localModelStatusFlow.value = LocalModelStatus.AVAILABLE
+                            is DownloadProgress.Failed -> localModelStatusFlow.value = LocalModelStatus.DOWNLOADABLE
+                        }
                     }
+                } catch (e: Exception) {
+                    localModelStatusFlow.value = LocalModelStatus.DOWNLOADABLE
                 }
             }
         }
