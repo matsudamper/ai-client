@@ -16,11 +16,15 @@ actual class LocalModelRepository actual constructor() {
     }
 
     actual suspend fun checkStatus(): LocalModelStatus {
-        return when (generativeModel.checkStatus()) {
-            FeatureStatus.DOWNLOADABLE -> LocalModelStatus.DOWNLOADABLE
-            FeatureStatus.DOWNLOADING -> LocalModelStatus.DOWNLOADING
-            FeatureStatus.AVAILABLE -> LocalModelStatus.AVAILABLE
-            else -> LocalModelStatus.UNAVAILABLE
+        return try {
+            when (generativeModel.checkStatus()) {
+                FeatureStatus.DOWNLOADABLE -> LocalModelStatus.DOWNLOADABLE
+                FeatureStatus.DOWNLOADING -> LocalModelStatus.DOWNLOADING
+                FeatureStatus.AVAILABLE -> LocalModelStatus.AVAILABLE
+                else -> LocalModelStatus.UNAVAILABLE
+            }
+        } catch (e: GenAiException) {
+            LocalModelStatus.UNAVAILABLE
         }
     }
 
