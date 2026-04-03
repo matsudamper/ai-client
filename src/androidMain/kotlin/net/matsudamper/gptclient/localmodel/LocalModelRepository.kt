@@ -24,7 +24,8 @@ actual class LocalModelRepository actual constructor() {
                 else -> LocalModelStatus.UNAVAILABLE
             }
         } catch (e: GenAiException) {
-            LocalModelStatus.UNAVAILABLE
+            // ErrorCode 606 (FEATURE_NOT_FOUND) はモデル未ダウンロード状態で発生しうる
+            LocalModelStatus.DOWNLOADABLE
         }
     }
 
