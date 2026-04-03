@@ -215,6 +215,20 @@ private fun LocalModelSettingItem(
                 title = { Text("ローカルモデル (Gemini Nano)") },
                 content = {
                     Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                text = "モデル選択画面に表示",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Switch(
+                                checked = localModelUiState.isActive,
+                                onCheckedChange = { localModelUiState.listener.onToggleActive(it) },
+                            )
+                        }
                         when (localModelUiState.status) {
                             SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADABLE -> {
                                 OutlinedButton(
@@ -234,20 +248,11 @@ private fun LocalModelSettingItem(
                             }
 
                             SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADED -> {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Text(
-                                        text = "モデル選択画面に表示",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                    Switch(
-                                        checked = localModelUiState.isActive,
-                                        onCheckedChange = { localModelUiState.listener.onToggleActive(it) },
-                                    )
-                                }
+                                Text(
+                                    text = "ダウンロード済み",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }

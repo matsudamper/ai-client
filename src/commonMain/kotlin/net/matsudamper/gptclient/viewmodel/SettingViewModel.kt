@@ -169,13 +169,13 @@ class SettingViewModel(
             null, LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelUiState.Unavailable
             LocalModelStatus.DOWNLOADABLE -> SettingsScreenUiState.LocalModelUiState.Available(
                 status = SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADABLE,
-                isActive = false,
+                isActive = localModelKey in activeKeys,
                 listener = localModelListener,
             )
 
             LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelUiState.Available(
                 status = SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADING,
-                isActive = false,
+                isActive = localModelKey in activeKeys,
                 listener = localModelListener,
             )
 

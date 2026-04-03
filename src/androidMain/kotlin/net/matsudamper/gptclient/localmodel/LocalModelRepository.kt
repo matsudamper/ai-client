@@ -20,7 +20,7 @@ actual class LocalModelRepository actual constructor() {
                 FeatureStatus.DOWNLOADING -> LocalModelStatus.DOWNLOADING
                 else -> LocalModelStatus.UNAVAILABLE
             }
-        } catch (e: GenAiException) {
+        } catch (e: Exception) {
             LocalModelStatus.DOWNLOADABLE
         }
     }
