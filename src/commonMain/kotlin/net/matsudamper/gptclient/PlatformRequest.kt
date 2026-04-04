@@ -16,15 +16,17 @@ interface PlatformRequest {
     fun copyToClipboard(text: String)
 
     /**
-     * 画像を切り抜き、切り抜き後画像のプラットフォーム依存参照文字列を返します。
+     * 画像を必要に応じて切り抜き、指定フォーマットで保存した参照文字列を返します。
      *
-     * @param uri 切り抜き対象画像のプラットフォーム依存参照文字列
-     * @param cropRect 切り抜き範囲（画像ビューの座標系）
-     * @return 切り抜き後画像のプラットフォーム依存参照文字列。切り抜きに失敗した場合は null
+     * @param uri 変換対象画像のプラットフォーム依存参照文字列
+     * @param cropRect 切り抜き範囲。null の場合は元画像全体を使います
+     * @param imageFormat 出力フォーマット
+     * @return 変換後画像のプラットフォーム依存参照文字列。失敗した場合は null
      */
-    suspend fun cropImage(
+    suspend fun prepareImage(
         uri: String,
-        cropRect: CropRect,
+        cropRect: CropRect?,
+        imageFormat: ImageFormat,
     ): String?
 
     /**

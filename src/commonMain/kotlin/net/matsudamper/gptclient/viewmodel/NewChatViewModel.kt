@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.matsudamper.gptclient.ImageFormat
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.Calendar
@@ -113,6 +114,8 @@ class NewChatViewModel(
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     viewModelScope.launch {
+                        val selectedModel = viewModelStateFlow.value.selectedModel
+                        val imageFormat = selectedModel.preferredImageFormat ?: ImageFormat.Jpeg
                         viewModelStateFlow.update {
                             it.copy(
                                 isLoading = true,
@@ -123,21 +126,23 @@ class NewChatViewModel(
                                 Navigator.Chat.ChatOpenContext.NewMessage(
                                     initialMessage = text,
                                     uriList = viewModelStateFlow.value.mediaList.mapNotNull map@{
-                                        val rect = it.rect ?: return@map it.imageUri
                                         eventSender.send { event ->
-                                            event.providePlatformRequest().cropImage(
+                                            event.providePlatformRequest().prepareImage(
                                                 uri = it.imageUri,
-                                                cropRect = PlatformRequest.CropRect(
-                                                    left = rect.left,
-                                                    top = rect.top,
-                                                    right = rect.right,
-                                                    bottom = rect.bottom,
-                                                ),
+                                                cropRect = it.rect?.let { rect ->
+                                                    PlatformRequest.CropRect(
+                                                        left = rect.left,
+                                                        top = rect.top,
+                                                        right = rect.right,
+                                                        bottom = rect.bottom,
+                                                    )
+                                                },
+                                                imageFormat = imageFormat,
                                             )
                                         }
                                     },
                                     chatType = Navigator.Chat.ChatType.Normal,
-                                    model = viewModelStateFlow.value.selectedModel,
+                                    model = selectedModel,
                                 ),
                             ),
                         )
@@ -242,6 +247,7 @@ class NewChatViewModel(
                             modelKey = def.modelId.value,
                             displayName = def.displayName,
                             enableImage = def.enableImage,
+                            supportedImageMimeTypes = def.supportedImageMimeTypes,
                             defaultToken = def.defaultToken,
                         )
                     }

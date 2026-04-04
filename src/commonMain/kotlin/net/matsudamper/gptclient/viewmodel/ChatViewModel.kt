@@ -15,12 +15,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.matsudamper.gptclient.ImageFormat
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.LocalModelDefinition
-import net.matsudamper.gptclient.localmodel.LocalModelId
-import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.entity.getName
+import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -38,7 +38,6 @@ class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
     private val appDatabase: AppDatabase,
     private val insertDataAndAddRequestUseCase: AddRequestUseCase,
-    private val settingDataStore: net.matsudamper.gptclient.datastore.SettingDataStore,
     private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
@@ -83,21 +82,27 @@ class ChatViewModel(
 
         override fun onClickSend(text: String) {
             viewModelScope.launch {
+                val imageFormat = viewModelStateFlow.value.roomInfo
+                    ?.room
+                    ?.modelKey
+                    ?.let(::findModel)
+                    ?.preferredImageFormat
+                    ?: ImageFormat.Jpeg
                 addRequest(
                     message = text,
                     uris = viewModelStateFlow.value.selectedMedia.mapNotNull map@{
-                        val rect = it.rect ?: return@map it.imageUri
-                        val platformCropRect = PlatformRequest.CropRect(
-                            left = rect.left,
-                            top = rect.top,
-                            right = rect.right,
-                            bottom = rect.bottom,
-                        )
-
                         withPlatformRequest {
-                            cropImage(
+                            prepareImage(
                                 uri = it.imageUri,
-                                cropRect = platformCropRect,
+                                cropRect = it.rect?.let { rect ->
+                                    PlatformRequest.CropRect(
+                                        left = rect.left,
+                                        top = rect.top,
+                                        right = rect.right,
+                                        bottom = rect.bottom,
+                                    )
+                                },
+                                imageFormat = imageFormat,
                             )
                         }
                     },
@@ -119,16 +124,10 @@ class ChatViewModel(
             visibleMediaLoading = false,
             listener = listener,
             errorDialogMessage = null,
-            modelLoadingState = ChatListUiState.ModelLoadingState.Loading,
             title = "",
             enableSend = false,
         ),
     ).also { uiState ->
-        viewModelScope.launch {
-            settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
-                viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
-            }
-        }
         viewModelScope.launch {
             val defs = localModelRepository.getModels()
             viewModelStateFlow.update { it.copy(localModelDefs = defs) }
@@ -163,38 +162,6 @@ class ChatViewModel(
 
                             is ViewModelState.RoomInfo.Normal -> ""
                             null -> ""
-                        },
-                        modelLoadingState = run {
-                            val roomInfo = viewModelState.roomInfo ?: return@run ChatListUiState.ModelLoadingState.Loading
-                            val localDefs = viewModelState.localModelDefs
-                            val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
-                                val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
-                                ChatGptModel.Local(
-                                    modelKey = def.modelId.value,
-                                    displayName = def.displayName,
-                                    enableImage = def.enableImage,
-                                    defaultToken = def.defaultToken,
-                                )
-                            }
-                            ChatListUiState.ModelLoadingState.Loaded(
-                                allModels.map { model ->
-                                    ChatListUiState.Model(
-                                        modelName = model.displayName,
-                                        selected = model.modelKey == roomInfo.room.modelKey,
-                                        listener = object : ChatListUiState.Model.Listener {
-                                            override fun onClick() {
-                                                viewModelScope.launch {
-                                                    appDatabase.chatRoomDao().update(
-                                                        roomInfo.room.copy(
-                                                            modelKey = model.modelKey,
-                                                        ),
-                                                    )
-                                                }
-                                            }
-                                        },
-                                    )
-                                },
-                            )
                         },
                         selectedImage = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
@@ -447,6 +414,21 @@ class ChatViewModel(
         }
     }
 
+    private fun findModel(modelKey: String): ChatGptModel? {
+        return ChatGptModel.entries.firstOrNull { it.modelKey == modelKey }
+            ?: viewModelStateFlow.value.localModelDefs
+                .firstOrNull { it.modelId.value == modelKey }
+                ?.let { def ->
+                    ChatGptModel.Local(
+                        modelKey = def.modelId.value,
+                        displayName = def.displayName,
+                        enableImage = def.enableImage,
+                        supportedImageMimeTypes = def.supportedImageMimeTypes,
+                        defaultToken = def.defaultToken,
+                    )
+                }
+    }
+
     private fun launchWithPlatformRequest(
         block: suspend PlatformRequest.() -> Unit,
     ) {
@@ -495,7 +477,6 @@ class ChatViewModel(
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
-        val activeLocalModelKeys: Set<LocalModelId> = emptySet(),
         val localModelDefs: List<LocalModelDefinition> = emptyList(),
     ) {
         sealed interface RoomInfo {

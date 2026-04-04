@@ -116,7 +116,6 @@ fun App(
                                 openContext = navigator.openContext,
                                 insertDataAndAddRequestUseCase = createInsertDataAndAddRequestUseCase(),
                                 appDatabase = koin.get(),
-                                settingDataStore = koin.get(),
                                 localModelRepository = koin.get(),
                             )
                         }

@@ -5,12 +5,13 @@ import android.app.NotificationManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toFile
 import androidx.core.net.toUri
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
 import java.security.MessageDigest
@@ -22,7 +23,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
     private val mediaLauncher = object {
         private val resultFlow = Channel<List<String>>(Channel.RENDEZVOUS)
         private val launcher = activity.registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
-            resultFlow.trySend(it.map { it.toString() })
+            resultFlow.trySend(it.map { uri -> uri.toString() })
         }
 
         suspend fun launch(): List<String> {
@@ -31,40 +32,24 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         }
     }
 
-    override suspend fun getMediaList(): List<String> {
-        val cacheDir = activity.cacheDir
-        return mediaLauncher.launch().map { uriString ->
-            withContext(Dispatchers.IO) {
-                val uri = uriString.toUri()
-                val source = ImageDecoder.createSource(activity.contentResolver, uri)
-                val bitmap = ImageDecoder.decodeBitmap(source)
-
-                val hash = MessageDigest.getInstance("SHA-256")
-                    .digest(uriString.toByteArray())
-                    .joinToString("") { "%02x".format(it) }
-                val file = File(cacheDir, "$hash.webp")
-
-                if (!file.exists()) {
-                    file.writeLossyWebp(bitmap)
-                }
-
-                file.toURI().toString()
-            }
-        }
-    }
+    override suspend fun getMediaList(): List<String> = mediaLauncher.launch()
 
     override suspend fun readImageData(uri: String): PlatformRequest.ImageData? {
         return withContext(Dispatchers.IO) {
-            val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
-            val bitmap = try {
-                ImageDecoder.decodeBitmap(source)
+            val parsedUri = uri.toUri()
+            val bytes = try {
+                activity.contentResolver.openInputStream(parsedUri)?.use { input -> input.readBytes() }
             } catch (_: FileNotFoundException) {
-                return@withContext null
-            }
+                null
+            } ?: return@withContext null
+
+            val mimeType = activity.contentResolver.getType(parsedUri)
+                ?: parsedUri.toMimeType()
+                ?: return@withContext null
 
             PlatformRequest.ImageData(
-                bytes = bitmap.toLossyWebpByteArray(),
-                mimeType = COMPRESSED_IMAGE_MIME_TYPE,
+                bytes = bytes,
+                mimeType = mimeType,
             )
         }
     }
@@ -80,7 +65,11 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
 
     override suspend fun deleteFile(uri: String): Boolean = withContext(Dispatchers.IO) {
         runCatching {
-            activity.contentResolver.delete(uri.toUri(), null, null) > 0
+            val parsedUri = uri.toUri()
+            when (parsedUri.scheme) {
+                "file" -> parsedUri.toFile().delete()
+                else -> activity.contentResolver.delete(parsedUri, null, null) > 0
+            }
         }.getOrNull() == true
     }
 
@@ -94,50 +83,39 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         clipboard.setPrimaryClip(clip)
     }
 
-    override suspend fun cropImage(
+    override suspend fun prepareImage(
         uri: String,
-        cropRect: PlatformRequest.CropRect,
+        cropRect: PlatformRequest.CropRect?,
+        imageFormat: ImageFormat,
     ): String? {
         return withContext(Dispatchers.IO) {
             try {
                 val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
                 val bitmap = ImageDecoder.decodeBitmap(source)
+                val outputBitmap = cropRect?.let { bitmap.crop(it) } ?: bitmap
+                val cacheKey = buildString {
+                    append(uri)
+                    append('|')
+                    append(cropRect?.left)
+                    append(',')
+                    append(cropRect?.top)
+                    append(',')
+                    append(cropRect?.right)
+                    append(',')
+                    append(cropRect?.bottom)
+                    append('|')
+                    append(imageFormat.name)
+                }.sha256Hex()
+                val file = File(activity.cacheDir, "$cacheKey.${imageFormat.fileExtension}")
 
-                val imageWidth = bitmap.width
-                val imageHeight = bitmap.height
+                if (!file.exists()) {
+                    file.writeBitmap(outputBitmap, imageFormat)
+                }
 
-                // cropRectは相対座標(0.0~1.0)で渡されるので実際のピクセル座標に変換
-                val bitmapCropRect = android.graphics.RectF(
-                    cropRect.left * imageWidth,
-                    cropRect.top * imageHeight,
-                    cropRect.right * imageWidth,
-                    cropRect.bottom * imageHeight,
-                )
-
-                val validLeft = bitmapCropRect.left.coerceIn(0f, imageWidth.toFloat())
-                val validTop = bitmapCropRect.top.coerceIn(0f, imageHeight.toFloat())
-                val validRight = bitmapCropRect.right.coerceIn(0f, imageWidth.toFloat())
-                val validBottom = bitmapCropRect.bottom.coerceIn(0f, imageHeight.toFloat())
-
-                // 切り抜き後のビットマップを生成
-                val croppedBitmap = Bitmap.createBitmap(
-                    bitmap,
-                    validLeft.toInt(),
-                    validTop.toInt(),
-                    (validRight - validLeft).toInt(),
-                    (validBottom - validTop).toInt(),
-                )
-
-                // 切り抜き後のビットマップをファイルに保存
-                val hash = croppedBitmap.hashCode().toString()
-                val file = File(activity.cacheDir, "cropped_$hash.webp")
-
-                file.writeLossyWebp(croppedBitmap)
-
-                return@withContext file.toURI().toString()
+                file.toURI().toString()
             } catch (e: Exception) {
                 e.printStackTrace()
-                return@withContext null
+                null
             }
         }
     }
@@ -154,21 +132,72 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         notificationManager.createNotificationChannel(channel)
     }
 
-    private fun Bitmap.toLossyWebpByteArray(): ByteArray {
-        return ByteArrayOutputStream().use { outputStream ->
-            compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, outputStream)
-            outputStream.toByteArray()
+    private fun Bitmap.crop(cropRect: PlatformRequest.CropRect): Bitmap {
+        val bitmapCropRect = android.graphics.RectF(
+            cropRect.left * width,
+            cropRect.top * height,
+            cropRect.right * width,
+            cropRect.bottom * height,
+        )
+        val validLeft = bitmapCropRect.left.coerceIn(0f, width.toFloat())
+        val validTop = bitmapCropRect.top.coerceIn(0f, height.toFloat())
+        val validRight = bitmapCropRect.right.coerceIn(0f, width.toFloat())
+        val validBottom = bitmapCropRect.bottom.coerceIn(0f, height.toFloat())
+        val cropWidth = (validRight - validLeft).toInt()
+        val cropHeight = (validBottom - validTop).toInt()
+
+        if (cropWidth <= 0 || cropHeight <= 0) {
+            return this
+        }
+
+        return Bitmap.createBitmap(
+            this,
+            validLeft.toInt(),
+            validTop.toInt(),
+            cropWidth,
+            cropHeight,
+        )
+    }
+
+    private fun File.writeBitmap(
+        bitmap: Bitmap,
+        imageFormat: ImageFormat,
+    ) {
+        outputStream().use { outputStream ->
+            val compressFormat = when (imageFormat) {
+                ImageFormat.Jpeg -> Bitmap.CompressFormat.JPEG
+                ImageFormat.Png -> Bitmap.CompressFormat.PNG
+                ImageFormat.Webp -> Bitmap.CompressFormat.WEBP_LOSSY
+            }
+            bitmap.compress(compressFormat, LOSSY_IMAGE_QUALITY, outputStream)
         }
     }
 
-    private fun File.writeLossyWebp(bitmap: Bitmap) {
-        outputStream().use { outputStream ->
-            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, outputStream)
+    private fun Uri.toMimeType(): String? {
+        val extension = runCatching {
+            when (scheme) {
+                "file" -> toFile().extension
+                else -> path?.substringAfterLast('.', "")
+            }
+        }.getOrNull()
+            .orEmpty()
+            .lowercase()
+
+        return when (extension) {
+            "jpg", "jpeg" -> ImageFormat.Jpeg.mimeType
+            "png" -> ImageFormat.Png.mimeType
+            "webp" -> ImageFormat.Webp.mimeType
+            else -> null
         }
+    }
+
+    private fun String.sha256Hex(): String {
+        return MessageDigest.getInstance("SHA-256")
+            .digest(toByteArray())
+            .joinToString("") { "%02x".format(it) }
     }
 
     private companion object {
-        private const val COMPRESSED_IMAGE_MIME_TYPE = "image/webp"
-        private const val WEBP_QUALITY = 75
+        private const val LOSSY_IMAGE_QUALITY = 85
     }
 }

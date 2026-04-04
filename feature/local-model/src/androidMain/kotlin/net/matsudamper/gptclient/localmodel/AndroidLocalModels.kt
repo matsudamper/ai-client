@@ -13,6 +13,7 @@ internal data class AndroidLocalModel(
     val fileName: String? = null,
     val downloadUrl: String? = null,
     val enableImage: Boolean,
+    val supportedImageMimeTypes: List<String>,
     val defaultToken: Int,
 ) {
     val canDelete: Boolean
@@ -24,6 +25,7 @@ internal data class AndroidLocalModel(
             displayName = displayName,
             description = description,
             enableImage = enableImage,
+            supportedImageMimeTypes = supportedImageMimeTypes,
             defaultToken = defaultToken,
             canDelete = canDelete,
         )
@@ -37,6 +39,7 @@ internal object AndroidLocalModels {
             displayName = "Gemini Nano",
             description = "ML Kit (AI Core)",
             enableImage = true,
+            supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
             defaultToken = 1024,
         )
 
@@ -49,6 +52,7 @@ internal object AndroidLocalModels {
             fileName = "gemma-4-E4B-it.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true",
             enableImage = true,
+            supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 4096,
         )
 
@@ -61,6 +65,7 @@ internal object AndroidLocalModels {
             fileName = "gemma-4-E2B-it.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm?download=true",
             enableImage = true,
+            supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 4096,
         )
 

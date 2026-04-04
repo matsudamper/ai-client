@@ -1,6 +1,8 @@
 package net.matsudamper.gptclient.localmodel
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
@@ -9,6 +11,7 @@ import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.Generation
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
+import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -67,7 +70,7 @@ private class LiteRtLmLocalModelClient(
                 when (content) {
                     is LocalModelMessage.Content.Text -> Content.Text(content.text)
                     is LocalModelMessage.Content.Base64Image ->
-                        Content.ImageBytes(Base64.decode(content.base64))
+                        content.toLiteRtImageBytes()?.let(Content::ImageBytes)
                 }
             }
         if (liteRtContents.isEmpty()) return null
@@ -77,6 +80,30 @@ private class LiteRtLmLocalModelClient(
             LocalModelMessage.Role.User -> Message.user(Contents.of(liteRtContents))
             LocalModelMessage.Role.Assistant -> Message.model(Contents.of(liteRtContents))
         }
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    private fun LocalModelMessage.Content.Base64Image.toLiteRtImageBytes(): ByteArray? {
+        val imageBytes = Base64.decode(base64)
+        if (mimeType == PNG_MIME_TYPE) {
+            return imageBytes
+        }
+
+        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size) ?: return null
+
+        return bitmap.toPngByteArray()
+    }
+
+    private fun Bitmap.toPngByteArray(): ByteArray {
+        return ByteArrayOutputStream().use { outputStream ->
+            compress(Bitmap.CompressFormat.PNG, PNG_QUALITY, outputStream)
+            outputStream.toByteArray()
+        }
+    }
+
+    private companion object {
+        private const val PNG_QUALITY = 100
+        private const val PNG_MIME_TYPE = "image/png"
     }
 }
 

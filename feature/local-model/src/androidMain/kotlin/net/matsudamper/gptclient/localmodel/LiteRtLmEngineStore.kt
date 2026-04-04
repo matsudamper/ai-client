@@ -45,12 +45,12 @@ internal object LiteRtLmEngineStore {
         }
     }
 
-    private fun createMainBackend(): Backend = Backend.CPU(numOfThreads = 4)
+    private fun createMainBackend(): Backend = Backend.CPU()
 
     private fun createVisionBackend(
         modelDefinition: AndroidLocalModel,
     ): Backend? {
         if (!modelDefinition.enableImage) return null
-        return Backend.CPU(numOfThreads = 4)
+        return Backend.CPU()
     }
 }

@@ -1,17 +1,24 @@
 package net.matsudamper.gptclient.entity
 
 import kotlinx.serialization.Serializable
+import net.matsudamper.gptclient.ImageFormat
 
 interface ChatGptModel {
     val modelKey: String
     val displayName: String
     val apiModelName: String get() = modelKey
     val enableImage: Boolean
+    val supportedImageMimeTypes: List<String>
     val defaultToken: Int
     val requireTemperature: Double?
+    val preferredImageFormat: ImageFormat?
+        get() = supportedImageMimeTypes.firstNotNullOfOrNull(ImageFormat::fromMimeType)
 
     @Serializable
     sealed interface Remote : ChatGptModel {
+        override val supportedImageMimeTypes: List<String>
+            get() = listOf(ImageFormat.Jpeg.mimeType, ImageFormat.Png.mimeType, ImageFormat.Webp.mimeType)
+
         @Serializable
         sealed interface Gpt : Remote {
             @Serializable
@@ -159,6 +166,7 @@ interface ChatGptModel {
         override val modelKey: String,
         override val displayName: String,
         override val enableImage: Boolean = false,
+        override val supportedImageMimeTypes: List<String> = emptyList(),
         override val defaultToken: Int = 1024,
         override val requireTemperature: Double? = null,
     ) : ChatGptModel

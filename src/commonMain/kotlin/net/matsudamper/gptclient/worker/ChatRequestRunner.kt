@@ -47,6 +47,7 @@ class ChatRequestRunner(
                             modelKey = localDef.modelId.value,
                             displayName = localDef.displayName,
                             enableImage = localDef.enableImage,
+                            supportedImageMimeTypes = localDef.supportedImageMimeTypes,
                             defaultToken = localDef.defaultToken,
                         )
                     } else {

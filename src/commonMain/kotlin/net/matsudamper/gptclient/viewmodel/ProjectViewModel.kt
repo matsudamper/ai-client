@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.matsudamper.gptclient.ImageFormat
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
@@ -148,27 +149,30 @@ class ProjectViewModel(
                 }
             }
             viewModelScope.launch {
+                val selectedModel = viewModelStateFlow.value.overwriteModel ?: systemInfo.getInfo().model
+                val imageFormat = selectedModel.preferredImageFormat ?: ImageFormat.Jpeg
                 appNavigator.navigate(
                     Navigator.Chat(
                         openContext = Navigator.Chat.ChatOpenContext.NewMessage(
                             initialMessage = text,
                             uriList = viewModelStateFlow.value.uriList.mapNotNull map@{
-                                val rect = it.rect ?: return@map it.imageUri
-
                                 withPlatformRequest {
-                                    cropImage(
-                                        it.imageUri,
-                                        PlatformRequest.CropRect(
-                                            left = rect.left,
-                                            top = rect.top,
-                                            right = rect.right,
-                                            bottom = rect.bottom,
-                                        ),
+                                    prepareImage(
+                                        uri = it.imageUri,
+                                        cropRect = it.rect?.let { rect ->
+                                            PlatformRequest.CropRect(
+                                                left = rect.left,
+                                                top = rect.top,
+                                                right = rect.right,
+                                                bottom = rect.bottom,
+                                            )
+                                        },
+                                        imageFormat = imageFormat,
                                     )
                                 }
                             },
                             chatType = chatType,
-                            model = viewModelStateFlow.value.overwriteModel ?: systemInfo.getInfo().model,
+                            model = selectedModel,
                         ),
                     ),
                 )
@@ -393,6 +397,7 @@ class ProjectViewModel(
                 modelKey = def.modelId.value,
                 displayName = def.displayName,
                 enableImage = def.enableImage,
+                supportedImageMimeTypes = def.supportedImageMimeTypes,
                 defaultToken = def.defaultToken,
             )
         }
