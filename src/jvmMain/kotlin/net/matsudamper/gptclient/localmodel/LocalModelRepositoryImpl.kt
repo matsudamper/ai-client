@@ -6,9 +6,9 @@ import kotlinx.coroutines.flow.flowOf
 class LocalModelRepositoryImpl : LocalModelRepository {
     override suspend fun getModels(): List<LocalModelDefinition> = emptyList()
 
-    override fun observeStatuses(): Flow<Map<String, LocalModelState>> = flowOf(emptyMap())
+    override fun observeStatuses(): Flow<Map<LocalModelId, LocalModelState>> = flowOf(emptyMap())
 
-    override suspend fun enqueueDownload(modelId: String) {}
+    override suspend fun enqueueDownload(modelId: LocalModelId) {}
 
-    override suspend fun delete(modelId: String) {}
+    override suspend fun delete(modelId: LocalModelId) {}
 }

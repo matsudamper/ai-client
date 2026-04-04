@@ -17,6 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.navigation.Navigator
@@ -168,7 +170,7 @@ class ChatViewModel(
                             val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
                                 val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
                                 ChatGptModel.Local(
-                                    modelKey = def.modelId,
+                                    modelKey = def.modelId.value,
                                     displayName = def.displayName,
                                     enableImage = def.enableImage,
                                     defaultToken = def.defaultToken,
@@ -493,8 +495,8 @@ class ChatViewModel(
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
-        val activeLocalModelKeys: Set<String> = emptySet(),
-        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
+        val activeLocalModelKeys: Set<LocalModelId> = emptySet(),
+        val localModelDefs: List<LocalModelDefinition> = emptyList(),
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom

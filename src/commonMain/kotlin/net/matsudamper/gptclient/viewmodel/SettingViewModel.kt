@@ -12,6 +12,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.localmodel.LocalModelState
 import net.matsudamper.gptclient.localmodel.LocalModelStatus
@@ -35,8 +36,8 @@ class SettingViewModel(
     val uiStateFlow: StateFlow<SettingsScreenUiState> = _uiStateFlow
 
     private val modelsFlow = MutableStateFlow<List<LocalModelDefinition>>(emptyList())
-    private val modelStateMap = MutableStateFlow<Map<String, LocalModelState>>(emptyMap())
-    private val pendingDeleteModelId = MutableStateFlow<String?>(null)
+    private val modelStateMap = MutableStateFlow<Map<LocalModelId, LocalModelState>>(emptyMap())
+    private val pendingDeleteModelId = MutableStateFlow<LocalModelId?>(null)
 
     private val loadedListener = object : SettingsScreenUiState.Loaded.Listener {
         override fun updateSecretKey(text: String) {
@@ -131,7 +132,7 @@ class SettingViewModel(
         }
     }
 
-    private fun createModelListener(modelId: String) =
+    private fun createModelListener(modelId: LocalModelId) =
         object : SettingsScreenUiState.LocalModelItem.Listener {
             override fun onClickDownload() {
                 viewModelScope.launch {
@@ -154,7 +155,7 @@ class SettingViewModel(
             }
         }
 
-    private fun createDeleteDialogListener(modelId: String) =
+    private fun createDeleteDialogListener(modelId: LocalModelId) =
         object : SettingsScreenUiState.DeleteDialog.Listener {
             override fun onConfirm() {
                 viewModelScope.launch {
@@ -175,16 +176,17 @@ class SettingViewModel(
     ): SettingsScreenUiState.LocalModelItem {
         val status =
             when (modelState.status) {
+                LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE
                 LocalModelStatus.NOT_DOWNLOADED -> SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED
                 LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING
                 LocalModelStatus.DOWNLOADED -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED
             }
         return SettingsScreenUiState.LocalModelItem(
-            modelId = modelId,
             displayName = displayName,
             description = description,
             status = status,
             downloadProgress = modelState.progress,
+            canDelete = canDelete,
             isActive = isActive,
             listener = createModelListener(modelId),
         )
@@ -220,10 +222,10 @@ class SettingViewModel(
 
     private data class ViewState(
         val themeMode: ThemeMode,
-        val activeKeys: Set<String>,
+        val activeKeys: Set<LocalModelId>,
         val models: List<LocalModelDefinition>,
-        val statuses: Map<String, LocalModelState>,
-        val deleteModelId: String?,
+        val statuses: Map<LocalModelId, LocalModelState>,
+        val deleteModelId: LocalModelId?,
     )
 }
 

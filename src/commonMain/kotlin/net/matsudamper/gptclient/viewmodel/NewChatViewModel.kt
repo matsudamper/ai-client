@@ -11,9 +11,11 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
+import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelId
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -237,7 +239,7 @@ class NewChatViewModel(
                     val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
                         val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
                         ChatGptModel.Local(
-                            modelKey = def.modelId,
+                            modelKey = def.modelId.value,
                             displayName = def.displayName,
                             enableImage = def.enableImage,
                             defaultToken = def.defaultToken,
@@ -322,7 +324,7 @@ class NewChatViewModel(
         val projectNameDialog: NewChatUiState.ProjectNameDialog? = null,
         val projects: List<Project>? = null,
         val isLoading: Boolean = false,
-        val activeLocalModelKeys: Set<String> = emptySet(),
-        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
+        val activeLocalModelKeys: Set<LocalModelId> = emptySet(),
+        val localModelDefs: List<LocalModelDefinition> = emptyList(),
     )
 }

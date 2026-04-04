@@ -4,9 +4,9 @@ import kotlinx.coroutines.flow.Flow
 
 interface LocalModelRepository {
     suspend fun getModels(): List<LocalModelDefinition>
-    fun observeStatuses(): Flow<Map<String, LocalModelState>>
-    suspend fun enqueueDownload(modelId: String)
-    suspend fun delete(modelId: String)
+    fun observeStatuses(): Flow<Map<LocalModelId, LocalModelState>>
+    suspend fun enqueueDownload(modelId: LocalModelId)
+    suspend fun delete(modelId: LocalModelId)
 }
 
 data class LocalModelState(
@@ -18,4 +18,5 @@ enum class LocalModelStatus {
     NOT_DOWNLOADED,
     DOWNLOADING,
     DOWNLOADED,
+    UNAVAILABLE,
 }

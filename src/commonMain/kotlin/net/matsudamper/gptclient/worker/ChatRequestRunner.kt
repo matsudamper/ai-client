@@ -36,10 +36,10 @@ class ChatRequestRunner(
             val chatModel = ChatGptModel.entries.firstOrNull { it.modelKey == requestInfo.modelKey }
                 ?: run {
                     val localDef = localModelRepository.getModels()
-                        .find { it.modelId == requestInfo.modelKey }
+                        .find { it.modelId.value == requestInfo.modelKey }
                     if (localDef != null) {
                         ChatGptModel.Local(
-                            modelKey = localDef.modelId,
+                            modelKey = localDef.modelId.value,
                             displayName = localDef.displayName,
                             enableImage = localDef.enableImage,
                             defaultToken = localDef.defaultToken,

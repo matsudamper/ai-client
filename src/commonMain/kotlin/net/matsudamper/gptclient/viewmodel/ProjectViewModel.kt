@@ -15,6 +15,8 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
@@ -388,7 +390,7 @@ class ProjectViewModel(
         val allModels = ChatGptModel.entries + viewModelStateFlow.value.activeLocalModelKeys.mapNotNull { key ->
             val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
             ChatGptModel.Local(
-                modelKey = def.modelId,
+                modelKey = def.modelId.value,
                 displayName = def.displayName,
                 enableImage = def.enableImage,
                 defaultToken = def.defaultToken,
@@ -436,8 +438,8 @@ class ProjectViewModel(
         val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: SystemInfoType? = null,
         val overwriteModel: ChatGptModel? = null,
-        val activeLocalModelKeys: Set<String> = emptySet(),
-        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
+        val activeLocalModelKeys: Set<LocalModelId> = emptySet(),
+        val localModelDefs: List<LocalModelDefinition> = emptyList(),
         val isLoading: Boolean = false,
     ) {
         sealed interface SystemInfoType {

@@ -39,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
 
@@ -81,15 +80,16 @@ sealed interface SettingsScreenUiState {
     }
 
     data class LocalModelItem(
-        val modelId: String,
         val displayName: String,
         val description: String,
         val status: ModelStatus,
         val downloadProgress: Float?,
+        val canDelete: Boolean,
         val isActive: Boolean,
         val listener: Listener,
     ) {
         enum class ModelStatus {
+            UNAVAILABLE,
             NOT_DOWNLOADED,
             DOWNLOADING,
             DOWNLOADED,
@@ -282,6 +282,14 @@ private fun LocalModelCard(
         Spacer(modifier = Modifier.height(8.dp))
 
         when (model.status) {
+            SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE -> {
+                Text(
+                    text = "このデバイスでは利用できません",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
             SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED -> {
                 OutlinedButton(
                     onClick = { model.listener.onClickDownload() },
@@ -319,14 +327,16 @@ private fun LocalModelCard(
                             checked = model.isActive,
                             onCheckedChange = { model.listener.onToggleActive(it) },
                         )
-                        IconButton(
-                            modifier = Modifier.size(40.dp),
-                            onClick = { model.listener.onClickDelete() },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete Model",
-                            )
+                        if (model.canDelete) {
+                            IconButton(
+                                modifier = Modifier.size(40.dp),
+                                onClick = { model.listener.onClickDelete() },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete Model",
+                                )
+                            }
                         }
                     }
                 }

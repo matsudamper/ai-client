@@ -7,10 +7,12 @@ import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.LogSeverity
 import java.io.File
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelId
+import net.matsudamper.gptclient.localmodel.LocalModelProviderIds
 
 object LiteRtLmEngineStore {
     private val lock = Any()
-    private val engines = mutableMapOf<String, Engine>()
+    private val engines = mutableMapOf<LocalModelId, Engine>()
 
     init {
         Engine.setNativeMinLogSeverity(LogSeverity.ERROR)
@@ -26,10 +28,10 @@ object LiteRtLmEngineStore {
                 Engine(
                     engineConfig = EngineConfig(
                         modelPath = modelFile.absolutePath,
-                        backend = createMainBackend(context, modelDefinition),
+                        backend = createMainBackend(modelDefinition),
                         visionBackend = createVisionBackend(modelDefinition),
                         maxNumTokens = modelDefinition.defaultToken,
-                        cacheDir = File(context.cacheDir, "litertlm/${modelDefinition.modelId}")
+                        cacheDir = File(context.cacheDir, "litertlm/${modelDefinition.modelId.value}")
                             .apply { mkdirs() }
                             .absolutePath,
                     ),
@@ -40,20 +42,18 @@ object LiteRtLmEngineStore {
         }
     }
 
-    fun remove(modelId: String) {
+    fun remove(modelId: LocalModelId) {
         synchronized(lock) {
             engines.remove(modelId)?.close()
         }
     }
 
     private fun createMainBackend(
-        context: Context,
         modelDefinition: LocalModelDefinition,
     ): Backend {
-        return when (modelDefinition.backend) {
-            LocalModelDefinition.Backend.LITERT_CPU -> Backend.CPU(numOfThreads = 4)
-            LocalModelDefinition.Backend.LITERT_QUALCOMM_NPU ->
-                Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir)
+        return when (modelDefinition.providerId) {
+            LocalModelProviderIds.LiteRtLm -> Backend.CPU(numOfThreads = 4)
+            else -> error("Unsupported provider: ${modelDefinition.providerId.value}")
         }
     }
 

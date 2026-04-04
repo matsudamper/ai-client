@@ -91,6 +91,7 @@ kotlin {
                 api(libs.koinCore)
                 api(libs.androidxWorkRuntime)
                 api(libs.litertlmAndroid)
+                api(libs.mlkitGenai)
             }
         }
     }

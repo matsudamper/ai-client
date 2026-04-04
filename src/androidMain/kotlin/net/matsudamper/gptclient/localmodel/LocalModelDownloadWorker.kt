@@ -27,6 +27,7 @@ class LocalModelDownloadWorker(
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val modelId = inputData.getString(KEY_MODEL_ID)
+            ?.let(::LocalModelId)
             ?: return Result.failure()
         val model = AndroidLocalModels.find(modelId)
             ?: return Result.failure()
@@ -48,7 +49,7 @@ class LocalModelDownloadWorker(
                 showCompletedNotification(
                     title = "モデルのダウンロード完了",
                     message = "${model.displayName} を利用できるようになりました",
-                    notificationId = modelId.hashCode(),
+                    notificationId = modelId.value.hashCode(),
                 )
                 Result.success()
             }
@@ -57,7 +58,7 @@ class LocalModelDownloadWorker(
             showCompletedNotification(
                 title = "モデルのダウンロード失敗",
                 message = throwable.message ?: "${model.displayName} のダウンロードに失敗しました",
-                notificationId = modelId.hashCode(),
+                notificationId = modelId.value.hashCode(),
             )
             Result.failure()
         }
@@ -68,7 +69,10 @@ class LocalModelDownloadWorker(
         tempFile: File,
         destinationFile: File,
     ) = withContext(Dispatchers.IO) {
-        val connection = (URL(model.downloadUrl).openConnection() as HttpURLConnection).apply {
+        val downloadUrl = requireNotNull(model.downloadUrl) {
+            "Model does not support file download: ${model.modelId}"
+        }
+        val connection = (URL(downloadUrl).openConnection() as HttpURLConnection).apply {
             instanceFollowRedirects = true
             connectTimeout = 30_000
             readTimeout = 30_000
@@ -145,7 +149,7 @@ class LocalModelDownloadWorker(
                 ).build()
 
         return ForegroundInfo(
-            model.modelId.hashCode(),
+            model.modelId.value.hashCode(),
             notification,
             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
         )
@@ -205,9 +209,9 @@ class LocalModelDownloadWorker(
         private const val KEY_PROGRESS = "progress"
         private const val REQUEST_CODE_SETTINGS = 10_001
 
-        fun createInputData(modelId: String): Data =
+        fun createInputData(modelId: LocalModelId): Data =
             Data.Builder()
-                .putString(KEY_MODEL_ID, modelId)
+                .putString(KEY_MODEL_ID, modelId.value)
                 .build()
 
         fun createProgressData(progress: Int): Data =
@@ -220,6 +224,6 @@ class LocalModelDownloadWorker(
                 .takeIf { it >= 0 }
                 ?.div(100f)
 
-        fun getUniqueWorkName(modelId: String): String = "local_model_download_$modelId"
+        fun getUniqueWorkName(modelId: LocalModelId): String = "local_model_download_${modelId.value}"
     }
 }
