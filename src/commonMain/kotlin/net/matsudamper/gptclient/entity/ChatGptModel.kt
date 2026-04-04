@@ -156,9 +156,9 @@ interface ChatGptModel {
 
     @Serializable
     data class Local(
-        override val modelKey: String = "local-gemini-nano",
-        override val displayName: String = "Gemini Nano (Local)",
-        override val enableImage: Boolean = true,
+        override val modelKey: String,
+        override val displayName: String,
+        override val enableImage: Boolean = false,
         override val defaultToken: Int = 1024,
         override val requireTemperature: Double? = null,
     ) : ChatGptModel

@@ -15,6 +15,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.getAvailableLocalModels
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -378,8 +379,15 @@ class ProjectViewModel(
     }
 
     private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState {
-        val allModels = ChatGptModel.entries + viewModelStateFlow.value.activeLocalModelKeys.map { key ->
-            ChatGptModel.Local(modelKey = key)
+        val localModelDefs = getAvailableLocalModels()
+        val allModels = ChatGptModel.entries + viewModelStateFlow.value.activeLocalModelKeys.mapNotNull { key ->
+            val def = localModelDefs.find { it.modelId == key } ?: return@mapNotNull null
+            ChatGptModel.Local(
+                modelKey = def.modelId,
+                displayName = def.displayName,
+                enableImage = def.enableImage,
+                defaultToken = def.defaultToken,
+            )
         }
         return ProjectUiState.ModelState(
         selectedModel = selectedModel.displayName,

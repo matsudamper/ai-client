@@ -42,7 +42,7 @@ sealed interface SettingsScreenUiState {
         val initialGeminiSecretKey: String,
         val initialGeminiBillingKey: String,
         val themeOption: ThemeOption,
-        val localModel: LocalModelUiState,
+        val localModels: List<LocalModelItem>,
         val listener: Listener,
     ) : SettingsScreenUiState {
         @Immutable
@@ -62,20 +62,20 @@ sealed interface SettingsScreenUiState {
         DARK,
     }
 
-    sealed interface LocalModelUiState {
-        data object Unavailable : LocalModelUiState
-        data class Available(
-            val status: Status,
-            val isActive: Boolean,
-            val listener: Listener,
-        ) : LocalModelUiState {
-            enum class Status { DOWNLOADABLE, DOWNLOADING, DOWNLOADED }
+    data class LocalModelItem(
+        val modelId: String,
+        val displayName: String,
+        val description: String,
+        val status: ModelStatus,
+        val isActive: Boolean,
+        val listener: Listener,
+    ) {
+        enum class ModelStatus { DOWNLOADABLE, DOWNLOADING, DOWNLOADED }
 
-            @Immutable
-            interface Listener {
-                fun onClickDownload()
-                fun onToggleActive(active: Boolean)
-            }
+        @Immutable
+        interface Listener {
+            fun onClickDownload()
+            fun onToggleActive(active: Boolean)
         }
     }
 }
@@ -181,83 +181,95 @@ private fun Loaded(
             initialValue = uiState.initialGeminiBillingKey,
             onValueChange = { uiState.listener.updateGeminiBillingKey(it) },
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        LocalModelSettingItem(
-            modifier = Modifier.fillMaxWidth(),
-            localModelUiState = uiState.localModel,
-        )
+        if (uiState.localModels.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            LocalModelSettingSection(
+                modifier = Modifier.fillMaxWidth(),
+                models = uiState.localModels,
+            )
+        }
     }
 }
 
 @Composable
-private fun LocalModelSettingItem(
+private fun LocalModelSettingSection(
     modifier: Modifier = Modifier,
-    localModelUiState: SettingsScreenUiState.LocalModelUiState,
+    models: List<SettingsScreenUiState.LocalModelItem>,
 ) {
-    when (localModelUiState) {
-        is SettingsScreenUiState.LocalModelUiState.Unavailable -> {
-            SettingItem(
-                modifier = modifier,
-                title = { Text("ローカルモデル") },
-                content = {
-                    Text(
-                        text = "このデバイスではローカルモデルを利用できません",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
+    SettingItem(
+        modifier = modifier,
+        title = { Text("ローカルモデル") },
+        content = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                models.forEach { model ->
+                    LocalModelCard(model = model)
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun LocalModelCard(
+    model: SettingsScreenUiState.LocalModelItem,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(12.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = model.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = model.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = model.isActive,
+                onCheckedChange = { model.listener.onToggleActive(it) },
             )
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        when (model.status) {
+            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADABLE -> {
+                OutlinedButton(
+                    onClick = { model.listener.onClickDownload() },
+                ) {
+                    Text("ダウンロード")
+                }
+            }
 
-        is SettingsScreenUiState.LocalModelUiState.Available -> {
-            SettingItem(
-                modifier = modifier,
-                title = { Text("ローカルモデル (Gemini Nano)") },
-                content = {
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(
-                                text = "モデル選択画面に表示",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Switch(
-                                checked = localModelUiState.isActive,
-                                onCheckedChange = { localModelUiState.listener.onToggleActive(it) },
-                            )
-                        }
-                        when (localModelUiState.status) {
-                            SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADABLE -> {
-                                OutlinedButton(
-                                    onClick = { localModelUiState.listener.onClickDownload() },
-                                ) {
-                                    Text("ダウンロード")
-                                }
-                            }
+            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING -> {
+                Text(
+                    text = "ダウンロード中...",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
 
-                            SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADING -> {
-                                Text(
-                                    text = "ダウンロード中...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                            }
-
-                            SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADED -> {
-                                Text(
-                                    text = "ダウンロード済み",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-                },
-            )
+            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED -> {
+                Text(
+                    text = "ダウンロード済み",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

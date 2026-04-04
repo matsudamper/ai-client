@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.getAvailableLocalModels
 import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -158,8 +159,15 @@ class ChatViewModel(
                         },
                         modelLoadingState = run {
                             val roomInfo = viewModelState.roomInfo ?: return@run ChatListUiState.ModelLoadingState.Loading
-                            val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.map { key ->
-                                ChatGptModel.Local(modelKey = key)
+                            val localModels = getAvailableLocalModels()
+                            val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
+                                val def = localModels.find { it.modelId == key } ?: return@mapNotNull null
+                                ChatGptModel.Local(
+                                    modelKey = def.modelId,
+                                    displayName = def.displayName,
+                                    enableImage = def.enableImage,
+                                    defaultToken = def.defaultToken,
+                                )
                             }
                             ChatListUiState.ModelLoadingState.Loaded(
                                 allModels.map { model ->

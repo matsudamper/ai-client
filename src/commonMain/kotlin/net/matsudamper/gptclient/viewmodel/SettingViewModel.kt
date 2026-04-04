@@ -11,8 +11,8 @@ import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
-import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.localmodel.DownloadProgress
+import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.localmodel.LocalModelStatus
 import net.matsudamper.gptclient.ui.SettingsScreenUiState
@@ -33,40 +33,7 @@ class SettingViewModel(
         SettingsScreenUiState.Loading,
     )
 
-    private val localModelStatusFlow = MutableStateFlow<LocalModelStatus?>(null)
-    private val localModelKey = ChatGptModel.Local().modelKey
-
-    private val localModelListener = object : SettingsScreenUiState.LocalModelUiState.Available.Listener {
-        override fun onClickDownload() {
-            viewModelScope.launch {
-                localModelStatusFlow.value = LocalModelStatus.DOWNLOADING
-                try {
-                    localModelRepository.download().collectLatest { progress ->
-                        when (progress) {
-                            is DownloadProgress.Started,
-                            is DownloadProgress.InProgress,
-                            -> localModelStatusFlow.value = LocalModelStatus.DOWNLOADING
-
-                            is DownloadProgress.Completed -> localModelStatusFlow.value = LocalModelStatus.AVAILABLE
-                            is DownloadProgress.Failed -> localModelStatusFlow.value = LocalModelStatus.DOWNLOADABLE
-                        }
-                    }
-                } catch (e: Exception) {
-                    localModelStatusFlow.value = LocalModelStatus.DOWNLOADABLE
-                }
-            }
-        }
-
-        override fun onToggleActive(active: Boolean) {
-            viewModelScope.launch {
-                if (active) {
-                    settingDataStore.addActiveLocalModelKey(localModelKey)
-                } else {
-                    settingDataStore.removeActiveLocalModelKey(localModelKey)
-                }
-            }
-        }
-    }
+    private val modelStatusMap = MutableStateFlow<Map<String, LocalModelStatus>>(emptyMap())
 
     private val loadedListener = object : SettingsScreenUiState.Loaded.Listener {
         override fun updateSecretKey(text: String) {
@@ -104,9 +71,50 @@ class SettingViewModel(
         }
     }
 
+    private fun createModelListener(modelId: String) =
+        object : SettingsScreenUiState.LocalModelItem.Listener {
+            override fun onClickDownload() {
+                viewModelScope.launch {
+                    modelStatusMap.update { it + (modelId to LocalModelStatus.DOWNLOADING) }
+                    try {
+                        localModelRepository.download(modelId).collectLatest { progress ->
+                            when (progress) {
+                                is DownloadProgress.Started,
+                                is DownloadProgress.InProgress,
+                                -> modelStatusMap.update { it + (modelId to LocalModelStatus.DOWNLOADING) }
+
+                                is DownloadProgress.Completed ->
+                                    modelStatusMap.update { it + (modelId to LocalModelStatus.AVAILABLE) }
+
+                                is DownloadProgress.Failed ->
+                                    modelStatusMap.update { it + (modelId to LocalModelStatus.DOWNLOADABLE) }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        modelStatusMap.update { it + (modelId to LocalModelStatus.DOWNLOADABLE) }
+                    }
+                }
+            }
+
+            override fun onToggleActive(active: Boolean) {
+                viewModelScope.launch {
+                    if (active) {
+                        settingDataStore.addActiveLocalModelKey(modelId)
+                    } else {
+                        settingDataStore.removeActiveLocalModelKey(modelId)
+                    }
+                }
+            }
+        }
+
     val uiStateFlow: StateFlow<SettingsScreenUiState> = _uiStateFlow.also { uiState ->
+        val models = localModelRepository.getModels()
         viewModelScope.launch {
-            localModelStatusFlow.value = localModelRepository.checkStatus()
+            val initialStatuses = mutableMapOf<String, LocalModelStatus>()
+            for (model in models) {
+                initialStatuses[model.modelId] = localModelRepository.checkStatus(model.modelId)
+            }
+            modelStatusMap.value = initialStatuses
         }
         viewModelScope.launch {
             val secretKey = settingDataStore.getSecretKey()
@@ -114,11 +122,11 @@ class SettingViewModel(
             val geminiBillingKey = settingDataStore.getGeminiBillingKey()
             combine(
                 settingDataStore.getThemeModeFlow(),
-                localModelStatusFlow,
+                modelStatusMap,
                 settingDataStore.getActiveLocalModelKeysFlow(),
-            ) { themeMode, localStatus, activeKeys ->
-                Triple(themeMode, localStatus, activeKeys)
-            }.collect { (themeMode, localStatus, activeKeys) ->
+            ) { themeMode, statuses, activeKeys ->
+                Triple(themeMode, statuses, activeKeys)
+            }.collect { (themeMode, statuses, activeKeys) ->
                 uiState.update {
                     val current = it as? SettingsScreenUiState.Loaded
                     SettingsScreenUiState.Loaded(
@@ -126,12 +134,36 @@ class SettingViewModel(
                         initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
                         initialGeminiBillingKey = current?.initialGeminiBillingKey ?: geminiBillingKey,
                         themeOption = themeMode.toUiState(),
-                        localModel = localStatus.toLocalModelUiState(activeKeys),
+                        localModels = models.mapNotNull { model ->
+                            val status = statuses[model.modelId] ?: return@mapNotNull null
+                            if (status == LocalModelStatus.UNAVAILABLE) return@mapNotNull null
+                            model.toUiItem(status, model.modelId in activeKeys)
+                        },
                         listener = loadedListener,
                     )
                 }
             }
         }
+    }
+
+    private fun LocalModelDefinition.toUiItem(
+        status: LocalModelStatus,
+        isActive: Boolean,
+    ): SettingsScreenUiState.LocalModelItem {
+        val uiStatus = when (status) {
+            LocalModelStatus.AVAILABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED
+            LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING
+            LocalModelStatus.DOWNLOADABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADABLE
+            LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADABLE
+        }
+        return SettingsScreenUiState.LocalModelItem(
+            modelId = modelId,
+            displayName = displayName,
+            description = description,
+            status = uiStatus,
+            isActive = isActive,
+            listener = createModelListener(modelId),
+        )
     }
 
     private fun saveSecretKey(text: String) {
@@ -159,31 +191,6 @@ class SettingViewModel(
             eventSender.send { event ->
                 event.providePlatformRequest().block()
             }
-        }
-    }
-
-    private fun LocalModelStatus?.toLocalModelUiState(
-        activeKeys: Set<String>,
-    ): SettingsScreenUiState.LocalModelUiState {
-        return when (this) {
-            null, LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelUiState.Unavailable
-            LocalModelStatus.DOWNLOADABLE -> SettingsScreenUiState.LocalModelUiState.Available(
-                status = SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADABLE,
-                isActive = localModelKey in activeKeys,
-                listener = localModelListener,
-            )
-
-            LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelUiState.Available(
-                status = SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADING,
-                isActive = localModelKey in activeKeys,
-                listener = localModelListener,
-            )
-
-            LocalModelStatus.AVAILABLE -> SettingsScreenUiState.LocalModelUiState.Available(
-                status = SettingsScreenUiState.LocalModelUiState.Available.Status.DOWNLOADED,
-                isActive = localModelKey in activeKeys,
-                listener = localModelListener,
-            )
         }
     }
 }

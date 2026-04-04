@@ -11,6 +11,7 @@ import net.matsudamper.gptclient.client.local.createLocalAiClient
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.getAvailableLocalModels
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
@@ -32,8 +33,19 @@ class ChatRequestRunner(
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val requestInfo = createRequestInfo(room)
             val chatModel = ChatGptModel.entries.firstOrNull { it.modelKey == requestInfo.modelKey }
-                ?: if (requestInfo.modelKey.startsWith("local-")) ChatGptModel.Local(modelKey = requestInfo.modelKey)
-                else return fail(chatRoomId = chatRoomId, errorMessage = "モデルが見つかりません")
+                ?: run {
+                    val localDef = getAvailableLocalModels().find { it.modelId == requestInfo.modelKey }
+                    if (localDef != null) {
+                        ChatGptModel.Local(
+                            modelKey = localDef.modelId,
+                            displayName = localDef.displayName,
+                            enableImage = localDef.enableImage,
+                            defaultToken = localDef.defaultToken,
+                        )
+                    } else {
+                        return fail(chatRoomId = chatRoomId, errorMessage = "モデルが見つかりません")
+                    }
+                }
 
             val gptClient = createClient(chatModel)
                 ?: return fail(
@@ -125,7 +137,7 @@ class ChatRequestRunner(
                 apiKey.takeIf { it.isNotBlank() }?.let { GeminiClient(apiKey = it) }
             }
 
-            is ChatGptModel.Local -> createLocalAiClient()
+            is ChatGptModel.Local -> createLocalAiClient(chatModel)
             else -> null
         }
     }

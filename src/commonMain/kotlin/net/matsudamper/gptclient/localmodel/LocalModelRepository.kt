@@ -3,8 +3,9 @@ package net.matsudamper.gptclient.localmodel
 import kotlinx.coroutines.flow.Flow
 
 expect class LocalModelRepository() {
-    suspend fun checkStatus(): LocalModelStatus
-    fun download(): Flow<DownloadProgress>
+    fun getModels(): List<LocalModelDefinition>
+    suspend fun checkStatus(modelId: String): LocalModelStatus
+    fun download(modelId: String): Flow<DownloadProgress>
 }
 
 enum class LocalModelStatus {

@@ -11,6 +11,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.getAvailableLocalModels
 import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.navigation.AppNavigator
@@ -227,8 +228,15 @@ class NewChatViewModel(
         viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
-                    val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.map { key ->
-                        ChatGptModel.Local(modelKey = key)
+                    val localModels = getAvailableLocalModels()
+                    val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
+                        val def = localModels.find { it.modelId == key } ?: return@mapNotNull null
+                        ChatGptModel.Local(
+                            modelKey = def.modelId,
+                            displayName = def.displayName,
+                            enableImage = def.enableImage,
+                            defaultToken = def.defaultToken,
+                        )
                     }
                     it.copy(
                         selectedMedia = viewModelState.mediaList,
