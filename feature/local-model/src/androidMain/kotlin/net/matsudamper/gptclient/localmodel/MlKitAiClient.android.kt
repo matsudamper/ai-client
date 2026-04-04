@@ -48,6 +48,9 @@ internal class MlKitAiClient : AiClient {
                 }
             }
 
+            if (format == AiClient.Format.Json) {
+                textParts.add(0, "[System] 応答はそのままJSONパーサに渡されます。マークダウンのコードブロックや余分なテキストを含めず、有効なJSONのみを返してください。")
+            }
             val combinedText = textParts.joinToString("\n")
             val textPart = TextPart(combinedText)
             val request =

@@ -24,15 +24,23 @@ internal class LiteRtAiClient(
     ): AiClient.GptResult {
         return runCatching {
             val engine = LiteRtLmEngineStore.getOrCreate(context, modelDefinition, modelFile)
-            val liteRtMessages = messages.mapNotNull { it.toLiteRtMessage() }
-            require(liteRtMessages.isNotEmpty()) { "送信するメッセージがありません" }
+            val resolvedMessages = if (format == AiClient.Format.Json) {
+                addJsonFormatInstruction(messages)
+            } else {
+                messages
+            }
+            require(resolvedMessages.isNotEmpty()) { "送信するメッセージがありません" }
+
+            val historyMessages = resolvedMessages.dropLast(1).mapNotNull { it.toLiteRtMessage(includeImages = false) }
+            val lastMessage = resolvedMessages.last().toLiteRtMessage(includeImages = true)
+                ?: error("最後のメッセージが空です")
 
             engine.createConversation(
                 ConversationConfig(
-                    initialMessages = liteRtMessages.dropLast(1),
+                    initialMessages = historyMessages,
                 ),
             ).use { conversation ->
-                val responseMessage = conversation.sendMessage(liteRtMessages.last())
+                val responseMessage = conversation.sendMessage(lastMessage)
                 responseMessage.toString().toSuccessResult()
             }
         }.getOrElse { throwable ->
@@ -44,13 +52,34 @@ internal class LiteRtAiClient(
         }
     }
 
+    private fun addJsonFormatInstruction(messages: List<AiClient.GptMessage>): List<AiClient.GptMessage> {
+        val jsonInstruction = "応答はそのままJSONパーサに渡されます。マークダウンのコードブロックや余分なテキストを含めず、有効なJSONのみを返してください。"
+        val systemIndex = messages.indexOfFirst { it.role == AiClient.GptMessage.Role.System }
+        return if (systemIndex >= 0) {
+            messages.toMutableList().also { list ->
+                val existing = list[systemIndex]
+                list[systemIndex] = existing.copy(
+                    contents = existing.contents + AiClient.GptMessage.Content.Text(jsonInstruction),
+                )
+            }
+        } else {
+            listOf(
+                AiClient.GptMessage(
+                    role = AiClient.GptMessage.Role.System,
+                    contents = listOf(AiClient.GptMessage.Content.Text(jsonInstruction)),
+                ),
+            ) + messages
+        }
+    }
+
     @OptIn(ExperimentalEncodingApi::class)
-    private fun AiClient.GptMessage.toLiteRtMessage(): Message? {
+    private fun AiClient.GptMessage.toLiteRtMessage(includeImages: Boolean = true): Message? {
         val liteRtContents = contents.mapNotNull { content ->
             when (content) {
                 is AiClient.GptMessage.Content.Text -> Content.Text(content.text)
                 is AiClient.GptMessage.Content.Base64Image ->
-                    content.toLiteRtImageBytes()?.let(Content::ImageBytes)
+                    if (includeImages) content.toLiteRtImageBytes()?.let(Content::ImageBytes)
+                    else null
 
                 is AiClient.GptMessage.Content.ImageUrl -> null
             }
