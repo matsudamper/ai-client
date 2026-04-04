@@ -15,4 +15,3 @@ data class LaunchNavigationRequest(
 }
 
 const val EXTRA_CHATROOM_ID = "chatRoomId"
-const val EXTRA_OPEN_SETTINGS = "openSettings"

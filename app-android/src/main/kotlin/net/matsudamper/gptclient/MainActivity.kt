@@ -10,6 +10,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.runtime.mutableStateOf
+import net.matsudamper.gptclient.localmodel.EXTRA_OPEN_LOCAL_MODEL_SETTINGS
+import net.matsudamper.gptclient.localmodel.LOCAL_MODEL_DOWNLOAD_NOTIFICATION_CHANNEL_ID
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import org.koin.android.ext.android.getKoin
@@ -66,7 +68,7 @@ class MainActivity : ComponentActivity() {
 
     private fun createLaunchNavigationRequest(intent: Intent): LaunchNavigationRequest {
         val navigator = when {
-            intent.getBooleanExtra(EXTRA_OPEN_SETTINGS, false) -> Navigator.Settings
+            intent.getBooleanExtra(EXTRA_OPEN_LOCAL_MODEL_SETTINGS, false) -> Navigator.Settings
             else -> getChatRoomIdFromIntent(intent)?.let { chatRoomId ->
                 Navigator.Chat(
                     openContext = Navigator.Chat.ChatOpenContext.OpenChat(chatRoomId),

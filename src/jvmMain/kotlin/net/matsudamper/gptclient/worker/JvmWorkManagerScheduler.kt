@@ -9,6 +9,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.localmodel.LocalModelClientFactory
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -19,6 +20,7 @@ class JvmWorkManagerScheduler(
     private val platformRequest: PlatformRequest,
     private val settingDataStore: SettingDataStore,
     private val localModelRepository: LocalModelRepository,
+    private val localModelClientFactory: LocalModelClientFactory,
 ) : AddRequestUseCase.WorkManagerScheduler {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val jobs = ConcurrentHashMap<String, Job>()
@@ -35,6 +37,7 @@ class JvmWorkManagerScheduler(
                 platformRequest = platformRequest,
                 settingDataStore = settingDataStore,
                 localModelRepository = localModelRepository,
+                localModelClientFactory = localModelClientFactory,
             ).run(
                 chatRoomId = chatRoomId,
                 message = message,

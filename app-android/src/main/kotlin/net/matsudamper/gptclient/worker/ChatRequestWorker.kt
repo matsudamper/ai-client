@@ -17,6 +17,7 @@ import net.matsudamper.gptclient.EXTRA_CHATROOM_ID
 import net.matsudamper.gptclient.GPT_CLIENT_NOTIFICATION_CHANNEL_ID
 import net.matsudamper.gptclient.MainActivity
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.localmodel.LocalModelClientFactory
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.room.AppDatabase
@@ -32,6 +33,7 @@ class ChatRequestWorker(
     private val platformRequest: PlatformRequest = GlobalContext.get().get()
     private val settingDataStore: SettingDataStore = GlobalContext.get().get()
     private val localModelRepository: LocalModelRepository = GlobalContext.get().get()
+    private val localModelClientFactory: LocalModelClientFactory = GlobalContext.get().get()
 
     override suspend fun doWork(): Result {
         val chatRoomId = ChatRoomId(inputData.getLong(KEY_CHAT_ROOM_ID, 0))
@@ -65,6 +67,7 @@ class ChatRequestWorker(
                 platformRequest = platformRequest,
                 settingDataStore = settingDataStore,
                 localModelRepository = localModelRepository,
+                localModelClientFactory = localModelClientFactory,
             ).run(
                 chatRoomId = chatRoomId,
                 message = message,

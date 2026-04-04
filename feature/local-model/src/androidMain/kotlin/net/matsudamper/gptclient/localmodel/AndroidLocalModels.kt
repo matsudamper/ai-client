@@ -1,10 +1,11 @@
 package net.matsudamper.gptclient.localmodel
 
-data class LocalModelId(val value: String)
+internal enum class LocalModelProviderId {
+    MlKitPrompt,
+    LiteRtLm,
+}
 
-data class LocalModelProviderId(val value: String)
-
-data class LocalModelDefinition(
+internal data class AndroidLocalModel(
     val modelId: LocalModelId,
     val providerId: LocalModelProviderId,
     val displayName: String,
@@ -15,29 +16,34 @@ data class LocalModelDefinition(
     val defaultToken: Int,
 ) {
     val canDelete: Boolean
-        get() = providerId == LocalModelProviderIds.LiteRtLm && fileName != null
-}
+        get() = providerId == LocalModelProviderId.LiteRtLm && fileName != null
 
-object LocalModelProviderIds {
-    val MlKitPrompt = LocalModelProviderId("mlkit-prompt")
-    val LiteRtLm = LocalModelProviderId("litert-lm")
-}
-
-object AndroidLocalModels {
-    val GeminiNano =
+    fun toDefinition(): LocalModelDefinition =
         LocalModelDefinition(
+            modelId = modelId,
+            displayName = displayName,
+            description = description,
+            enableImage = enableImage,
+            defaultToken = defaultToken,
+            canDelete = canDelete,
+        )
+}
+
+internal object AndroidLocalModels {
+    private val geminiNano =
+        AndroidLocalModel(
             modelId = LocalModelId("mlkit-prompt"),
-            providerId = LocalModelProviderIds.MlKitPrompt,
+            providerId = LocalModelProviderId.MlKitPrompt,
             displayName = "Gemini Nano",
             description = "ML Kit (AI Core)",
             enableImage = true,
             defaultToken = 1024,
         )
 
-    val Gemma4E4B =
-        LocalModelDefinition(
+    private val gemma4E4B =
+        AndroidLocalModel(
             modelId = LocalModelId("litertlm-gemma-4-e4b-it"),
-            providerId = LocalModelProviderIds.LiteRtLm,
+            providerId = LocalModelProviderId.LiteRtLm,
             displayName = "Gemma 4 E4B",
             description = "LiteRT-LM",
             fileName = "gemma-4-E4B-it.litertlm",
@@ -46,10 +52,10 @@ object AndroidLocalModels {
             defaultToken = 4096,
         )
 
-    val Gemma4E2B =
-        LocalModelDefinition(
+    private val gemma4E2B =
+        AndroidLocalModel(
             modelId = LocalModelId("litertlm-gemma-4-e2b-it"),
-            providerId = LocalModelProviderIds.LiteRtLm,
+            providerId = LocalModelProviderId.LiteRtLm,
             displayName = "Gemma 4 E2B",
             description = "LiteRT-LM",
             fileName = "gemma-4-E2B-it.litertlm",
@@ -58,16 +64,12 @@ object AndroidLocalModels {
             defaultToken = 4096,
         )
 
-    val entries: List<LocalModelDefinition> =
+    val entries: List<AndroidLocalModel> =
         listOf(
-            GeminiNano,
-            Gemma4E4B,
-            Gemma4E2B,
+            geminiNano,
+            gemma4E4B,
+            gemma4E2B,
         )
 
-    fun find(modelId: LocalModelId): LocalModelDefinition? = entries.firstOrNull { it.modelId == modelId }
+    fun find(modelId: LocalModelId): AndroidLocalModel? = entries.firstOrNull { it.modelId == modelId }
 }
-
-fun String.toLocalModelId(): LocalModelId = LocalModelId(this)
-
-fun Set<String>.toLocalModelIds(): Set<LocalModelId> = mapTo(linkedSetOf()) { LocalModelId(it) }

@@ -7,13 +7,11 @@ import kotlin.system.exitProcess
 import net.matsudamper.gptclient.datastore.NoopSettingsEncryptor
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.SettingsEncryptor
-import net.matsudamper.gptclient.localmodel.LocalModelRepository
-import net.matsudamper.gptclient.localmodel.LocalModelRepositoryImpl
+import net.matsudamper.gptclient.localmodel.localModelFeatureModule
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.RoomPlatformBuilder
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
 import net.matsudamper.gptclient.worker.JvmWorkManagerScheduler
-import org.koin.core.context.loadKoinModules
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
@@ -23,8 +21,8 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
     val desktopPlatformRequest = DesktopPlatformRequest()
 
     startKoin {
-        loadKoinModules(
-            module = module {
+        modules(
+            module {
                 single<AppDatabase> {
                     RoomPlatformBuilder.create(appDatabasePath)
                 }
@@ -46,12 +44,11 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
                         platformRequest = get(),
                         settingDataStore = get(),
                         localModelRepository = get(),
+                        localModelClientFactory = get(),
                     )
                 }
-                single<LocalModelRepository> {
-                    LocalModelRepositoryImpl()
-                }
             },
+            localModelFeatureModule(),
         )
     }
     application {

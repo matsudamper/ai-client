@@ -83,6 +83,7 @@ dependencies {
     implementation(project(":"))
 
     implementation(libs.androidxCoreKtx)
+    implementation(libs.androidxWorkRuntime)
     implementation(libs.androidActivityActivityCompose)
     implementation(libs.koinAndroid)
     implementation(compose.material3)

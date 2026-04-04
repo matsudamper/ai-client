@@ -18,10 +18,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.matsudamper.gptclient.EXTRA_OPEN_SETTINGS
-import net.matsudamper.gptclient.LOCAL_MODEL_DOWNLOAD_NOTIFICATION_CHANNEL_ID
 
-class LocalModelDownloadWorker(
+internal class LocalModelDownloadWorker(
     context: android.content.Context,
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
@@ -65,7 +63,7 @@ class LocalModelDownloadWorker(
     }
 
     private suspend fun downloadToFile(
-        model: LocalModelDefinition,
+        model: AndroidLocalModel,
         tempFile: File,
         destinationFile: File,
     ) = withContext(Dispatchers.IO) {
@@ -125,7 +123,7 @@ class LocalModelDownloadWorker(
     }
 
     private suspend fun createForegroundInfo(
-        model: LocalModelDefinition,
+        model: AndroidLocalModel,
         progress: Int?,
     ): ForegroundInfo {
         val contentText = when (progress) {
@@ -189,11 +187,11 @@ class LocalModelDownloadWorker(
                 applicationContext.packageName,
             )?.apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                putExtra(EXTRA_OPEN_SETTINGS, true)
+                putExtra(EXTRA_OPEN_LOCAL_MODEL_SETTINGS, true)
             } ?: Intent().apply {
                 setPackage(applicationContext.packageName)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                putExtra(EXTRA_OPEN_SETTINGS, true)
+                putExtra(EXTRA_OPEN_LOCAL_MODEL_SETTINGS, true)
             }
 
         return PendingIntent.getActivity(

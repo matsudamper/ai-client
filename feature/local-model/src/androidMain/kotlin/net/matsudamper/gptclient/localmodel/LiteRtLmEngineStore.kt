@@ -1,4 +1,4 @@
-package net.matsudamper.gptclient.client.local
+package net.matsudamper.gptclient.localmodel
 
 import android.content.Context
 import com.google.ai.edge.litertlm.Backend
@@ -6,11 +6,8 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.LogSeverity
 import java.io.File
-import net.matsudamper.gptclient.localmodel.LocalModelDefinition
-import net.matsudamper.gptclient.localmodel.LocalModelId
-import net.matsudamper.gptclient.localmodel.LocalModelProviderIds
 
-object LiteRtLmEngineStore {
+internal object LiteRtLmEngineStore {
     private val lock = Any()
     private val engines = mutableMapOf<LocalModelId, Engine>()
 
@@ -20,7 +17,7 @@ object LiteRtLmEngineStore {
 
     fun getOrCreate(
         context: Context,
-        modelDefinition: LocalModelDefinition,
+        modelDefinition: AndroidLocalModel,
         modelFile: File,
     ): Engine {
         return synchronized(lock) {
@@ -28,7 +25,7 @@ object LiteRtLmEngineStore {
                 Engine(
                     engineConfig = EngineConfig(
                         modelPath = modelFile.absolutePath,
-                        backend = createMainBackend(modelDefinition),
+                        backend = createMainBackend(),
                         visionBackend = createVisionBackend(modelDefinition),
                         maxNumTokens = modelDefinition.defaultToken,
                         cacheDir = File(context.cacheDir, "litertlm/${modelDefinition.modelId.value}")
@@ -48,17 +45,10 @@ object LiteRtLmEngineStore {
         }
     }
 
-    private fun createMainBackend(
-        modelDefinition: LocalModelDefinition,
-    ): Backend {
-        return when (modelDefinition.providerId) {
-            LocalModelProviderIds.LiteRtLm -> Backend.CPU(numOfThreads = 4)
-            else -> error("Unsupported provider: ${modelDefinition.providerId.value}")
-        }
-    }
+    private fun createMainBackend(): Backend = Backend.CPU(numOfThreads = 4)
 
     private fun createVisionBackend(
-        modelDefinition: LocalModelDefinition,
+        modelDefinition: AndroidLocalModel,
     ): Backend? {
         if (!modelDefinition.enableImage) return null
         return Backend.CPU(numOfThreads = 4)

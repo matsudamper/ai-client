@@ -22,9 +22,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import net.matsudamper.gptclient.client.local.LiteRtLmEngineStore
 
-class LocalModelRepositoryImpl(
+internal class LocalModelRepositoryImpl(
     private val context: Context,
     private val workManager: WorkManager,
 ) : LocalModelRepository {
@@ -38,12 +37,12 @@ class LocalModelRepositoryImpl(
         }
     }
 
-    override suspend fun getModels(): List<LocalModelDefinition> = AndroidLocalModels.entries
+    override suspend fun getModels(): List<LocalModelDefinition> = AndroidLocalModels.entries.map { it.toDefinition() }
 
     override fun observeStatuses(): Flow<Map<LocalModelId, LocalModelState>> {
         val liteRtWorkInfoFlows =
             AndroidLocalModels.entries
-                .filter { it.providerId == LocalModelProviderIds.LiteRtLm }
+                .filter { it.providerId == LocalModelProviderId.LiteRtLm }
                 .map { model ->
                     observeWorkInfos(
                         LocalModelDownloadWorker.getUniqueWorkName(model.modelId),
@@ -67,16 +66,14 @@ class LocalModelRepositoryImpl(
             AndroidLocalModels.entries.associate { model ->
                 val state =
                     when (model.providerId) {
-                        LocalModelProviderIds.MlKitPrompt ->
+                        LocalModelProviderId.MlKitPrompt ->
                             mlKitStateMap[model.modelId] ?: LocalModelState(LocalModelStatus.UNAVAILABLE)
 
-                        LocalModelProviderIds.LiteRtLm ->
+                        LocalModelProviderId.LiteRtLm ->
                             createLiteRtState(
                                 modelId = model.modelId,
                                 workInfos = liteRtWorkInfoMap[model.modelId].orEmpty(),
                             )
-
-                        else -> LocalModelState(LocalModelStatus.UNAVAILABLE)
                     }
                 model.modelId to state
             }
@@ -86,16 +83,16 @@ class LocalModelRepositoryImpl(
     override suspend fun enqueueDownload(modelId: LocalModelId) {
         val model = AndroidLocalModels.find(modelId) ?: return
         when (model.providerId) {
-            LocalModelProviderIds.MlKitPrompt -> downloadMlKitModel(model)
-            LocalModelProviderIds.LiteRtLm -> enqueueLiteRtModel(model)
+            LocalModelProviderId.MlKitPrompt -> downloadMlKitModel(model)
+            LocalModelProviderId.LiteRtLm -> enqueueLiteRtModel(model)
         }
     }
 
     override suspend fun delete(modelId: LocalModelId) {
         val model = AndroidLocalModels.find(modelId) ?: return
         when (model.providerId) {
-            LocalModelProviderIds.MlKitPrompt -> Unit
-            LocalModelProviderIds.LiteRtLm -> {
+            LocalModelProviderId.MlKitPrompt -> Unit
+            LocalModelProviderId.LiteRtLm -> {
                 workManager.cancelUniqueWork(LocalModelDownloadWorker.getUniqueWorkName(modelId))
                 LiteRtLmEngineStore.remove(modelId)
                 getModelFile(context, modelId).delete()
@@ -108,7 +105,7 @@ class LocalModelRepositoryImpl(
     private suspend fun refreshMlKitStatuses() {
         val states =
             AndroidLocalModels.entries
-                .filter { it.providerId == LocalModelProviderIds.MlKitPrompt }
+                .filter { it.providerId == LocalModelProviderId.MlKitPrompt }
                 .associate { model ->
                     model.modelId to checkMlKitStatus()
                 }
@@ -132,7 +129,7 @@ class LocalModelRepositoryImpl(
         }
     }
 
-    private suspend fun downloadMlKitModel(model: LocalModelDefinition) {
+    private suspend fun downloadMlKitModel(model: AndroidLocalModel) {
         val client = try {
             Generation.getClient()
         } catch (_: Exception) {
@@ -190,7 +187,7 @@ class LocalModelRepositoryImpl(
         }
     }
 
-    private fun enqueueLiteRtModel(model: LocalModelDefinition) {
+    private fun enqueueLiteRtModel(model: AndroidLocalModel) {
         val request =
             OneTimeWorkRequestBuilder<LocalModelDownloadWorker>()
                 .setInputData(LocalModelDownloadWorker.createInputData(model.modelId))
@@ -241,12 +238,12 @@ class LocalModelRepositoryImpl(
     }
 
     companion object {
-        fun getModelsDirectory(context: Context): File =
+        internal fun getModelsDirectory(context: Context): File =
             File(context.filesDir, "models").apply {
                 mkdirs()
             }
 
-        fun getModelFile(context: Context, modelId: LocalModelId): File {
+        internal fun getModelFile(context: Context, modelId: LocalModelId): File {
             val definition = requireNotNull(AndroidLocalModels.find(modelId)) {
                 "Unknown modelId: ${modelId.value}"
             }
@@ -256,7 +253,7 @@ class LocalModelRepositoryImpl(
             return File(getModelsDirectory(context), fileName)
         }
 
-        fun getTempModelFile(context: Context, modelId: LocalModelId): File =
+        internal fun getTempModelFile(context: Context, modelId: LocalModelId): File =
             File(getModelsDirectory(context), "${getModelFile(context, modelId).name}.download")
     }
 }
