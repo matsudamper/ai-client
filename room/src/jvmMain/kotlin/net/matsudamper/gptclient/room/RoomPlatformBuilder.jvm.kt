@@ -5,10 +5,10 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import net.matsudamper.gptclient.room.migration.Migration1to2
 
 object RoomPlatformBuilder {
-    fun create(): AppDatabase {
+    fun create(path: String): AppDatabase {
         return Room
             .databaseBuilder<AppDatabase>(
-                "app-database",
+                path,
             )
             .setDriver(BundledSQLiteDriver())
             .addMigrations(Migration1to2)

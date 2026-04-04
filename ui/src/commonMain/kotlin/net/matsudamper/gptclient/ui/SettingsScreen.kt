@@ -1,8 +1,10 @@
 package net.matsudamper.gptclient.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,13 +16,17 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -30,20 +36,47 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
     data class Loaded(
         val initialSecretKey: String,
         val initialGeminiSecretKey: String,
+        val initialGeminiBillingKey: String,
+        val themeOption: ThemeOption,
+        val localModels: List<LocalModelItem>,
         val listener: Listener,
     ) : SettingsScreenUiState {
         @Immutable
         interface Listener {
             fun updateSecretKey(text: String)
             fun updateGeminiSecretKey(text: String)
+            fun updateGeminiBillingKey(text: String)
             fun onClickOpenAiUsage()
             fun onClickGeminiUsage()
+            fun onClickThemeOption(themeOption: ThemeOption)
+        }
+    }
+
+    enum class ThemeOption {
+        SYSTEM,
+        LIGHT,
+        DARK,
+    }
+
+    data class LocalModelItem(
+        val modelId: String,
+        val displayName: String,
+        val description: String,
+        val status: ModelStatus,
+        val isActive: Boolean,
+        val listener: Listener,
+    ) {
+        enum class ModelStatus { UNAVAILABLE, DOWNLOADABLE, DOWNLOADING, DOWNLOADED }
+
+        @Immutable
+        interface Listener {
+            fun onClickDownload()
+            fun onToggleActive(active: Boolean)
         }
     }
 }
@@ -109,6 +142,12 @@ private fun Loaded(
         modifier = modifier
             .verticalScroll(rememberScrollState()),
     ) {
+        ThemeSettingItem(
+            modifier = Modifier.fillMaxWidth(),
+            currentThemeOption = uiState.themeOption,
+            onClickThemeOption = { uiState.listener.onClickThemeOption(it) },
+        )
+        Spacer(modifier = Modifier.height(12.dp))
         ApiKeySettingItem(
             modifier = Modifier.fillMaxWidth(),
             title = "OpenAI Secret Key",
@@ -136,7 +175,158 @@ private fun Loaded(
         ) {
             Text("Usage")
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        ApiKeySettingItem(
+            modifier = Modifier.fillMaxWidth(),
+            title = "Gemini Billing Key",
+            initialValue = uiState.initialGeminiBillingKey,
+            onValueChange = { uiState.listener.updateGeminiBillingKey(it) },
+        )
+        if (uiState.localModels.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            LocalModelSettingSection(
+                modifier = Modifier.fillMaxWidth(),
+                models = uiState.localModels,
+            )
+        }
     }
+}
+
+@Composable
+private fun LocalModelSettingSection(
+    modifier: Modifier = Modifier,
+    models: List<SettingsScreenUiState.LocalModelItem>,
+) {
+    SettingItem(
+        modifier = modifier,
+        title = { Text("ローカルモデル") },
+        content = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                models.forEach { model ->
+                    LocalModelCard(model = model)
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun LocalModelCard(
+    model: SettingsScreenUiState.LocalModelItem,
+    modifier: Modifier = Modifier,
+) {
+    val isUnavailable = model.status == SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE
+    val alpha = if (isUnavailable) 0.4f else 1f
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha))
+            .padding(12.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = model.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
+                )
+                Text(
+                    text = model.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
+                )
+            }
+            Switch(
+                checked = model.isActive,
+                onCheckedChange = { model.listener.onToggleActive(it) },
+                enabled = !isUnavailable,
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        when (model.status) {
+            SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE -> {
+                Text(
+                    text = "このデバイスでは利用できません",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                )
+            }
+
+            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADABLE -> {
+                OutlinedButton(
+                    onClick = { model.listener.onClickDownload() },
+                ) {
+                    Text("ダウンロード")
+                }
+            }
+
+            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING -> {
+                Text(
+                    text = "ダウンロード中...",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
+            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "ダウンロード済み",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeSettingItem(
+    modifier: Modifier = Modifier,
+    currentThemeOption: SettingsScreenUiState.ThemeOption,
+    onClickThemeOption: (SettingsScreenUiState.ThemeOption) -> Unit,
+) {
+    SettingItem(
+        modifier = modifier,
+        title = {
+            Text("テーマ")
+        },
+        content = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingsScreenUiState.ThemeOption.entries.forEach { option ->
+                    FilterChip(
+                        selected = currentThemeOption == option,
+                        onClick = { onClickThemeOption(option) },
+                        label = {
+                            Text(
+                                when (option) {
+                                    SettingsScreenUiState.ThemeOption.SYSTEM -> "端末に同期"
+                                    SettingsScreenUiState.ThemeOption.LIGHT -> "ライト"
+                                    SettingsScreenUiState.ThemeOption.DARK -> "ダーク"
+                                },
+                            )
+                        },
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable

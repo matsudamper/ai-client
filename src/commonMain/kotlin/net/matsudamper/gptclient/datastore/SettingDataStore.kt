@@ -2,19 +2,24 @@ package net.matsudamper.gptclient.datastore
 
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.okio.OkioStorage
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import okio.FileSystem
+import okio.Path
 import okio.Path.Companion.toPath
 
 class SettingDataStore(
-    private val filename: String,
+    storagePath: String,
     encryptor: SettingsEncryptor,
 ) {
+    private val dataStorePath: Path = storagePath.toPath(normalize = true)
+
     private val store = DataStoreFactory.create(
         storage = OkioStorage(
             fileSystem = FileSystem.SYSTEM,
             serializer = SettingsSerializer(encryptor),
-            producePath = { "$filename.pb".toPath() },
+            producePath = { dataStorePath },
         ),
     )
 
@@ -29,4 +34,26 @@ class SettingDataStore(
     }
 
     suspend fun getGeminiSecretKey(): String = store.data.first().geminiSecretKey
+
+    suspend fun setGeminiBillingKey(key: String) {
+        store.updateData { it.copy(geminiBillingKey = key) }
+    }
+
+    suspend fun getGeminiBillingKey(): String = store.data.first().geminiBillingKey
+
+    suspend fun setThemeMode(themeMode: ThemeMode) {
+        store.updateData { it.copy(themeMode = themeMode) }
+    }
+
+    fun getThemeModeFlow(): Flow<ThemeMode> = store.data.map { it.themeMode }
+
+    suspend fun addActiveLocalModelKey(key: String) {
+        store.updateData { it.copy(activeLocalModelKeys = it.activeLocalModelKeys + key) }
+    }
+
+    suspend fun removeActiveLocalModelKey(key: String) {
+        store.updateData { it.copy(activeLocalModelKeys = it.activeLocalModelKeys - key) }
+    }
+
+    fun getActiveLocalModelKeysFlow(): Flow<Set<String>> = store.data.map { it.activeLocalModelKeys }
 }

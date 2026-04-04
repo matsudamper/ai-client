@@ -4,7 +4,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -18,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -30,13 +30,22 @@ import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.chat.ChatErrorMessageRetryComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.util.EventSender
 
 class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
-    private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
     private val insertDataAndAddRequestUseCase: AddRequestUseCase,
+    private val settingDataStore: net.matsudamper.gptclient.datastore.SettingDataStore,
+    private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
+    private val eventSender = EventSender<Event>()
+    val eventHandler = eventSender.asHandler()
+
+    interface Event {
+        fun providePlatformRequest(): PlatformRequest
+    }
+
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val listener = object : ChatListUiState.Listener {
         override fun onClickImage() {
@@ -45,7 +54,9 @@ class ChatViewModel(
                     viewModelStateFlow.update {
                         it.copy(isMediaLoading = true)
                     }
-                    val images = platformRequest.getMediaList()
+                    val images = withPlatformRequest {
+                        getMediaList()
+                    }
                     viewModelStateFlow.update { viewModelState ->
                         viewModelState.copy(
                             selectedMedia = images.map { image ->
@@ -81,10 +92,12 @@ class ChatViewModel(
                             bottom = rect.bottom,
                         )
 
-                        platformRequest.cropImage(
-                            uri = it.imageUri,
-                            cropRect = platformCropRect,
-                        )
+                        withPlatformRequest {
+                            cropImage(
+                                uri = it.imageUri,
+                                cropRect = platformCropRect,
+                            )
+                        }
                     },
                 )
             }
@@ -105,6 +118,15 @@ class ChatViewModel(
             enableSend = false,
         ),
     ).also { uiState ->
+        viewModelScope.launch {
+            settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
+                viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
+            }
+        }
+        viewModelScope.launch {
+            val defs = localModelRepository.getModels()
+            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+        }
         viewModelScope.launch {
             viewModelStateFlow.map { it.roomInfo?.room?.id }
                 .filterNotNull()
@@ -138,17 +160,27 @@ class ChatViewModel(
                         },
                         modelLoadingState = run {
                             val roomInfo = viewModelState.roomInfo ?: return@run ChatListUiState.ModelLoadingState.Loading
+                            val localDefs = viewModelState.localModelDefs
+                            val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
+                                val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
+                                ChatGptModel.Local(
+                                    modelKey = def.modelId,
+                                    displayName = def.displayName,
+                                    enableImage = def.enableImage,
+                                    defaultToken = def.defaultToken,
+                                )
+                            }
                             ChatListUiState.ModelLoadingState.Loaded(
-                                ChatGptModel.entries.map { model ->
+                                allModels.map { model ->
                                     ChatListUiState.Model(
                                         modelName = model.displayName,
-                                        selected = model.modelName == roomInfo.room.modelName,
+                                        selected = model.modelKey == roomInfo.room.modelKey,
                                         listener = object : ChatListUiState.Model.Listener {
                                             override fun onClick() {
                                                 viewModelScope.launch {
                                                     appDatabase.chatRoomDao().update(
                                                         roomInfo.room.copy(
-                                                            modelName = model.modelName,
+                                                            modelKey = model.modelKey,
                                                         ),
                                                     )
                                                 }
@@ -252,10 +284,7 @@ class ChatViewModel(
                             ViewModelState.RoomInfo.BuiltinProject(
                                 room = room,
                                 builtinProjectId = chatType.builtinProjectId,
-                                builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
-                                    chatType.builtinProjectId,
-                                    platformRequest = platformRequest,
-                                ),
+                                builtinProjectInfo = createBuiltinProjectInfo(chatType.builtinProjectId),
                             )
                         }
 
@@ -293,10 +322,7 @@ class ChatViewModel(
                                 ViewModelState.RoomInfo.BuiltinProject(
                                     room = room,
                                     builtinProjectId = builtInProjectId,
-                                    builtinProjectInfo = GetBuiltinProjectInfoUseCase().exec(
-                                        builtInProjectId,
-                                        platformRequest = platformRequest,
-                                    ),
+                                    builtinProjectInfo = createBuiltinProjectInfo(builtInProjectId),
                                 )
                             } else {
                                 ViewModelState.RoomInfo.Normal(room = room)
@@ -330,11 +356,15 @@ class ChatViewModel(
                     }
 
                     is AddRequestUseCase.Result.GptResultError -> {
-                        platformRequest.showToast(result.gptError.reason.message)
+                        withPlatformRequest {
+                            showToast(result.gptError.reason.message)
+                        }
                     }
 
                     is AddRequestUseCase.Result.ModelNotFoundError -> {
-                        platformRequest.showToast("モデルが見つかりません")
+                        withPlatformRequest {
+                            showToast("モデルが見つかりません")
+                        }
                     }
                 }
             } catch (_: Throwable) {
@@ -349,13 +379,26 @@ class ChatViewModel(
         }
     }
 
+    private fun createBuiltinProjectInfo(
+        builtinProjectId: BuiltinProjectId,
+    ): GetBuiltinProjectInfoUseCase.Info {
+        return GetBuiltinProjectInfoUseCase().exec(
+            builtinProjectId = builtinProjectId,
+            onCopyEmoji = { emoji ->
+                launchWithPlatformRequest {
+                    copyToClipboard(emoji)
+                }
+            },
+        )
+    }
+
     private suspend fun createRoom(
         builtinProjectId: BuiltinProjectId?,
         projectId: ProjectId?,
         model: ChatGptModel,
     ): ChatRoom = withContext(Dispatchers.IO) {
         val room = ChatRoom(
-            modelName = model.modelName,
+            modelKey = model.modelKey,
             builtInProjectId = builtinProjectId,
             projectId = projectId,
             summary = null,
@@ -392,11 +435,15 @@ class ChatViewModel(
 
                     is AddRequestUseCase.Result.GptResultError,
                     -> {
-                        platformRequest.showToast("エラーが発生しました")
+                        withPlatformRequest {
+                            showToast("エラーが発生しました")
+                        }
                     }
 
                     AddRequestUseCase.Result.ModelNotFoundError -> {
-                        platformRequest.showToast("モデル: ${roomInfo.room.modelName}がありません")
+                        withPlatformRequest {
+                            showToast("モデル: ${roomInfo.room.modelKey}がありません")
+                        }
                     }
                 }
             } catch (_: Throwable) {
@@ -408,6 +455,22 @@ class ChatViewModel(
                     it.copy(isChatLoading = false)
                 }
             }
+        }
+    }
+
+    private suspend fun <R> withPlatformRequest(
+        block: suspend PlatformRequest.() -> R,
+    ): R {
+        return eventSender.send { event ->
+            event.providePlatformRequest().block()
+        }
+    }
+
+    private fun launchWithPlatformRequest(
+        block: suspend PlatformRequest.() -> Unit,
+    ) {
+        viewModelScope.launch {
+            withPlatformRequest(block)
         }
     }
 
@@ -452,6 +515,8 @@ class ChatViewModel(
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
         val latestClientErrorMessage: String? = null,
+        val activeLocalModelKeys: Set<String> = emptySet(),
+        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom

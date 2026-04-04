@@ -23,6 +23,7 @@ data class TextMessageComposableInterface(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(6.dp),
                 text = uiState,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

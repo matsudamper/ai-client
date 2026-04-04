@@ -192,7 +192,11 @@ private fun ImageContent(
                             bottom = offset.y + actualImageSize.height,
                         )
 
-                        // UI表示座標から実画像座標への変換
+                        // UI表示座標から実画像の相対座標(0.0~1.0)へ変換
+                        // Coilが大きい画像をダウンサンプリングして読み込む場合、
+                        // intrinsicSizeがダウンサンプリング後のサイズになる。
+                        // cropImage()側は元の高解像度画像を読み込むため、
+                        // ピクセル座標ではなく相対座標で渡して座標系のミスマッチを防ぐ。
                         val imageRelativeCropRect = Rect(
                             left = (currentCropRect.left - actualImageRect.left) / actualImageRect.width,
                             top = (currentCropRect.top - actualImageRect.top) / actualImageRect.height,
@@ -200,15 +204,7 @@ private fun ImageContent(
                             bottom = (currentCropRect.bottom - actualImageRect.top) / actualImageRect.height,
                         )
 
-                        // 実画像のピクセル座標に変換
-                        val pixelCropRect = Rect(
-                            left = imageRelativeCropRect.left * imageIntrinsicSize.width,
-                            top = imageRelativeCropRect.top * imageIntrinsicSize.height,
-                            right = imageRelativeCropRect.right * imageIntrinsicSize.width,
-                            bottom = imageRelativeCropRect.bottom * imageIntrinsicSize.height,
-                        )
-
-                        it(pixelCropRect)
+                        it(imageRelativeCropRect)
                     }
                 }
 
@@ -229,21 +225,12 @@ private fun ImageContent(
 
                     cropRect = run {
                         if (initialRect != null) {
-                            // 実画像のピクセル座標からUI表示座標への変換
-                            val imageIntrinsicSize = asyncImageState.painter.intrinsicSize
-                            val imageRelativeCropRect = Rect(
-                                left = initialRect.left / imageIntrinsicSize.width,
-                                top = initialRect.top / imageIntrinsicSize.height,
-                                right = initialRect.right / imageIntrinsicSize.width,
-                                bottom = initialRect.bottom / imageIntrinsicSize.height,
-                            )
-
-                            // UI表示座標に変換
+                            // initialRectは相対座標(0.0~1.0)でくるのでUI表示座標に変換
                             Rect(
-                                left = imageRelativeCropRect.left * imageSize.width + offset.x,
-                                top = imageRelativeCropRect.top * imageSize.height + offset.y,
-                                right = imageRelativeCropRect.right * imageSize.width + offset.x,
-                                bottom = imageRelativeCropRect.bottom * imageSize.height + offset.y,
+                                left = initialRect.left * imageSize.width + offset.x,
+                                top = initialRect.top * imageSize.height + offset.y,
+                                right = initialRect.right * imageSize.width + offset.x,
+                                bottom = initialRect.bottom * imageSize.height + offset.y,
                             )
                         } else {
                             val paddingRatio = (1 - INITIAL_CROP_SIZE_RATIO) / 2

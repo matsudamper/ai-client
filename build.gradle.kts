@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.ktlingGradle) apply false
-    id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.composeCompiler)
 }
 
 allprojects {
@@ -35,8 +35,8 @@ version = "1.0-SNAPSHOT"
 kotlin {
     androidLibrary {
         namespace = "net.matsudamper.gptclient"
-        compileSdk = 36
-        minSdk = 34
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
+        minSdk = libs.versions.androidMinSdk.get().toInt()
     }
 
     jvm()
@@ -90,6 +90,8 @@ kotlin {
                 api(libs.koinAndroid)
                 api(libs.koinCore)
                 api(libs.androidxWorkRuntime)
+                api(libs.mlkitGenai)
+                api(libs.mediapipeGenai)
             }
         }
     }

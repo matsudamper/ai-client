@@ -27,6 +27,7 @@ class GeminiClient(
         format: AiClient.Format,
         model: ChatGptModel,
     ): AiClient.GptResult {
+        model as ChatGptModel.Remote.Gemini
         val systemInstruction = messages
             .filter { it.role == AiClient.GptMessage.Role.System }
             .flatMap { message ->
@@ -57,7 +58,7 @@ class GeminiClient(
                         is AiClient.GptMessage.Content.Base64Image -> {
                             GeminiRequest.Part(
                                 inlineData = GeminiRequest.InlineData(
-                                    mimeType = "image/png",
+                                    mimeType = content.mimeType,
                                     data = content.base64,
                                 ),
                             )
@@ -80,6 +81,7 @@ class GeminiClient(
                 }
                 GeminiRequest.Content(role = role, parts = parts)
             }
+
 
         val thinkingConfig = model.thinkingLevel?.let { level ->
             GeminiRequest.ThinkingConfig(thinkingLevel = level)

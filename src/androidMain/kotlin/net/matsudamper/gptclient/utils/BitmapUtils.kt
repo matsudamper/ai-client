@@ -11,14 +11,14 @@ import kotlinx.coroutines.withContext
 
 object BitmapUtils {
     /**
-     * Crops a bitmap from a URI using the specified crop rectangle.
+     * 指定した切り抜き範囲を使って URI からビットマップを切り抜きます。
      *
-     * @param context The Android context
-     * @param uri The URI of the image to crop
-     * @param cropRect The rectangle to crop (in the coordinate space of the image view)
-     * @param viewWidth The width of the view containing the image
-     * @param viewHeight The height of the view containing the image
-     * @return The URI of the cropped image, or null if cropping failed
+     * @param context Android のコンテキスト
+     * @param uri 切り抜き対象画像の URI
+     * @param cropRect 切り抜き範囲（画像ビューの座標系）
+     * @param viewWidth 画像を表示しているビューの幅
+     * @param viewHeight 画像を表示しているビューの高さ
+     * @return 切り抜いた画像の URI。切り抜きに失敗した場合は null
      */
     suspend fun cropImageFromUri(
         context: Context,
@@ -31,15 +31,15 @@ object BitmapUtils {
             val source = ImageDecoder.createSource(context.contentResolver, uri.toUri())
             val bitmap = ImageDecoder.decodeBitmap(source)
 
-            // Calculate the actual image dimensions within the view
+            // ビュー内で扱う実際の画像サイズを取得
             val imageWidth = bitmap.width
             val imageHeight = bitmap.height
 
-            // Calculate scaling factors
+            // 拡大率を計算
             val scaleX = imageWidth.toFloat() / viewWidth
             val scaleY = imageHeight.toFloat() / viewHeight
 
-            // Convert view coordinates to bitmap coordinates
+            // ビュー座標をビットマップ座標に変換
             val bitmapCropRect = android.graphics.RectF(
                 cropRect.left * scaleX,
                 cropRect.top * scaleY,
@@ -47,13 +47,13 @@ object BitmapUtils {
                 cropRect.bottom * scaleY,
             )
 
-            // Ensure the crop rect is within the bitmap bounds
+            // 切り抜き範囲がビットマップの範囲内に収まるよう補正
             val validLeft = bitmapCropRect.left.coerceIn(0f, imageWidth.toFloat())
             val validTop = bitmapCropRect.top.coerceIn(0f, imageHeight.toFloat())
             val validRight = bitmapCropRect.right.coerceIn(0f, imageWidth.toFloat())
             val validBottom = bitmapCropRect.bottom.coerceIn(0f, imageHeight.toFloat())
 
-            // Create the cropped bitmap
+            // 切り抜き後のビットマップを生成
             val croppedBitmap = Bitmap.createBitmap(
                 bitmap,
                 validLeft.toInt(),
@@ -62,7 +62,7 @@ object BitmapUtils {
                 (validBottom - validTop).toInt(),
             )
 
-            // Save the cropped bitmap to a file
+            // 切り抜き後のビットマップをファイルに保存
             val hash = croppedBitmap.hashCode().toString()
             val file = File(context.cacheDir, "cropped_$hash.png")
 

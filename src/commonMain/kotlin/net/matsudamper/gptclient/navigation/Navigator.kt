@@ -17,7 +17,12 @@ sealed interface Navigator {
         @Serializable
         sealed interface ChatOpenContext {
             @Serializable
-            data class NewMessage(val initialMessage: String, val uriList: List<String>, val chatType: ChatType, val model: ChatGptModel) : ChatOpenContext
+            data class NewMessage(
+                val initialMessage: String,
+                val uriList: List<String>,
+                val chatType: ChatType,
+                val model: ChatGptModel,
+            ) : ChatOpenContext
 
             @Serializable
             data class OpenChat(val chatRoomId: ChatRoomId) : ChatOpenContext

@@ -26,20 +26,20 @@ class MoneyResponseParser {
         } else {
             buildAnnotatedString {
                 for ((index, result) in response.results.withIndex()) {
-                    val date = DateTimeFormatterBuilder()
-                        .appendPattern("yyyy-MM-dd")
+                    val dateTime = DateTimeFormatterBuilder()
+                        .appendPattern("yyyy-MM-dd HH:mm")
                         .toFormatter()
                         .format(result.date)
 
                     appendLine("タイトル: ${result.title}")
-                    appendLine("日付: $date")
+                    appendLine("日時: $dateTime")
                     appendLine("金額: ${result.amount}")
                     appendLine("説明: ${result.description}")
 
                     val googleCalendarUrl = "https://money.matsudamper.net/add/money-usage" +
                         "?action=TEMPLATE" +
                         "&title=${result.title.encodeURLParameter()}" +
-                        "&date=$date" +
+                        "&date=${result.date}" +
                         "&price=${result.amount}" +
                         "&description=${result.description.orEmpty().encodeURLParameter()}"
                     pushLink(LinkAnnotation.Url(googleCalendarUrl))

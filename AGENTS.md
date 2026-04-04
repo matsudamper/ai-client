@@ -1,50 +1,8 @@
-# AGENTS.md
+# プロジェクト概要
+Kotlin Multiplatform(KMP)で構築されたAIクライアントアプリ。
+Android,Desktop(JVM)に対応
 
-## プロジェクト概要
-
-Kotlin Multiplatform (KMP) で構築された ChatGPT クライアントアプリケーション。Android と Desktop (JVM) の両プラットフォームに対応。
-
-- **パッケージ名:** `net.matsudamper.gptclient`
-- **Kotlin / Compose バージョン:** `gradle.properties` を参照
-- **ライブラリバージョン:** `build-logic/libs.versions.toml` を参照
-- **Java:** JDK 21
-
-## プロジェクト構成
-
-```
-ai-client/
-├── src/                  # 共有 KMP コアモジュール（ルートプロジェクト）
-│   ├── commonMain/       # 共通コード（ViewModel, UseCase, API クライアント等）
-│   ├── androidMain/      # Android 固有コード
-│   └── jvmMain/          # Desktop (JVM) 固有コード
-├── app-android/          # Android アプリケーションモジュール
-├── app-desktop/          # Desktop (JVM) アプリケーションモジュール
-├── ui/                   # 共有 Compose UI モジュール
-├── room/                 # Room データベースモジュール
-├── build-logic/          # ビルド設定・バージョンカタログ (libs.versions.toml)
-├── .github/workflows/    # CI/CD
-└── gradle/               # Gradle Wrapper
-```
-
-### 主要パッケージ (src/commonMain)
-
-| パッケージ | 役割 |
-|---|---|
-| `gpt/` | ChatGPT API クライアント・リクエスト/レスポンスモデル |
-| `viewmodel/` | MVVM ViewModel 層 |
-| `usecase/` | ビジネスロジック（レスポンスパーサー、チャット削除等） |
-| `entity/` | データモデル |
-| `datastore/` | 設定の永続化 (DataStore) |
-| `navigation/` | 画面遷移 |
-| `serialization/` | JSON シリアライザ |
-
-### UI モジュール (`ui/`)
-
-共有 Compose UI コンポーネント（NewChat, ChatList, SettingsScreen, ProjectScreen 等）
-
-### Room モジュール (`room/`)
-
-SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
+バージョン等は`build-logic/libs.versions.toml`参照
 
 ## ビルドコマンド
 
@@ -55,63 +13,35 @@ SQLite データベース。エンティティ: `Chat`, `ChatRoom`, `Project`
 # Desktop JVM JAR ビルド
 ./gradlew :app-desktop:jvmJar
 
-# Android Release APK ビルド
-./gradlew assembleRelease
-
-# コードフォーマットチェック (ktlint)
+# コードフォーマットチェック
 ./gradlew ktlintCheck
 
 # コードフォーマット修正
 ./gradlew ktlintFormat
 ```
 
-**CI では `:app-android:assembleDebug` と `:app-desktop:jvmJar` が実行される。** 変更後はこの2つが通ることを確認すること。
 
-## Agent固有
-### Claude Code Web
-Claude Code WebではGradleの依存がダウンロードでエラーになります。
-https://github.com/anthropics/claude-code/issues/13372
+## プロジェクト構成
 
-## コードスタイル・規約
-
-- **フォーマッター:** ktlint（全モジュールに適用）
-- 詳細な設定は `.editorconfig` を参照
+```
+ai-client/
+├── app-android/          # Android アプリケーションモジュール
+├── app-desktop/          # Desktop (JVM) アプリケーションモジュール
+├── ui/                   # 共有 Compose UI モジュール
+├── room/                 # Room データベースモジュール
+```
 
 ## アーキテクチャ
+### UI + ViewModel
+ComposeとViewModelのやり取りはUiStateを介して行う。
+UiStateはViewModelStateFlowからのみの情報で構成されるべき。
 
-- **MVVM パターン:** ViewModel + StateFlow による状態管理
-- **DI:** Koin によるモジュール構成
-- **ネットワーク:** Ktor Client (CIO エンジン)
-- **データベース:** Room (KSP でコード生成)
-- **永続化:** DataStore (設定)
-- **シリアライズ:** kotlinx.serialization (JSON)
-- **マルチプラットフォーム:** `commonMain` に共通ロジック、`androidMain`/`jvmMain` にプラットフォーム固有実装
-
-## エントリーポイント
-
-- **Android:** `app-android/src/main/.../MainActivity.kt`
-- **Desktop:** `app-desktop/src/main/.../Main.kt`
-- **共通:** `src/commonMain/.../App.kt`
-
-## Android 設定
-
-- **minSdk:** 34 / **targetSdk:** 36 / **compileSdk:** 36
-
-## Pull Request
-
-Pull Requestを作成する際、タイトルと説明文は日本語で記述してください。
+## その他
+コミットメッセージは日本語
 
 ## AI 応答ルール
 
-**質問への対応:**
-- ユーザーから質問を受けた場合、すぐに作業（コード変更、ファイル作成、リファクタリング等）を開始しない
-- まず質問に対する回答や提案を提示し、ユーザーの明示的な承認または作業指示を待つこと
-- 例: 「〜についてどう思う?」「〜を追加すべき?」等の質問には、意見や提案を述べるに留め、実装は指示があってから行う
-
-**作業の実施:**
-- 「〜を追加して」「〜を修正して」「〜を実装して」等の明確な指示がある場合のみ、作業を開始する
-
-## CI/CD
-
-- **GitHub Actions** (`build.yaml`): `main` ブランチへの push と PR で `:app-android:assembleDebug` + `:app-desktop:jvmJar` を実行
-- **リリース** (`release.yml`): `v*` タグで Release APK をビルドし GitHub Release に公開
+- 日本語で応答する
+- 質問への対応
+  - ユーザーから質問と取れる応答があった場合、すぐに作業（コード変更、ファイル作成、リファクタリング等）を開始しない
+    - まず質問に対する回答や提案を提示し、ユーザーの明示的な承認または作業指示を待つこと

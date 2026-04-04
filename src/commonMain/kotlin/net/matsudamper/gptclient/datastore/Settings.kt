@@ -9,4 +9,14 @@ import kotlinx.serialization.protobuf.ProtoNumber
 data class Settings(
     @ProtoNumber(1) val secretKey: String = "",
     @ProtoNumber(2) val geminiSecretKey: String = "",
+    @ProtoNumber(3) val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    @ProtoNumber(4) val geminiBillingKey: String = "",
+    @ProtoNumber(5) val activeLocalModelKeys: Set<String> = emptySet(),
 )
+
+@Serializable
+enum class ThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK,
+}

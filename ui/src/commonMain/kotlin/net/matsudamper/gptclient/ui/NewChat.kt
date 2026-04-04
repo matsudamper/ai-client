@@ -40,6 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -380,5 +381,58 @@ private fun ProjectScreen(
         onClick = { onClick() },
     ) {
         content()
+    }
+}
+
+@Composable
+internal fun NewChatPreviewContent() {
+    MaterialTheme(
+        colorScheme = lightColorScheme(),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            NewChat(
+                uiState = NewChatUiState(
+                    projects = listOf(
+                        NewChatUiState.Project(
+                            name = "Personal",
+                            icon = NewChatUiState.Project.Icon.Favorite,
+                            listener = object : NewChatUiState.Project.Listener {
+                                override fun onClick() = Unit
+                            },
+                        ),
+                        NewChatUiState.Project(
+                            name = "Work",
+                            icon = NewChatUiState.Project.Icon.Card,
+                            listener = object : NewChatUiState.Project.Listener {
+                                override fun onClick() = Unit
+                            },
+                        ),
+                    ),
+                    selectedMedia = emptyList(),
+                    visibleMediaLoading = false,
+                    enableSend = false,
+                    models = listOf(
+                        NewChatUiState.Model(
+                            name = "gpt-4o-mini",
+                            listener = object : NewChatUiState.Model.Listener {
+                                override fun onClick() = Unit
+                            },
+                        ),
+                    ),
+                    selectedModel = "gpt-4o-mini",
+                    projectNameDialog = null,
+                    isLoading = false,
+                    listener = object : NewChatUiState.Listener {
+                        override fun send(text: String) = Unit
+                        override fun onClickSelectMedia() = Unit
+                        override fun onClickVoice() = Unit
+                        override fun addProject() = Unit
+                    },
+                ),
+                onClickMenu = {},
+            )
+        }
     }
 }

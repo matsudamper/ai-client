@@ -32,7 +32,7 @@ interface AiClient {
         sealed interface Content {
             data class Text(val text: String) : Content
             data class ImageUrl(val imageUrl: String) : Content
-            data class Base64Image(val base64: String) : Content
+            data class Base64Image(val base64: String, val mimeType: String) : Content
         }
     }
 

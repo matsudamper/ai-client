@@ -13,7 +13,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
+import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -23,13 +25,22 @@ import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.util.EventSender
 
 class ProjectViewModel(
     private val navigator: Navigator.Project,
-    private val platformRequest: PlatformRequest,
     private val appDatabase: AppDatabase,
     private val appNavigator: AppNavigator,
+    private val settingDataStore: SettingDataStore,
+    private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
+    private val eventSender = EventSender<Event>()
+    val eventHandler = eventSender.asHandler()
+
+    interface Event {
+        fun providePlatformRequest(): PlatformRequest
+    }
+
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val systemMessageListener = object : ProjectUiState.SystemMessage.Listener {
         override fun onChange(text: String) {
@@ -92,7 +103,9 @@ class ProjectViewModel(
                     viewModelStateFlow.update {
                         it.copy(mediaLoading = true)
                     }
-                    val uriList = platformRequest.getMediaList()
+                    val uriList = withPlatformRequest {
+                        getMediaList()
+                    }
                     viewModelStateFlow.update {
                         it.copy(
                             uriList = uriList.map { imageUrl ->
@@ -140,15 +153,17 @@ class ProjectViewModel(
                             uriList = viewModelStateFlow.value.uriList.mapNotNull map@{
                                 val rect = it.rect ?: return@map it.imageUri
 
-                                platformRequest.cropImage(
-                                    it.imageUri,
-                                    PlatformRequest.CropRect(
-                                        left = rect.left,
-                                        top = rect.top,
-                                        right = rect.right,
-                                        bottom = rect.bottom,
-                                    ),
-                                )
+                                withPlatformRequest {
+                                    cropImage(
+                                        it.imageUri,
+                                        PlatformRequest.CropRect(
+                                            left = rect.left,
+                                            top = rect.top,
+                                            right = rect.right,
+                                            bottom = rect.bottom,
+                                        ),
+                                    )
+                                }
                             },
                             chatType = chatType,
                             model = viewModelStateFlow.value.overwriteModel ?: systemInfo.getInfo().model,
@@ -176,11 +191,20 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            modelState = createModelState(ChatGptModel.Gpt5Nano),
+            modelState = createModelState(ChatGptModel.Remote.Gpt.Gpt5Nano),
             enableSend = false,
             listener = listener,
         ),
     ).also { uiStateFlow ->
+        viewModelScope.launch {
+            settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
+                viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
+            }
+        }
+        viewModelScope.launch {
+            val defs = localModelRepository.getModels()
+            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+        }
         viewModelScope.launch {
             when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
@@ -256,7 +280,7 @@ class ProjectViewModel(
                         modelState = createModelState(
                             viewModelState.overwriteModel
                                 ?: viewModelState.systemInfo?.getInfo()?.model
-                                ?: ChatGptModel.Gpt5Nano,
+                                ?: ChatGptModel.Remote.Gpt.Gpt5Nano,
                         ),
                     )
                 }
@@ -268,14 +292,11 @@ class ProjectViewModel(
         viewModelScope.launch {
             when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
-                    val systemInfo = GetBuiltinProjectInfoUseCase().exec(
-                        navigator.type.builtinProjectId,
-                        platformRequest = platformRequest,
-                    )
-
                     viewModelStateFlow.update {
                         it.copy(
-                            systemInfo = ViewModelState.SystemInfoType.BuiltinInfo(systemInfo),
+                            systemInfo = ViewModelState.SystemInfoType.BuiltinInfo(
+                                createBuiltinProjectInfo(navigator.type.builtinProjectId),
+                            ),
                         )
                     }
                 }
@@ -292,6 +313,35 @@ class ProjectViewModel(
                         }
                 }
             }
+        }
+    }
+
+    private fun createBuiltinProjectInfo(
+        builtinProjectId: net.matsudamper.gptclient.room.entity.BuiltinProjectId,
+    ): GetBuiltinProjectInfoUseCase.Info {
+        return GetBuiltinProjectInfoUseCase().exec(
+            builtinProjectId = builtinProjectId,
+            onCopyEmoji = { emoji ->
+                launchWithPlatformRequest {
+                    copyToClipboard(emoji)
+                }
+            },
+        )
+    }
+
+    private suspend fun <R> withPlatformRequest(
+        block: suspend PlatformRequest.() -> R,
+    ): R {
+        return eventSender.send { event ->
+            event.providePlatformRequest().block()
+        }
+    }
+
+    private fun launchWithPlatformRequest(
+        block: suspend PlatformRequest.() -> Unit,
+    ) {
+        viewModelScope.launch {
+            withPlatformRequest(block)
         }
     }
 
@@ -333,9 +383,20 @@ class ProjectViewModel(
         }
     }
 
-    private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState = ProjectUiState.ModelState(
+    private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState {
+        val localDefs = viewModelStateFlow.value.localModelDefs
+        val allModels = ChatGptModel.entries + viewModelStateFlow.value.activeLocalModelKeys.mapNotNull { key ->
+            val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
+            ChatGptModel.Local(
+                modelKey = def.modelId,
+                displayName = def.displayName,
+                enableImage = def.enableImage,
+                defaultToken = def.defaultToken,
+            )
+        }
+        return ProjectUiState.ModelState(
         selectedModel = selectedModel.displayName,
-        models = ChatGptModel.entries.map { model ->
+        models = allModels.map { model ->
             ProjectUiState.ModelState.Item(
                 modelName = model.displayName,
                 selected = model == selectedModel,
@@ -356,7 +417,7 @@ class ProjectViewModel(
                                 viewModelScope.launch {
                                     appDatabase.projectDao().update(
                                         info.project.copy(
-                                            modelName = model.modelName,
+                                            modelName = model.modelKey,
                                         ),
                                     )
                                 }
@@ -367,6 +428,7 @@ class ProjectViewModel(
             )
         },
     )
+    }
 
     private data class ViewModelState(
         val uriList: List<ChatFooterImage> = listOf(),
@@ -374,6 +436,8 @@ class ProjectViewModel(
         val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: SystemInfoType? = null,
         val overwriteModel: ChatGptModel? = null,
+        val activeLocalModelKeys: Set<String> = emptySet(),
+        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
         val isLoading: Boolean = false,
     ) {
         sealed interface SystemInfoType {
@@ -391,8 +455,8 @@ class ProjectViewModel(
                     systemMessage = project.systemMessage,
                     format = AiClient.Format.Text,
                     responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
-                    model = ChatGptModel.entries.firstOrNull { it.modelName == project.modelName }
-                        ?: ChatGptModel.Gpt5Nano,
+                    model = ChatGptModel.entries.firstOrNull { it.modelKey == project.modelName }
+                        ?: ChatGptModel.Remote.Gpt.Gpt5Nano,
                 )
             }
 

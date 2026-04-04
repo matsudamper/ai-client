@@ -42,12 +42,10 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 val hash = MessageDigest.getInstance("SHA-256")
                     .digest(uriString.toByteArray())
                     .joinToString("") { "%02x".format(it) }
-                val file = File(cacheDir, "$hash.png")
+                val file = File(cacheDir, "$hash.webp")
 
                 if (!file.exists()) {
-                    file.outputStream().use { outputStream ->
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                    }
+                    file.writeLossyWebp(bitmap)
                 }
 
                 file.toURI().toString()
@@ -55,7 +53,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         }
     }
 
-    override suspend fun readPngByteArray(uri: String): ByteArray? {
+    override suspend fun readImageData(uri: String): PlatformRequest.ImageData? {
         return withContext(Dispatchers.IO) {
             val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
             val bitmap = try {
@@ -64,10 +62,10 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 return@withContext null
             }
 
-            ByteArrayOutputStream().use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                outputStream.toByteArray()
-            }
+            PlatformRequest.ImageData(
+                bytes = bitmap.toLossyWebpByteArray(),
+                mimeType = COMPRESSED_IMAGE_MIME_TYPE,
+            )
         }
     }
 
@@ -108,11 +106,12 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 val imageWidth = bitmap.width
                 val imageHeight = bitmap.height
 
+                // cropRectは相対座標(0.0~1.0)で渡されるので実際のピクセル座標に変換
                 val bitmapCropRect = android.graphics.RectF(
-                    cropRect.left,
-                    cropRect.top,
-                    cropRect.right,
-                    cropRect.bottom,
+                    cropRect.left * imageWidth,
+                    cropRect.top * imageHeight,
+                    cropRect.right * imageWidth,
+                    cropRect.bottom * imageHeight,
                 )
 
                 val validLeft = bitmapCropRect.left.coerceIn(0f, imageWidth.toFloat())
@@ -120,7 +119,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                 val validRight = bitmapCropRect.right.coerceIn(0f, imageWidth.toFloat())
                 val validBottom = bitmapCropRect.bottom.coerceIn(0f, imageHeight.toFloat())
 
-                // Create the cropped bitmap
+                // 切り抜き後のビットマップを生成
                 val croppedBitmap = Bitmap.createBitmap(
                     bitmap,
                     validLeft.toInt(),
@@ -129,13 +128,11 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                     (validBottom - validTop).toInt(),
                 )
 
-                // Save the cropped bitmap to a file
+                // 切り抜き後のビットマップをファイルに保存
                 val hash = croppedBitmap.hashCode().toString()
-                val file = File(activity.cacheDir, "cropped_$hash.png")
+                val file = File(activity.cacheDir, "cropped_$hash.webp")
 
-                file.outputStream().use { outputStream ->
-                    croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                }
+                file.writeLossyWebp(croppedBitmap)
 
                 return@withContext file.toURI().toString()
             } catch (e: Exception) {
@@ -155,5 +152,23 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
         val notificationManager: NotificationManager =
             activity.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun Bitmap.toLossyWebpByteArray(): ByteArray {
+        return ByteArrayOutputStream().use { outputStream ->
+            compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, outputStream)
+            outputStream.toByteArray()
+        }
+    }
+
+    private fun File.writeLossyWebp(bitmap: Bitmap) {
+        outputStream().use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, WEBP_QUALITY, outputStream)
+        }
+    }
+
+    private companion object {
+        private const val COMPRESSED_IMAGE_MIME_TYPE = "image/webp"
+        private const val WEBP_QUALITY = 75
     }
 }

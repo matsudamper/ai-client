@@ -2,10 +2,10 @@ package net.matsudamper.gptclient
 
 interface PlatformRequest {
     /**
-     * @return URI
+     * @return プラットフォーム依存の画像参照文字列
      */
     suspend fun getMediaList(): List<String>
-    suspend fun readPngByteArray(uri: String): ByteArray?
+    suspend fun readImageData(uri: String): ImageData?
     fun openLink(url: String)
 
     /**
@@ -16,11 +16,11 @@ interface PlatformRequest {
     fun copyToClipboard(text: String)
 
     /**
-     * Crops an image and returns the URI of the cropped image.
+     * 画像を切り抜き、切り抜き後画像のプラットフォーム依存参照文字列を返します。
      *
-     * @param uri The URI of the image to crop
-     * @param cropRect The rectangle to crop (in the coordinate space of the image view)
-     * @return The URI of the cropped image, or null if cropping failed
+     * @param uri 切り抜き対象画像のプラットフォーム依存参照文字列
+     * @param cropRect 切り抜き範囲（画像ビューの座標系）
+     * @return 切り抜き後画像のプラットフォーム依存参照文字列。切り抜きに失敗した場合は null
      */
     suspend fun cropImage(
         uri: String,
@@ -28,9 +28,15 @@ interface PlatformRequest {
     ): String?
 
     /**
-     * Represents a rectangle for cropping an image.
+     * 画像切り抜き用の矩形を表します。
+     * すべての値は 0.0 から 1.0 の相対座標です。
      */
     data class CropRect(val left: Float, val top: Float, val right: Float, val bottom: Float)
+
+    data class ImageData(
+        val bytes: ByteArray,
+        val mimeType: String,
+    )
 
     fun createNotificationChannel(channelId: String)
 }

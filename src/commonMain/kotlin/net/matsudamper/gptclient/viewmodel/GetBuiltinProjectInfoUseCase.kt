@@ -21,6 +21,16 @@ class GetBuiltinProjectInfoUseCase {
         builtinProjectId: BuiltinProjectId,
         platformRequest: PlatformRequest,
     ): Info {
+        return exec(
+            builtinProjectId = builtinProjectId,
+            onCopyEmoji = platformRequest::copyToClipboard,
+        )
+    }
+
+    fun exec(
+        builtinProjectId: BuiltinProjectId,
+        onCopyEmoji: (String) -> Unit = {},
+    ): Info {
         val date = DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd")
             .toFormatter()
@@ -58,7 +68,7 @@ class GetBuiltinProjectInfoUseCase {
                         val parsed = CalendarResponseParser().parse(response)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
                     },
-                    model = ChatGptModel.GeminiFlashLiteLatest,
+                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteLatestLow,
                 )
             }
 
@@ -94,7 +104,7 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = AiClient.Format.Json,
                     responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
-                    model = ChatGptModel.GeminiFlashLiteLatest,
+                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteLatestLow,
                     summaryProvider = { _, _, response ->
                         val parsed = MoneyResponseParser().parse(response)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
@@ -115,11 +125,9 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = AiClient.Format.Json,
                     responseTransformer = {
-                        EmojiResponseParser().getEmojiList(it) { emoji ->
-                            platformRequest.copyToClipboard(emoji)
-                        }
+                        EmojiResponseParser().getEmojiList(it, onCopyEmoji)
                     },
-                    model = ChatGptModel.GeminiFlashLiteLatest,
+                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteLatestLow,
                     summaryProvider = { _, lastInstruction, response ->
                         val emoji = runCatching {
                             Json.decodeFromString<EmojiGptResponse>(response).results.firstOrNull()
