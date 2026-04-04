@@ -7,6 +7,7 @@ import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.SettingsEncryptor
 import android.content.Context
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.LocalModelRepositoryImpl
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.RoomPlatformBuilder
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
@@ -39,9 +40,7 @@ class Application : Application() {
                         AndroidWorkManagerScheduler(WorkManager.getInstance(applicationContext))
                     }
                     single<LocalModelRepository> {
-                        LocalModelRepository().apply {
-                            setContext(applicationContext)
-                        }
+                        LocalModelRepositoryImpl()
                     }
                 },
             )

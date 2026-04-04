@@ -81,7 +81,7 @@ class SettingViewModel(
                             when (progress) {
                                 is DownloadProgress.Started,
                                 is DownloadProgress.InProgress,
-                                -> modelStatusMap.update { it + (modelId to LocalModelStatus.DOWNLOADING) }
+                                    -> modelStatusMap.update { it + (modelId to LocalModelStatus.DOWNLOADING) }
 
                                 is DownloadProgress.Completed ->
                                     modelStatusMap.update { it + (modelId to LocalModelStatus.AVAILABLE) }
@@ -91,6 +91,7 @@ class SettingViewModel(
                             }
                         }
                     } catch (e: Exception) {
+                        e.printStackTrace()
                         modelStatusMap.update { it + (modelId to LocalModelStatus.DOWNLOADABLE) }
                     }
                 }

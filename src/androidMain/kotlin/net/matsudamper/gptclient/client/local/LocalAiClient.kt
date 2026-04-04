@@ -9,20 +9,21 @@ import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.LocalModelDefinition
-import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.LocalModelRepositoryImpl
 import org.koin.java.KoinJavaComponent.getKoin
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import net.matsudamper.gptclient.util.Log
 
 actual fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
-    val repo: LocalModelRepository = getKoin().get()
+    val repo: LocalModelRepositoryImpl = getKoin().get()
+    Log.d("LOG", "model.modelKey=${model.modelKey}")
     // Determine backend from modelId prefix
     return if (model.modelKey == "mlkit-prompt") {
         MlKitAiClient()
     } else if (model.modelKey.startsWith("hf:")) {
         val context: Context = getKoin().get()
-        val modelFile = LocalModelRepository.getModelFile(context, model.modelKey)
+        val modelFile = LocalModelRepositoryImpl.getModelFile(context, model.modelKey)
         if (!modelFile.exists()) return null
         MediaPipeAiClient(modelFile.absolutePath, context)
     } else {

@@ -53,6 +53,7 @@ class ChatRequestRunner(
                 ?: return fail(
                     chatRoomId = chatRoomId,
                     errorMessage = when {
+                        chatModel is ChatGptModel.Local -> "モデルファイルが見つかりません。ダウンロードしてください"
                         chatModel is ChatGptModel.Remote.Gemini && chatModel.requireBillingKey -> "Gemini Billing Key が未設定です"
                         chatModel is ChatGptModel.Remote.Gemini -> "Gemini API Key が未設定です"
                         else -> "APIキーが未設定です"

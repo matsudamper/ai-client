@@ -8,6 +8,7 @@ import net.matsudamper.gptclient.datastore.NoopSettingsEncryptor
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.SettingsEncryptor
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.LocalModelRepositoryImpl
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.RoomPlatformBuilder
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
@@ -48,7 +49,7 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
                     )
                 }
                 single<LocalModelRepository> {
-                    LocalModelRepository()
+                    LocalModelRepositoryImpl()
                 }
             },
         )
