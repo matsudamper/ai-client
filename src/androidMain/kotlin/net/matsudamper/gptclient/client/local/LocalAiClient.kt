@@ -16,7 +16,6 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import net.matsudamper.gptclient.util.Log
 
 actual fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
-    val repo: LocalModelRepositoryImpl = getKoin().get()
     Log.d("LOG", "model.modelKey=${model.modelKey}")
     // Determine backend from modelId prefix
     return if (model.modelKey == "mlkit-prompt") {
