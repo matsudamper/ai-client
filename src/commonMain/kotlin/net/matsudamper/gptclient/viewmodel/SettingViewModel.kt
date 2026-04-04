@@ -107,9 +107,12 @@ class SettingViewModel(
             }
         }
 
+    private val modelsFlow = MutableStateFlow<List<LocalModelDefinition>>(emptyList())
+
     val uiStateFlow: StateFlow<SettingsScreenUiState> = _uiStateFlow.also { uiState ->
-        val models = localModelRepository.getModels()
         viewModelScope.launch {
+            val models = localModelRepository.getModels()
+            modelsFlow.value = models
             val initialStatuses = mutableMapOf<String, LocalModelStatus>()
             for (model in models) {
                 initialStatuses[model.modelId] = localModelRepository.checkStatus(model.modelId)
@@ -124,20 +127,27 @@ class SettingViewModel(
                 settingDataStore.getThemeModeFlow(),
                 modelStatusMap,
                 settingDataStore.getActiveLocalModelKeysFlow(),
-            ) { themeMode, statuses, activeKeys ->
-                Triple(themeMode, statuses, activeKeys)
-            }.collect { (themeMode, statuses, activeKeys) ->
+                modelsFlow,
+            ) { themeMode, statuses, activeKeys, models ->
+                data class State(
+                    val themeMode: ThemeMode,
+                    val statuses: Map<String, LocalModelStatus>,
+                    val activeKeys: Set<String>,
+                    val models: List<LocalModelDefinition>,
+                )
+                State(themeMode, statuses, activeKeys, models)
+            }.collect { state ->
                 uiState.update {
                     val current = it as? SettingsScreenUiState.Loaded
                     SettingsScreenUiState.Loaded(
                         initialSecretKey = current?.initialSecretKey ?: secretKey,
                         initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
                         initialGeminiBillingKey = current?.initialGeminiBillingKey ?: geminiBillingKey,
-                        themeOption = themeMode.toUiState(),
-                        localModels = models.mapNotNull { model ->
-                            val status = statuses[model.modelId] ?: return@mapNotNull null
+                        themeOption = state.themeMode.toUiState(),
+                        localModels = state.models.mapNotNull { model ->
+                            val status = state.statuses[model.modelId] ?: return@mapNotNull null
                             if (status == LocalModelStatus.UNAVAILABLE) return@mapNotNull null
-                            model.toUiItem(status, model.modelId in activeKeys)
+                            model.toUiItem(status, model.modelId in state.activeKeys)
                         },
                         listener = loadedListener,
                     )

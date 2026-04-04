@@ -10,7 +10,6 @@ import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.RoomPlatformBuilder
 import net.matsudamper.gptclient.viewmodel.AddRequestUseCase
 import net.matsudamper.gptclient.worker.AndroidWorkManagerScheduler
-import android.content.Context
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -22,9 +21,6 @@ class Application : Application() {
         startKoin {
             loadKoinModules(
                 module = module {
-                    single<Context> {
-                        applicationContext
-                    }
                     single<AppDatabase> {
                         RoomPlatformBuilder.create(applicationContext)
                     }
@@ -41,9 +37,7 @@ class Application : Application() {
                         AndroidWorkManagerScheduler(WorkManager.getInstance(applicationContext))
                     }
                     single<LocalModelRepository> {
-                        LocalModelRepository().apply {
-                            setContext(applicationContext)
-                        }
+                        LocalModelRepository()
                     }
                 },
             )

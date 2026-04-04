@@ -15,7 +15,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.getAvailableLocalModels
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -32,6 +32,7 @@ class ProjectViewModel(
     private val appDatabase: AppDatabase,
     private val appNavigator: AppNavigator,
     private val settingDataStore: SettingDataStore,
+    private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
@@ -199,6 +200,10 @@ class ProjectViewModel(
             settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
                 viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
             }
+        }
+        viewModelScope.launch {
+            val defs = localModelRepository.getModels()
+            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
         }
         viewModelScope.launch {
             when (navigator.type) {
@@ -379,9 +384,9 @@ class ProjectViewModel(
     }
 
     private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState {
-        val localModelDefs = getAvailableLocalModels()
+        val localDefs = viewModelStateFlow.value.localModelDefs
         val allModels = ChatGptModel.entries + viewModelStateFlow.value.activeLocalModelKeys.mapNotNull { key ->
-            val def = localModelDefs.find { it.modelId == key } ?: return@mapNotNull null
+            val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
             ChatGptModel.Local(
                 modelKey = def.modelId,
                 displayName = def.displayName,
@@ -432,6 +437,7 @@ class ProjectViewModel(
         val systemInfo: SystemInfoType? = null,
         val overwriteModel: ChatGptModel? = null,
         val activeLocalModelKeys: Set<String> = emptySet(),
+        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
         val isLoading: Boolean = false,
     ) {
         sealed interface SystemInfoType {

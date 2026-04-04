@@ -1,32 +1,16 @@
 package net.matsudamper.gptclient.client.local
 
 import android.graphics.BitmapFactory
-import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.Generation
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.LocalModelDefinition
-import net.matsudamper.gptclient.localmodel.LocalModelRepository
-import net.matsudamper.gptclient.localmodel.getAvailableLocalModels
-import org.koin.java.KoinJavaComponent.getKoin
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-actual fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
-    val definition = getAvailableLocalModels().find { it.modelId == model.modelKey } ?: return null
-    return when (definition.backend) {
-        LocalModelDefinition.Backend.ML_KIT -> MlKitAiClient()
-        LocalModelDefinition.Backend.MEDIAPIPE -> {
-            val context: android.content.Context = getKoin().get()
-            val modelFile = LocalModelRepository.getModelFile(context, model.modelKey)
-            if (!modelFile.exists()) return null
-            MediaPipeAiClient(modelFile.absolutePath)
-        }
-    }
-}
+actual fun createLocalAiClient(model: ChatGptModel.Local): AiClient? = MlKitAiClient()
 
 private class MlKitAiClient : AiClient {
     @OptIn(ExperimentalEncodingApi::class)
@@ -95,66 +79,6 @@ private class MlKitAiClient : AiClient {
             AiClient.GptResult.Error(
                 AiClient.GptResult.ErrorReason.Unknown(
                     e.message ?: "ローカルモデルでの推論に失敗しました",
-                ),
-            )
-        }
-    }
-}
-
-private class MediaPipeAiClient(
-    private val modelPath: String,
-) : AiClient {
-    override suspend fun request(
-        messages: List<AiClient.GptMessage>,
-        format: AiClient.Format,
-        model: ChatGptModel,
-    ): AiClient.GptResult {
-        return try {
-            val options = LlmInference.LlmInferenceOptions.builder()
-                .setModelPath(modelPath)
-                .setMaxTokens(model.defaultToken)
-                .build()
-
-            val context: android.content.Context = getKoin().get()
-            val llmInference = LlmInference.createFromOptions(context, options)
-
-            val textParts = mutableListOf<String>()
-            for (message in messages) {
-                val rolePrefix = when (message.role) {
-                    AiClient.GptMessage.Role.System -> "[System] "
-                    AiClient.GptMessage.Role.User -> "[User] "
-                    AiClient.GptMessage.Role.Assistant -> "[Assistant] "
-                }
-                for (content in message.contents) {
-                    when (content) {
-                        is AiClient.GptMessage.Content.Text -> {
-                            textParts.add(rolePrefix + content.text)
-                        }
-                        else -> Unit
-                    }
-                }
-            }
-
-            val prompt = textParts.joinToString("\n")
-            val response = llmInference.generateResponse(prompt)
-            llmInference.close()
-
-            AiClient.GptResult.Success(
-                AiClient.AiResponse(
-                    choices = listOf(
-                        AiClient.AiResponse.Choice(
-                            message = AiClient.AiResponse.Choice.Message(
-                                role = AiClient.AiResponse.Choice.Role.Assistant,
-                                content = response,
-                            ),
-                        ),
-                    ),
-                ),
-            )
-        } catch (e: Exception) {
-            AiClient.GptResult.Error(
-                AiClient.GptResult.ErrorReason.Unknown(
-                    e.message ?: "MediaPipeモデルでの推論に失敗しました",
                 ),
             )
         }

@@ -44,6 +44,7 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
                         appDatabase = get(),
                         platformRequest = get(),
                         settingDataStore = get(),
+                        localModelRepository = get(),
                     )
                 }
                 single<LocalModelRepository> {

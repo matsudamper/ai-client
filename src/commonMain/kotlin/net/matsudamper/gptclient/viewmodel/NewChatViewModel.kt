@@ -11,7 +11,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.getAvailableLocalModels
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.navigation.AppNavigator
@@ -28,6 +28,7 @@ class NewChatViewModel(
     private val appDatabase: AppDatabase,
     private val appNavigator: AppNavigator,
     private val settingDataStore: SettingDataStore,
+    private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
@@ -226,11 +227,15 @@ class NewChatViewModel(
             }
         }
         viewModelScope.launch {
+            val defs = localModelRepository.getModels()
+            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+        }
+        viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
-                    val localModels = getAvailableLocalModels()
+                    val localDefs = viewModelState.localModelDefs
                     val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
-                        val def = localModels.find { it.modelId == key } ?: return@mapNotNull null
+                        val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
                         ChatGptModel.Local(
                             modelKey = def.modelId,
                             displayName = def.displayName,
@@ -318,5 +323,6 @@ class NewChatViewModel(
         val projects: List<Project>? = null,
         val isLoading: Boolean = false,
         val activeLocalModelKeys: Set<String> = emptySet(),
+        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
     )
 }

@@ -11,7 +11,7 @@ import net.matsudamper.gptclient.client.local.createLocalAiClient
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.getAvailableLocalModels
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
@@ -23,6 +23,7 @@ class ChatRequestRunner(
     private val appDatabase: AppDatabase,
     private val platformRequest: PlatformRequest,
     private val settingDataStore: SettingDataStore,
+    private val localModelRepository: LocalModelRepository,
 ) {
     suspend fun run(
         chatRoomId: ChatRoomId,
@@ -34,7 +35,8 @@ class ChatRequestRunner(
             val requestInfo = createRequestInfo(room)
             val chatModel = ChatGptModel.entries.firstOrNull { it.modelKey == requestInfo.modelKey }
                 ?: run {
-                    val localDef = getAvailableLocalModels().find { it.modelId == requestInfo.modelKey }
+                    val localDef = localModelRepository.getModels()
+                        .find { it.modelId == requestInfo.modelKey }
                     if (localDef != null) {
                         ChatGptModel.Local(
                             modelKey = localDef.modelId,

@@ -88,6 +88,7 @@ fun App(
                                 appNavigator = appNavigator,
                                 appDatabase = koin.get(),
                                 settingDataStore = koin.get(),
+                                localModelRepository = koin.get(),
                             )
                         }
                         LaunchedEffect(viewModel, providePlatformRequest) {
@@ -111,6 +112,7 @@ fun App(
                                 insertDataAndAddRequestUseCase = createInsertDataAndAddRequestUseCase(),
                                 appDatabase = koin.get(),
                                 settingDataStore = koin.get(),
+                                localModelRepository = koin.get(),
                             )
                         }
                         LaunchedEffect(viewModel, providePlatformRequest) {
@@ -178,6 +180,7 @@ fun App(
                                 navigator = navigator,
                                 appDatabase = koin.get(),
                                 settingDataStore = koin.get(),
+                                localModelRepository = koin.get(),
                             )
                         }
                         LaunchedEffect(viewModel, providePlatformRequest) {

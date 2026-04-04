@@ -83,7 +83,6 @@ koinAndroid = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 
 # ML Kit GenAI
 mlkitGenai = { module = "com.google.mlkit:genai-prompt", version.require = "1.0.0-beta1" }
-mediapipeGenai = { module = "com.google.mediapipe:tasks-genai", version.require = "0.10.24" }
 
 # UI
 composeIcons = { module = "br.com.devsrsouza.compose.icons:feather", version.require = "1.1.1" }
