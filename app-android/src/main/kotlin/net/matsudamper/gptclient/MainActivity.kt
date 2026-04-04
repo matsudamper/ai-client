@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.runtime.mutableStateOf
+import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import org.koin.android.ext.android.getKoin
 import org.koin.dsl.module
@@ -20,8 +22,9 @@ class MainActivity : ComponentActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { isGranted: Boolean ->
+    ) { _: Boolean ->
     }
+    private val launchNavigationRequestState = mutableStateOf(LaunchNavigationRequest.none())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +37,8 @@ class MainActivity : ComponentActivity() {
             ),
         )
 
-        platformRequest.createNotificationChannel(GPT_CLIENT_NOTIFICATION_ID)
+        platformRequest.createNotificationChannel(GPT_CLIENT_NOTIFICATION_CHANNEL_ID)
+        platformRequest.createNotificationChannel(LOCAL_MODEL_DOWNLOAD_NOTIFICATION_CHANNEL_ID)
 
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -44,24 +48,40 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        val chatRoomId = getChatRoomIdFromIntent(intent)
+        launchNavigationRequestState.value = createLaunchNavigationRequest(intent)
 
         setContent {
             App(
-                initialChatRoomId = chatRoomId,
+                launchNavigationRequest = launchNavigationRequestState.value,
                 providePlatformRequest = { platformRequest },
             )
         }
     }
 
-    private fun getChatRoomIdFromIntent(intent: Intent): ChatRoomId? {
-        val chatRoomIdString = intent.getStringExtra(KEY_CHATROOM_ID) ?: return null
-        val chatRoomIdLong = chatRoomIdString.toLongOrNull() ?: return null
-        return ChatRoomId(chatRoomIdLong)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        launchNavigationRequestState.value = createLaunchNavigationRequest(intent)
     }
 
-    companion object {
-        const val KEY_CHATROOM_ID = "chatRoomId"
-        const val GPT_CLIENT_NOTIFICATION_ID = "gpt_client_notifications"
+    private fun createLaunchNavigationRequest(intent: Intent): LaunchNavigationRequest {
+        val navigator = when {
+            intent.getBooleanExtra(EXTRA_OPEN_SETTINGS, false) -> Navigator.Settings
+            else -> getChatRoomIdFromIntent(intent)?.let { chatRoomId ->
+                Navigator.Chat(
+                    openContext = Navigator.Chat.ChatOpenContext.OpenChat(chatRoomId),
+                )
+            }
+        }
+        return LaunchNavigationRequest(
+            id = System.nanoTime(),
+            navigator = navigator,
+        )
+    }
+
+    private fun getChatRoomIdFromIntent(intent: Intent): ChatRoomId? {
+        val chatRoomIdString = intent.getStringExtra(EXTRA_CHATROOM_ID) ?: return null
+        val chatRoomIdLong = chatRoomIdString.toLongOrNull() ?: return null
+        return ChatRoomId(chatRoomIdLong)
     }
 }

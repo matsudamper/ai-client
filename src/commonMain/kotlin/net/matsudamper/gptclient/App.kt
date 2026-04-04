@@ -17,7 +17,6 @@ import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.navigation.Navigator
-import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.ProjectUiState
@@ -34,7 +33,7 @@ import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
 fun App(
-    initialChatRoomId: ChatRoomId? = null,
+    launchNavigationRequest: LaunchNavigationRequest = LaunchNavigationRequest.none(),
     providePlatformRequest: () -> PlatformRequest,
 ) {
     val settingDataStore: SettingDataStore = remember { getKoin().get() }
@@ -70,10 +69,16 @@ fun App(
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         }
         val appNavigationViewModel = viewModel(viewModelStoreOwner) {
-            AppNavigationViewModel(initialChatRoomId = initialChatRoomId)
+            AppNavigationViewModel()
         }
         val backStack = appNavigationViewModel.backStack
         val appNavigator = appNavigationViewModel.appNavigator
+
+        LaunchedEffect(launchNavigationRequest.id) {
+            launchNavigationRequest.navigator?.let { navigator ->
+                appNavigator.navigateClearToStart(navigator)
+            }
+        }
 
         MainScreen(
             modifier = Modifier.fillMaxSize(),

@@ -1,141 +1,56 @@
 package net.matsudamper.gptclient.client.local
 
 import android.content.Context
-import android.graphics.BitmapFactory
-import com.google.mediapipe.tasks.genai.llminference.LlmInference
-import com.google.mlkit.genai.prompt.GenerateContentRequest
-import com.google.mlkit.genai.prompt.Generation
-import com.google.mlkit.genai.prompt.ImagePart
-import com.google.mlkit.genai.prompt.TextPart
+import com.google.ai.edge.litertlm.Content
+import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.ConversationConfig
+import com.google.ai.edge.litertlm.Message
+import java.io.File
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.AndroidLocalModels
+import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelRepositoryImpl
 import org.koin.java.KoinJavaComponent.getKoin
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import net.matsudamper.gptclient.util.Log
 
 actual fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
-    Log.d("LOG", "model.modelKey=${model.modelKey}")
-    // Determine backend from modelId prefix
-    return if (model.modelKey == "mlkit-prompt") {
-        MlKitAiClient()
-    } else if (model.modelKey.startsWith("hf:")) {
-        val context: Context = getKoin().get()
-        val modelFile = LocalModelRepositoryImpl.getModelFile(context, model.modelKey)
-        if (!modelFile.exists()) return null
-        MediaPipeAiClient(modelFile.absolutePath, context)
-    } else {
-        null
-    }
+    val context: Context = getKoin().get()
+    val modelDefinition = AndroidLocalModels.find(model.modelKey) ?: return null
+    val modelFile = LocalModelRepositoryImpl.getModelFile(context, model.modelKey)
+    if (!modelFile.exists()) return null
+
+    return LiteRtLmAiClient(
+        context = context,
+        modelDefinition = modelDefinition,
+        modelFile = modelFile,
+    )
 }
 
-private class MlKitAiClient : AiClient {
-    @OptIn(ExperimentalEncodingApi::class)
-    override suspend fun request(
-        messages: List<AiClient.GptMessage>,
-        format: AiClient.Format,
-        model: ChatGptModel,
-    ): AiClient.GptResult {
-        val client = Generation.getClient()
-
-        val textParts = mutableListOf<String>()
-        var firstImagePart: ImagePart? = null
-
-        for (message in messages) {
-            val rolePrefix = when (message.role) {
-                AiClient.GptMessage.Role.System -> "[System] "
-                AiClient.GptMessage.Role.User -> "[User] "
-                AiClient.GptMessage.Role.Assistant -> "[Assistant] "
-            }
-            for (content in message.contents) {
-                when (content) {
-                    is AiClient.GptMessage.Content.Text -> {
-                        textParts.add(rolePrefix + content.text)
-                    }
-                    is AiClient.GptMessage.Content.Base64Image -> {
-                        if (firstImagePart == null) {
-                            val bytes = Base64.decode(content.base64)
-                            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                            if (bitmap != null) {
-                                firstImagePart = ImagePart(bitmap)
-                            }
-                        }
-                    }
-                    is AiClient.GptMessage.Content.ImageUrl -> Unit
-                }
-            }
-        }
-
-        val combinedText = textParts.joinToString("\n")
-        val textPart = TextPart(combinedText)
-        val request = if (firstImagePart != null) {
-            GenerateContentRequest.Builder(firstImagePart, textPart).build()
-        } else {
-            GenerateContentRequest.Builder(textPart).build()
-        }
-
-        return try {
-            val response = client.generateContent(request)
-            val text = response.candidates.firstOrNull()?.text ?: ""
-            client.close()
-            AiClient.GptResult.Success(
-                AiClient.AiResponse(
-                    choices = listOf(
-                        AiClient.AiResponse.Choice(
-                            message = AiClient.AiResponse.Choice.Message(
-                                role = AiClient.AiResponse.Choice.Role.Assistant,
-                                content = text,
-                            ),
-                        ),
-                    ),
-                ),
-            )
-        } catch (e: Exception) {
-            client.close()
-            AiClient.GptResult.Error(
-                AiClient.GptResult.ErrorReason.Unknown(
-                    e.message ?: "ML Kitモデルでの推論に失敗しました",
-                ),
-            )
-        }
-    }
-}
-
-private class MediaPipeAiClient(
-    private val modelPath: String,
+private class LiteRtLmAiClient(
     private val context: Context,
+    private val modelDefinition: LocalModelDefinition,
+    private val modelFile: File,
 ) : AiClient {
     override suspend fun request(
         messages: List<AiClient.GptMessage>,
         format: AiClient.Format,
         model: ChatGptModel,
     ): AiClient.GptResult {
-        return try {
-            val options = LlmInference.LlmInferenceOptions.builder()
-                .setModelPath(modelPath)
-                .setMaxTokens(model.defaultToken)
-                .build()
+        return runCatching {
+            val engine = LiteRtLmEngineStore.getOrCreate(context, modelDefinition, modelFile)
+            val liteRtMessages = messages.mapNotNull { it.toLiteRtMessage() }
+            require(liteRtMessages.isNotEmpty()) { "送信するメッセージがありません" }
 
-            val llmInference = LlmInference.createFromOptions(context, options)
-
-            val textParts = mutableListOf<String>()
-            for (message in messages) {
-                val rolePrefix = when (message.role) {
-                    AiClient.GptMessage.Role.System -> "[System] "
-                    AiClient.GptMessage.Role.User -> "[User] "
-                    AiClient.GptMessage.Role.Assistant -> "[Assistant] "
+            val responseMessage =
+                engine.createConversation(
+                    ConversationConfig(
+                        initialMessages = liteRtMessages.dropLast(1),
+                    ),
+                ).use { conversation ->
+                    conversation.sendMessage(liteRtMessages.last())
                 }
-                for (content in message.contents) {
-                    if (content is AiClient.GptMessage.Content.Text) {
-                        textParts.add(rolePrefix + content.text)
-                    }
-                }
-            }
-
-            val prompt = textParts.joinToString("\n")
-            val response = llmInference.generateResponse(prompt)
-            llmInference.close()
 
             AiClient.GptResult.Success(
                 AiClient.AiResponse(
@@ -143,18 +58,39 @@ private class MediaPipeAiClient(
                         AiClient.AiResponse.Choice(
                             message = AiClient.AiResponse.Choice.Message(
                                 role = AiClient.AiResponse.Choice.Role.Assistant,
-                                content = response,
+                                content = responseMessage.toString(),
                             ),
                         ),
                     ),
                 ),
             )
-        } catch (e: Exception) {
+        }.getOrElse { throwable ->
             AiClient.GptResult.Error(
                 AiClient.GptResult.ErrorReason.Unknown(
-                    e.message ?: "MediaPipeモデルでの推論に失敗しました",
+                    throwable.message ?: "LiteRT-LM モデルでの推論に失敗しました",
                 ),
             )
+        }
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    private fun AiClient.GptMessage.toLiteRtMessage(): Message? {
+        val liteRtContents =
+            contents.mapNotNull { content ->
+                when (content) {
+                    is AiClient.GptMessage.Content.Text -> Content.Text(content.text)
+                    is AiClient.GptMessage.Content.Base64Image ->
+                        Content.ImageBytes(Base64.decode(content.base64))
+
+                    is AiClient.GptMessage.Content.ImageUrl -> null
+                }
+            }
+        if (liteRtContents.isEmpty()) return null
+
+        return when (role) {
+            AiClient.GptMessage.Role.System -> Message.system(Contents.of(liteRtContents))
+            AiClient.GptMessage.Role.User -> Message.user(Contents.of(liteRtContents))
+            AiClient.GptMessage.Role.Assistant -> Message.model(Contents.of(liteRtContents))
         }
     }
 }

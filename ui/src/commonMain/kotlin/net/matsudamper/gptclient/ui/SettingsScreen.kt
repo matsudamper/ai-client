@@ -10,13 +10,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -28,6 +30,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -36,14 +39,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
+
     data class Loaded(
         val initialSecretKey: String,
         val initialGeminiSecretKey: String,
         val initialGeminiBillingKey: String,
         val themeOption: ThemeOption,
         val localModels: List<LocalModelItem>,
+        val deleteDialog: DeleteDialog?,
         val listener: Listener,
     ) : SettingsScreenUiState {
         @Immutable
@@ -54,6 +60,17 @@ sealed interface SettingsScreenUiState {
             fun onClickOpenAiUsage()
             fun onClickGeminiUsage()
             fun onClickThemeOption(themeOption: ThemeOption)
+        }
+    }
+
+    data class DeleteDialog(
+        val modelName: String,
+        val listener: Listener,
+    ) {
+        @Immutable
+        interface Listener {
+            fun onConfirm()
+            fun onDismiss()
         }
     }
 
@@ -68,23 +85,30 @@ sealed interface SettingsScreenUiState {
         val displayName: String,
         val description: String,
         val status: ModelStatus,
+        val downloadProgress: Float?,
         val isActive: Boolean,
         val listener: Listener,
     ) {
-        enum class ModelStatus { UNAVAILABLE, DOWNLOADABLE, DOWNLOADING, DOWNLOADED }
+        enum class ModelStatus {
+            NOT_DOWNLOADED,
+            DOWNLOADING,
+            DOWNLOADED,
+        }
 
         @Immutable
         interface Listener {
             fun onClickDownload()
             fun onToggleActive(active: Boolean)
+            fun onClickDelete()
         }
     }
 }
+
 private val HorizontalPadding = 12.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-public fun SettingsScreen(
+fun SettingsScreen(
     uiState: SettingsScreenUiState,
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
@@ -138,6 +162,28 @@ private fun Loaded(
     uiState: SettingsScreenUiState.Loaded,
     modifier: Modifier = Modifier,
 ) {
+    uiState.deleteDialog?.let { dialog ->
+        AlertDialog(
+            onDismissRequest = { dialog.listener.onDismiss() },
+            confirmButton = {
+                TextButton(onClick = { dialog.listener.onConfirm() }) {
+                    Text("削除")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { dialog.listener.onDismiss() }) {
+                    Text("キャンセル")
+                }
+            },
+            title = {
+                Text("モデルを削除しますか？")
+            },
+            text = {
+                Text("${dialog.modelName} を削除します。")
+            },
+        )
+    }
+
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState()),
@@ -217,50 +263,26 @@ private fun LocalModelCard(
     model: SettingsScreenUiState.LocalModelItem,
     modifier: Modifier = Modifier,
 ) {
-    val isUnavailable = model.status == SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE
-    val alpha = if (isUnavailable) 0.4f else 1f
-
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(12.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = model.displayName,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
-                )
-                Text(
-                    text = model.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
-                )
-            }
-            Switch(
-                checked = model.isActive,
-                onCheckedChange = { model.listener.onToggleActive(it) },
-                enabled = !isUnavailable,
-            )
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        when (model.status) {
-            SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE -> {
-                Text(
-                    text = "このデバイスでは利用できません",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                )
-            }
+        Text(
+            text = model.displayName,
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            text = model.description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADABLE -> {
+        when (model.status) {
+            SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED -> {
                 OutlinedButton(
                     onClick = { model.listener.onClickDownload() },
                 ) {
@@ -270,24 +292,43 @@ private fun LocalModelCard(
 
             SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING -> {
                 Text(
-                    text = "ダウンロード中...",
+                    text = model.downloadProgress
+                        ?.let { "ダウンロード中... ${(it * 100).toInt()}%" }
+                        ?: "ダウンロード中...",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
             SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED -> {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "ダウンロード済み",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = "有効にする",
+                        style = MaterialTheme.typography.bodyMedium,
                     )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Switch(
+                            checked = model.isActive,
+                            onCheckedChange = { model.listener.onToggleActive(it) },
+                        )
+                        IconButton(
+                            modifier = Modifier.size(40.dp),
+                            onClick = { model.listener.onClickDelete() },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Model",
+                            )
+                        }
+                    }
                 }
             }
         }

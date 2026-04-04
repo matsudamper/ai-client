@@ -40,7 +40,10 @@ class Application : Application() {
                         AndroidWorkManagerScheduler(WorkManager.getInstance(applicationContext))
                     }
                     single<LocalModelRepository> {
-                        LocalModelRepositoryImpl()
+                        LocalModelRepositoryImpl(
+                            context = applicationContext,
+                            workManager = WorkManager.getInstance(applicationContext),
+                        )
                     }
                 },
             )

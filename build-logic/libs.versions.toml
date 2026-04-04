@@ -21,6 +21,7 @@ zoomable = "2.11.1"
 ktlintGradle = "14.2.0"
 ktlint = "1.6.0"
 workManager = "2.11.2"
+litertlm = "0.10.0"
 androidxTestRules = "1.7.0"
 nav3Ui = "1.0.0-alpha05"
 paparazzi = "2.0.0-alpha04"
@@ -81,9 +82,8 @@ androidxSqliteBundled = { module = "androidx.sqlite:sqlite-bundled", version.req
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koinAndroid = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 
-# ML Kit GenAI
-mlkitGenai = { module = "com.google.mlkit:genai-prompt", version.require = "1.0.0-beta1" }
-mediapipeGenai = { module = "com.google.mediapipe:tasks-genai", version.require = "0.10.33" }
+# LiteRT-LM
+litertlmAndroid = { module = "com.google.ai.edge.litertlm:litertlm-android", version.ref = "litertlm" }
 
 # UI
 composeIcons = { module = "br.com.devsrsouza.compose.icons:feather", version.require = "1.1.1" }

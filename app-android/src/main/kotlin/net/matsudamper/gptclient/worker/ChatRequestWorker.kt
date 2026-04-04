@@ -13,6 +13,8 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import kotlin.random.Random
 import kotlinx.coroutines.flow.first
+import net.matsudamper.gptclient.EXTRA_CHATROOM_ID
+import net.matsudamper.gptclient.GPT_CLIENT_NOTIFICATION_CHANNEL_ID
 import net.matsudamper.gptclient.MainActivity
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
@@ -48,7 +50,7 @@ class ChatRequestWorker(
                 createNotificationBuilder(
                     title = roomTitle,
                     message = "処理中...",
-                    channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                    channelId = GPT_CLIENT_NOTIFICATION_CHANNEL_ID,
                     pendingIntent = pendingIntent,
                 )
                     .setOngoing(true)
@@ -73,7 +75,7 @@ class ChatRequestWorker(
                 snowFinishNotification(
                     title = "処理失敗",
                     message = result.errorMessage,
-                    channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                    channelId = GPT_CLIENT_NOTIFICATION_CHANNEL_ID,
                     notificationId = Random.nextInt(),
                     pendingIntent = pendingIntent,
                 )
@@ -87,7 +89,7 @@ class ChatRequestWorker(
                 snowFinishNotification(
                     title = "処理完了",
                     message = "${notificationTitle}の処理が完了しました",
-                    channelId = MainActivity.GPT_CLIENT_NOTIFICATION_ID,
+                    channelId = GPT_CLIENT_NOTIFICATION_CHANNEL_ID,
                     notificationId = Random.nextInt(),
                     pendingIntent = pendingIntent,
                 )
@@ -127,7 +129,7 @@ class ChatRequestWorker(
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             if (chatRoomId != null) {
-                putExtra(MainActivity.KEY_CHATROOM_ID, chatRoomId)
+                putExtra(EXTRA_CHATROOM_ID, chatRoomId)
             }
         }
         return PendingIntent.getActivity(
