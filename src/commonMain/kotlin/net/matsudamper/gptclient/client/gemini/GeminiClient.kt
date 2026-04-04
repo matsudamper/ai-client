@@ -27,7 +27,7 @@ class GeminiClient(
         format: AiClient.Format,
         model: ChatGptModel,
     ): AiClient.GptResult {
-        model as ChatGptModel.Gemini
+        model as ChatGptModel.Remote.Gemini
         val systemInstruction = messages
             .filter { it.role == AiClient.GptMessage.Role.System }
             .flatMap { message ->

@@ -83,9 +83,12 @@ fun App(
                     @Composable
                     override fun provideNewChatUiState(): NewChatUiState {
                         val viewModel = viewModel {
+                            val koin = getKoin()
                             NewChatViewModel(
                                 appNavigator = appNavigator,
-                                appDatabase = getKoin().get(),
+                                appDatabase = koin.get(),
+                                settingDataStore = koin.get(),
+                                localModelRepository = koin.get(),
                             )
                         }
                         LaunchedEffect(viewModel, providePlatformRequest) {
@@ -108,6 +111,8 @@ fun App(
                                 openContext = navigator.openContext,
                                 insertDataAndAddRequestUseCase = createInsertDataAndAddRequestUseCase(),
                                 appDatabase = koin.get(),
+                                settingDataStore = koin.get(),
+                                localModelRepository = koin.get(),
                             )
                         }
                         LaunchedEffect(viewModel, providePlatformRequest) {
@@ -126,6 +131,7 @@ fun App(
                             val koin = getKoin()
                             SettingViewModel(
                                 settingDataStore = koin.get(),
+                                localModelRepository = koin.get(),
                             )
                         }
                         LaunchedEffect(viewModel, providePlatformRequest) {
@@ -168,10 +174,13 @@ fun App(
                             viewModelStoreOwner = viewModelStoreOwner,
                             key = navigator.type.toString(),
                         ) {
+                            val koin = getKoin()
                             ProjectViewModel(
                                 appNavigator = appNavigator,
                                 navigator = navigator,
-                                appDatabase = getKoin().get(),
+                                appDatabase = koin.get(),
+                                settingDataStore = koin.get(),
+                                localModelRepository = koin.get(),
                             )
                         }
                         LaunchedEffect(viewModel, providePlatformRequest) {

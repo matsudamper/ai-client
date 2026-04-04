@@ -90,6 +90,8 @@ kotlin {
                 api(libs.koinAndroid)
                 api(libs.koinCore)
                 api(libs.androidxWorkRuntime)
+                api(libs.mlkitGenai)
+                api(libs.mediapipeGenai)
             }
         }
     }

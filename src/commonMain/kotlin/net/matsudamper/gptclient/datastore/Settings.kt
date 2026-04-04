@@ -11,6 +11,7 @@ data class Settings(
     @ProtoNumber(2) val geminiSecretKey: String = "",
     @ProtoNumber(3) val themeMode: ThemeMode = ThemeMode.SYSTEM,
     @ProtoNumber(4) val geminiBillingKey: String = "",
+    @ProtoNumber(5) val activeLocalModelKeys: Set<String> = emptySet(),
 )
 
 @Serializable

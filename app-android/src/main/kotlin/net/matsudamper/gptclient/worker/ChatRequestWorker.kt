@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.first
 import net.matsudamper.gptclient.MainActivity
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.localmodel.LocalModelRepositoryImpl
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import org.koin.core.context.GlobalContext
@@ -28,6 +29,7 @@ class ChatRequestWorker(
     private val appDatabase: AppDatabase = GlobalContext.get().get()
     private val platformRequest: PlatformRequest = GlobalContext.get().get()
     private val settingDataStore: SettingDataStore = GlobalContext.get().get()
+    private val localModelRepository: LocalModelRepositoryImpl = GlobalContext.get().get()
 
     override suspend fun doWork(): Result {
         val chatRoomId = ChatRoomId(inputData.getLong(KEY_CHAT_ROOM_ID, 0))
@@ -60,6 +62,7 @@ class ChatRequestWorker(
                 appDatabase = appDatabase,
                 platformRequest = platformRequest,
                 settingDataStore = settingDataStore,
+                localModelRepository = localModelRepository,
             ).run(
                 chatRoomId = chatRoomId,
                 message = message,

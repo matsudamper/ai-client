@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -35,6 +36,8 @@ class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
     private val appDatabase: AppDatabase,
     private val insertDataAndAddRequestUseCase: AddRequestUseCase,
+    private val settingDataStore: net.matsudamper.gptclient.datastore.SettingDataStore,
+    private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
@@ -120,6 +123,15 @@ class ChatViewModel(
         ),
     ).also { uiState ->
         viewModelScope.launch {
+            settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
+                viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
+            }
+        }
+        viewModelScope.launch {
+            val defs = localModelRepository.getModels()
+            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+        }
+        viewModelScope.launch {
             viewModelStateFlow.map { it.roomInfo?.room?.id }
                 .filterNotNull()
                 .stateIn(this)
@@ -152,8 +164,18 @@ class ChatViewModel(
                         },
                         modelLoadingState = run {
                             val roomInfo = viewModelState.roomInfo ?: return@run ChatListUiState.ModelLoadingState.Loading
+                            val localDefs = viewModelState.localModelDefs
+                            val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
+                                val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
+                                ChatGptModel.Local(
+                                    modelKey = def.modelId,
+                                    displayName = def.displayName,
+                                    enableImage = def.enableImage,
+                                    defaultToken = def.defaultToken,
+                                )
+                            }
                             ChatListUiState.ModelLoadingState.Loaded(
-                                ChatGptModel.entries.map { model ->
+                                allModels.map { model ->
                                     ChatListUiState.Model(
                                         modelName = model.displayName,
                                         selected = model.modelKey == roomInfo.room.modelKey,
@@ -471,6 +493,8 @@ class ChatViewModel(
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
+        val activeLocalModelKeys: Set<String> = emptySet(),
+        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom
