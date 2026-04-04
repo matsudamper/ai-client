@@ -144,9 +144,8 @@ class SettingViewModel(
                         initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
                         initialGeminiBillingKey = current?.initialGeminiBillingKey ?: geminiBillingKey,
                         themeOption = state.themeMode.toUiState(),
-                        localModels = state.models.mapNotNull { model ->
-                            val status = state.statuses[model.modelId] ?: return@mapNotNull null
-                            if (status == LocalModelStatus.UNAVAILABLE) return@mapNotNull null
+                        localModels = state.models.map { model ->
+                            val status = state.statuses[model.modelId] ?: LocalModelStatus.DOWNLOADABLE
                             model.toUiItem(status, model.modelId in state.activeKeys)
                         },
                         listener = loadedListener,
@@ -164,7 +163,7 @@ class SettingViewModel(
             LocalModelStatus.AVAILABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED
             LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING
             LocalModelStatus.DOWNLOADABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADABLE
-            LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADABLE
+            LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE
         }
         return SettingsScreenUiState.LocalModelItem(
             modelId = modelId,

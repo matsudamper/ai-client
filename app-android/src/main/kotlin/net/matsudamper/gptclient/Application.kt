@@ -5,6 +5,7 @@ import androidx.work.WorkManager
 import net.matsudamper.gptclient.datastore.AndroidSettingsEncryptor
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.SettingsEncryptor
+import android.content.Context
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.RoomPlatformBuilder
@@ -21,6 +22,7 @@ class Application : Application() {
         startKoin {
             loadKoinModules(
                 module = module {
+                    single<Context> { applicationContext }
                     single<AppDatabase> {
                         RoomPlatformBuilder.create(applicationContext)
                     }
@@ -37,7 +39,9 @@ class Application : Application() {
                         AndroidWorkManagerScheduler(WorkManager.getInstance(applicationContext))
                     }
                     single<LocalModelRepository> {
-                        LocalModelRepository()
+                        LocalModelRepository().apply {
+                            setContext(applicationContext)
+                        }
                     }
                 },
             )

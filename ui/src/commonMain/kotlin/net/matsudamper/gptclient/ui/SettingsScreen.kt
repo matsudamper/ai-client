@@ -70,7 +70,7 @@ sealed interface SettingsScreenUiState {
         val isActive: Boolean,
         val listener: Listener,
     ) {
-        enum class ModelStatus { DOWNLOADABLE, DOWNLOADING, DOWNLOADED }
+        enum class ModelStatus { UNAVAILABLE, DOWNLOADABLE, DOWNLOADING, DOWNLOADED }
 
         @Immutable
         interface Listener {
@@ -216,11 +216,14 @@ private fun LocalModelCard(
     model: SettingsScreenUiState.LocalModelItem,
     modifier: Modifier = Modifier,
 ) {
+    val isUnavailable = model.status == SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE
+    val alpha = if (isUnavailable) 0.4f else 1f
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha))
             .padding(12.dp),
     ) {
         Row(
@@ -232,20 +235,30 @@ private fun LocalModelCard(
                 Text(
                     text = model.displayName,
                     style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
                 )
                 Text(
                     text = model.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
                 )
             }
             Switch(
                 checked = model.isActive,
                 onCheckedChange = { model.listener.onToggleActive(it) },
+                enabled = !isUnavailable,
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
         when (model.status) {
+            SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE -> {
+                Text(
+                    text = "このデバイスでは利用できません",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                )
+            }
+
             SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADABLE -> {
                 OutlinedButton(
                     onClick = { model.listener.onClickDownload() },
