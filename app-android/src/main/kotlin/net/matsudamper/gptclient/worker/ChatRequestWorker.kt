@@ -17,8 +17,8 @@ import net.matsudamper.gptclient.EXTRA_CHATROOM_ID
 import net.matsudamper.gptclient.GPT_CLIENT_NOTIFICATION_CHANNEL_ID
 import net.matsudamper.gptclient.MainActivity
 import net.matsudamper.gptclient.PlatformRequest
-import net.matsudamper.gptclient.localmodel.LocalModelClientFactory
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.localmodel.LocalModelAiClientFactory
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -33,12 +33,10 @@ class ChatRequestWorker(
     private val platformRequest: PlatformRequest = GlobalContext.get().get()
     private val settingDataStore: SettingDataStore = GlobalContext.get().get()
     private val localModelRepository: LocalModelRepository = GlobalContext.get().get()
-    private val localModelClientFactory: LocalModelClientFactory = GlobalContext.get().get()
+    private val localModelAiClientFactory: LocalModelAiClientFactory = GlobalContext.get().get()
 
     override suspend fun doWork(): Result {
         val chatRoomId = ChatRoomId(inputData.getLong(KEY_CHAT_ROOM_ID, 0))
-        val message = inputData.getString(KEY_MESSAGE).orEmpty()
-        val uris = inputData.getStringArray(KEY_URIS)?.toList().orEmpty()
 
         val chatRoom = appDatabase.chatRoomDao()
 
@@ -67,11 +65,9 @@ class ChatRequestWorker(
                 platformRequest = platformRequest,
                 settingDataStore = settingDataStore,
                 localModelRepository = localModelRepository,
-                localModelClientFactory = localModelClientFactory,
+                localModelAiClientFactory = localModelAiClientFactory,
             ).run(
                 chatRoomId = chatRoomId,
-                message = message,
-                uris = uris,
             )
         ) {
             is ChatRequestRunner.Result.Error -> {
@@ -160,18 +156,12 @@ class ChatRequestWorker(
 
     companion object {
         const val KEY_CHAT_ROOM_ID = "chat_room_id"
-        const val KEY_MESSAGE = "message"
-        const val KEY_URIS = "uris"
 
         fun createInputData(
             chatRoomId: ChatRoomId,
-            message: String,
-            uris: List<String>,
         ): Data {
             return Data.Builder()
                 .putLong(KEY_CHAT_ROOM_ID, chatRoomId.value)
-                .putString(KEY_MESSAGE, message)
-                .putStringArray(KEY_URIS, uris.toTypedArray())
                 .build()
         }
     }

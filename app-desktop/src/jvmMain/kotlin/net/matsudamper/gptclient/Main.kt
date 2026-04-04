@@ -44,7 +44,7 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
                         platformRequest = get(),
                         settingDataStore = get(),
                         localModelRepository = get(),
-                        localModelClientFactory = get(),
+                        localModelAiClientFactory = get(),
                     )
                 }
             },

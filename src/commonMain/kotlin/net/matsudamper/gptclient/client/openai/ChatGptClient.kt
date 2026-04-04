@@ -21,11 +21,11 @@ import net.matsudamper.gptclient.util.Log
 
 class ChatGptClient(
     private val secretKey: String,
+    private val model: ChatGptModel.Remote.Gpt,
 ) : AiClient {
     override suspend fun request(
         messages: List<AiClient.GptMessage>,
         format: AiClient.Format,
-        model: ChatGptModel,
     ): AiClient.GptResult {
         val requestMessages = messages.map { message ->
             val role = when (message.role) {

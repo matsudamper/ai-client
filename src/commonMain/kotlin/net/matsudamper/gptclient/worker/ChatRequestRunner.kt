@@ -10,11 +10,8 @@ import net.matsudamper.gptclient.client.gemini.GeminiClient
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.LocalModelClient
-import net.matsudamper.gptclient.localmodel.LocalModelClientFactory
-import net.matsudamper.gptclient.localmodel.LocalModelClientResult
+import net.matsudamper.gptclient.localmodel.LocalModelAiClientFactory
 import net.matsudamper.gptclient.localmodel.LocalModelId
-import net.matsudamper.gptclient.localmodel.LocalModelMessage
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
@@ -28,12 +25,10 @@ class ChatRequestRunner(
     private val platformRequest: PlatformRequest,
     private val settingDataStore: SettingDataStore,
     private val localModelRepository: LocalModelRepository,
-    private val localModelClientFactory: LocalModelClientFactory,
+    private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) {
     suspend fun run(
         chatRoomId: ChatRoomId,
-        message: String,
-        uris: List<String>,
     ): Result {
         return try {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
@@ -73,7 +68,6 @@ class ChatRequestRunner(
                         chatRoomId = chatRoomId,
                     ),
                     format = requestInfo.format,
-                    model = chatModel,
                 )
             ) {
                 is AiClient.GptResult.Error -> {
@@ -135,6 +129,7 @@ class ChatRequestRunner(
         return when (chatModel) {
             is ChatGptModel.Remote.Gpt -> ChatGptClient(
                 secretKey = settingDataStore.getSecretKey(),
+                model = chatModel,
             )
 
             is ChatGptModel.Remote.Gemini -> {
@@ -143,7 +138,7 @@ class ChatRequestRunner(
                 } else {
                     settingDataStore.getGeminiSecretKey()
                 }
-                apiKey.takeIf { it.isNotBlank() }?.let { GeminiClient(apiKey = it) }
+                apiKey.takeIf { it.isNotBlank() }?.let { GeminiClient(apiKey = it, model = chatModel) }
             }
 
             is ChatGptModel.Local -> createLocalAiClient(chatModel)
@@ -152,8 +147,7 @@ class ChatRequestRunner(
     }
 
     private fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
-        return localModelClientFactory.create(LocalModelId(model.modelKey))
-            ?.let(::LocalModelAiClientAdapter)
+        return localModelAiClientFactory.create(LocalModelId(model.modelKey))
     }
 
     private suspend fun writeResponse(
@@ -314,63 +308,5 @@ class ChatRequestRunner(
     sealed interface Result {
         data object Success : Result
         data class Error(val errorMessage: String) : Result
-    }
-}
-
-private class LocalModelAiClientAdapter(
-    private val localModelClient: LocalModelClient,
-) : AiClient {
-    override suspend fun request(
-        messages: List<AiClient.GptMessage>,
-        format: AiClient.Format,
-        model: ChatGptModel,
-    ): AiClient.GptResult {
-        val localMessages = messages.map { it.toLocalModelMessage() }
-            .filter { it.contents.isNotEmpty() }
-
-        return when (val result = localModelClient.request(localMessages)) {
-            is LocalModelClientResult.Success ->
-                AiClient.GptResult.Success(
-                    AiClient.AiResponse(
-                        choices = listOf(
-                            AiClient.AiResponse.Choice(
-                                message = AiClient.AiResponse.Choice.Message(
-                                    role = AiClient.AiResponse.Choice.Role.Assistant,
-                                    content = result.text,
-                                ),
-                            ),
-                        ),
-                    ),
-                )
-
-            is LocalModelClientResult.Error ->
-                AiClient.GptResult.Error(
-                    AiClient.GptResult.ErrorReason.Unknown(result.message),
-                )
-        }
-    }
-
-    private fun AiClient.GptMessage.toLocalModelMessage(): LocalModelMessage {
-        return LocalModelMessage(
-            role = when (role) {
-                AiClient.GptMessage.Role.User -> LocalModelMessage.Role.User
-                AiClient.GptMessage.Role.Assistant -> LocalModelMessage.Role.Assistant
-                AiClient.GptMessage.Role.System -> LocalModelMessage.Role.System
-            },
-            contents = contents.mapNotNull { content ->
-                when (content) {
-                    is AiClient.GptMessage.Content.Text ->
-                        LocalModelMessage.Content.Text(content.text)
-
-                    is AiClient.GptMessage.Content.Base64Image ->
-                        LocalModelMessage.Content.Base64Image(
-                            base64 = content.base64,
-                            mimeType = content.mimeType,
-                        )
-
-                    is AiClient.GptMessage.Content.ImageUrl -> null
-                }
-            },
-        )
     }
 }

@@ -13,7 +13,7 @@ actual fun localModelFeatureModule(): Module =
                 workManager = WorkManager.getInstance(get<Context>()),
             )
         }
-        single<LocalModelClientFactory> {
-            AndroidLocalModelClientFactory(context = get())
+        single<LocalModelAiClientFactory> {
+            AndroidLocalModelAiClientFactory(context = get())
         }
     }

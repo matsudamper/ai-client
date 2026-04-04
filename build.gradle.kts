@@ -44,6 +44,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                api(projects.common)
                 api(projects.ui)
                 api(projects.room)
                 api(projects.feature.localModel)

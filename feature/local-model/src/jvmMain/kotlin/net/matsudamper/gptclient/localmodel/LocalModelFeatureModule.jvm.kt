@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.localmodel
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import net.matsudamper.gptclient.client.AiClient
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -10,8 +11,8 @@ actual fun localModelFeatureModule(): Module =
         single<LocalModelRepository> {
             JvmLocalModelRepository()
         }
-        single<LocalModelClientFactory> {
-            EmptyLocalModelClientFactory
+        single<LocalModelAiClientFactory> {
+            EmptyLocalModelAiClientFactory
         }
     }
 
@@ -25,6 +26,6 @@ internal class JvmLocalModelRepository : LocalModelRepository {
     override suspend fun delete(modelId: LocalModelId) {}
 }
 
-internal object EmptyLocalModelClientFactory : LocalModelClientFactory {
-    override fun create(modelId: LocalModelId): LocalModelClient? = null
+internal object EmptyLocalModelAiClientFactory : LocalModelAiClientFactory {
+    override fun create(modelId: LocalModelId): AiClient? = null
 }

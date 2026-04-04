@@ -29,6 +29,7 @@ rootProject.name = "gpt-client"
 
 include(":ui")
 include(":room")
+include(":common")
 include(":feature:local-model")
 include(":app-android")
 include(":app-desktop")

@@ -15,6 +15,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                api(projects.common)
                 api(libs.koinCore)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${libs.versions.coroutine.get()}")
             }

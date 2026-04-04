@@ -21,13 +21,12 @@ import net.matsudamper.gptclient.util.Log
 
 class GeminiClient(
     private val apiKey: String,
+    private val model: ChatGptModel.Remote.Gemini,
 ) : AiClient {
     override suspend fun request(
         messages: List<AiClient.GptMessage>,
         format: AiClient.Format,
-        model: ChatGptModel,
     ): AiClient.GptResult {
-        model as ChatGptModel.Remote.Gemini
         val systemInstruction = messages
             .filter { it.role == AiClient.GptMessage.Role.System }
             .flatMap { message ->

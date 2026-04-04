@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.navigation.Navigator
@@ -202,8 +201,6 @@ fun App(
                         val koin = getKoin()
                         return AddRequestUseCase(
                             appDatabase = koin.get(),
-                            gptClientProvider = { secretKey -> ChatGptClient(secretKey) },
-                            settingDataStore = koin.get(),
                             workManagerScheduler = koin.get(),
                         )
                     }
