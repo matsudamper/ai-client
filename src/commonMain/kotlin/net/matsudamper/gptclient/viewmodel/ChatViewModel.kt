@@ -167,7 +167,7 @@ class ChatViewModel(
                             val modelKey = viewModelState.roomInfo?.room?.modelKey ?: return@run null
                             val model = findModel(modelKey) ?: return@run null
                             val engineLabel = if (model is ChatGptModel.Local) {
-                                viewModelState.engineLabels[LocalModelId(model.modelKey)]
+                                viewModelState.engineLabels[LocalModelId(model.baseModelKey)]
                             } else {
                                 null
                             }

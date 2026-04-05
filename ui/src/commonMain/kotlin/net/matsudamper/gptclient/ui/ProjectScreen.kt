@@ -239,12 +239,12 @@ fun ProjectScreen(
                 .padding(innerPadding),
         ) {
             val itemHorizontalPadding = 12.dp
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth()
-                    .weight(1f),
-            ) {
-                when (uiState.chatRoomsState) {
-                    is ProjectUiState.ChatRoomsState.Loaded -> {
+            when (val chatRoomsState = uiState.chatRoomsState) {
+                is ProjectUiState.ChatRoomsState.Loaded -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth()
+                            .weight(1f),
+                    ) {
                         item {
                             Column(
                                 modifier = Modifier.fillMaxWidth()
@@ -295,9 +295,9 @@ fun ProjectScreen(
                                 text = "履歴",
                             )
                         }
-                        items(uiState.chatRoomsState.histories) { history ->
+                        items(chatRoomsState.histories) { history ->
                             Row(
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxWidth()
                                     .clickable {
                                         history.listener.onClick()
                                     }
@@ -318,16 +318,15 @@ fun ProjectScreen(
                             }
                         }
                     }
+                }
 
-                    is ProjectUiState.ChatRoomsState.Loading -> {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        }
+                is ProjectUiState.ChatRoomsState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
                     }
                 }
             }

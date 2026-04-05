@@ -134,12 +134,9 @@ class ProjectViewModel(
         }
 
         override fun send(text: String) {
-            viewModelStateFlow.update {
-                it.copy(
-                    isLoading = true,
-                )
-            }
-            val systemInfo = viewModelStateFlow.value.systemInfo ?: return
+            val currentState = viewModelStateFlow.value
+            currentState.systemInfo ?: return
+            val selectedModel = resolveSelectedModel(currentState) ?: return
             val chatType = when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
                     Navigator.Chat.ChatType.BuiltinProject(
@@ -153,8 +150,12 @@ class ProjectViewModel(
                     )
                 }
             }
+            viewModelStateFlow.update {
+                it.copy(
+                    isLoading = true,
+                )
+            }
             viewModelScope.launch {
-                val selectedModel = resolveSelectedModel(viewModelStateFlow.value)
                 val imageFormat = selectedModel.preferredImageFormat ?: ImageFormat.Jpeg
                 appNavigator.navigate(
                     Navigator.Chat(
@@ -202,7 +203,7 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            modelState = createModelState(ChatGptModel.Remote.Gpt.Gpt5Nano),
+            modelState = createModelState(null),
             enableSend = false,
             listener = listener,
         ),
@@ -248,6 +249,7 @@ class ProjectViewModel(
         viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiStateFlow.update { uiState ->
+                    val selectedModel = resolveSelectedModel(viewModelState)
                     val editable = when (viewModelState.systemInfo) {
                         null,
                         is ViewModelState.SystemInfoType.BuiltinInfo,
@@ -269,7 +271,7 @@ class ProjectViewModel(
                         ),
                         selectedMedia = viewModelState.uriList,
                         visibleMediaLoading = viewModelState.mediaLoading,
-                        enableSend = !viewModelState.mediaLoading,
+                        enableSend = !viewModelState.mediaLoading && selectedModel != null,
                         chatRoomsState = run rooms@{
                             val chatRooms = viewModelState.chatRooms
                                 ?: return@rooms ProjectUiState.ChatRoomsState.Loading
@@ -289,7 +291,7 @@ class ProjectViewModel(
                             )
                         },
                         modelState = createModelState(
-                            resolveSelectedModel(viewModelState),
+                            selectedModel,
                         ),
                     )
                 }
@@ -400,7 +402,7 @@ class ProjectViewModel(
         }
     }
 
-    private fun createModelState(selectedModel: ChatGptModel): ModelSelectorUiState {
+    private fun createModelState(selectedModel: ChatGptModel?): ModelSelectorUiState {
         return ModelSelectorStateFactory.create(
             selectedModel = selectedModel,
             activeLocalModelKeys = viewModelStateFlow.value.activeLocalModelKeys,
@@ -418,11 +420,17 @@ class ProjectViewModel(
                     }
 
                     is ViewModelState.SystemInfoType.Project -> {
+                        val updatedProject = info.project.copy(
+                            modelName = model.modelKey,
+                        )
+                        viewModelStateFlow.update { viewModelState ->
+                            viewModelState.copy(
+                                systemInfo = ViewModelState.SystemInfoType.Project(updatedProject),
+                            )
+                        }
                         viewModelScope.launch {
                             appDatabase.projectDao().update(
-                                info.project.copy(
-                                    modelName = model.modelKey,
-                                ),
+                                updatedProject,
                             )
                         }
                     }
@@ -431,7 +439,7 @@ class ProjectViewModel(
         )
     }
 
-    private fun resolveSelectedModel(viewModelState: ViewModelState): ChatGptModel {
+    private fun resolveSelectedModel(viewModelState: ViewModelState): ChatGptModel? {
         return viewModelState.overwriteModel
             ?: when (val systemInfo = viewModelState.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo -> systemInfo.info.model
@@ -440,10 +448,9 @@ class ProjectViewModel(
                         .firstOrNull { it.matchesModelKey(systemInfo.project.modelName) }
                         ?.toChatGptModel(modelKey = systemInfo.project.modelName)
                         ?: ChatGptModel.findByModelKey(systemInfo.project.modelName)
-                        ?: ChatGptModel.Remote.Gpt.Gpt5Nano
                 }
 
-                null -> ChatGptModel.Remote.Gpt.Gpt5Nano
+                null -> null
             }
     }
 

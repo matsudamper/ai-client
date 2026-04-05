@@ -8,7 +8,7 @@ import net.matsudamper.gptclient.ui.component.ModelSelectorUiState
 
 internal object ModelSelectorStateFactory {
     fun create(
-        selectedModel: ChatGptModel,
+        selectedModel: ChatGptModel?,
         activeLocalModelKeys: Set<LocalModelId>,
         localModelDefs: List<LocalModelDefinition>,
         onSelectModel: (ChatGptModel) -> Unit,
@@ -19,22 +19,23 @@ internal object ModelSelectorStateFactory {
         )
 
         return ModelSelectorUiState(
-            selectedModelName = selectedModel.displayName,
+            selectedModelName = selectedModel?.displayName ?: "モデルを選択",
             items = selectableModels.map { model ->
                 ModelSelectorUiState.Item(
                     modelName = model.displayName,
-                    selected = model.selectionKey == selectedModel.selectionKey,
+                    selected = model.selectionKey == selectedModel?.selectionKey,
                     listener = object : ModelSelectorUiState.ItemListener {
                         override fun onClick() {
-                            onSelectModel(model.withThinking(selectedModel.thinkingEnabled))
+                            onSelectModel(model.withThinking(selectedModel?.thinkingEnabled == true))
                         }
                     },
                 )
             },
-            thinkingEnabled = selectedModel.thinkingEnabled,
-            thinkingToggleEnabled = selectedModel.thinkingToggleEnabled,
+            thinkingEnabled = selectedModel?.thinkingEnabled ?: false,
+            thinkingToggleEnabled = selectedModel?.thinkingToggleEnabled ?: false,
             listener = object : ModelSelectorUiState.Listener {
                 override fun onChangeThinking(enabled: Boolean) {
+                    selectedModel ?: return
                     onSelectModel(selectedModel.withThinking(enabled))
                 }
             },

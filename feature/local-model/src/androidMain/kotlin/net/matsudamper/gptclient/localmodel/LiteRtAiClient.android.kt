@@ -60,21 +60,26 @@ internal class LiteRtAiClient(
 
     private fun addJsonFormatInstruction(messages: List<AiClient.GptMessage>): List<AiClient.GptMessage> {
         val jsonInstruction = "応答はそのままJSONパーサに渡されます。マークダウンのコードブロックや余分なテキストを含めず、有効なJSONのみを返してください。"
-        val systemIndex = messages.indexOfFirst { it.role == AiClient.GptMessage.Role.System }
-        return if (systemIndex >= 0) {
-            messages.toMutableList().also { list ->
-                val existing = list[systemIndex]
-                list[systemIndex] = existing.copy(
-                    contents = existing.contents + AiClient.GptMessage.Content.Text(jsonInstruction),
-                )
-            }
-        } else {
-            listOf(
+        return messages.indexOfFirst { it.role == AiClient.GptMessage.Role.System }
+            .takeIf { it >= 0 }
+            ?.let { systemIndex ->
+                messages.mapIndexed { index, message ->
+                    if (index == systemIndex) {
+                        message.copy(
+                            contents = message.contents + AiClient.GptMessage.Content.Text(jsonInstruction),
+                        )
+                    } else {
+                        message
+                    }
+                }
+            } ?: buildList {
+            add(
                 AiClient.GptMessage(
                     role = AiClient.GptMessage.Role.System,
                     contents = listOf(AiClient.GptMessage.Content.Text(jsonInstruction)),
                 ),
-            ) + messages
+            )
+            addAll(messages)
         }
     }
 
@@ -107,8 +112,11 @@ internal class LiteRtAiClient(
         }
 
         val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size) ?: return null
-
-        return bitmap.toPngByteArray()
+        return try {
+            bitmap.toPngByteArray()
+        } finally {
+            bitmap.recycle()
+        }
     }
 
     private fun Bitmap.toPngByteArray(): ByteArray {
