@@ -40,7 +40,12 @@ internal class LiteRtAiClient(
                     initialMessages = historyMessages,
                 ),
             ).use { conversation ->
-                val responseMessage = conversation.sendMessage(lastMessage)
+                val responseMessage = conversation.sendMessage(
+                    message = lastMessage,
+                    extraContext = mapOf(
+                        "enable_thinking" to true,
+                    ),
+                )
                 responseMessage.toString().toSuccessResult()
             }
         }.getOrElse { throwable ->
