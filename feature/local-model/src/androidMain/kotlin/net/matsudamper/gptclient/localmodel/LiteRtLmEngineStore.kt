@@ -53,10 +53,10 @@ internal object LiteRtLmEngineStore {
         val enableImage = modelDefinition.enableImage
 
         val backends = listOf(
-            "NPU" to {
-                Backend.NPU(nativeLibraryDir = nativeLibDir) to
-                    if (enableImage) Backend.NPU(nativeLibraryDir = nativeLibDir) else null
-            },
+//            "NPU" to {
+//                Backend.NPU(nativeLibraryDir = nativeLibDir) to
+//                    if (enableImage) Backend.NPU(nativeLibraryDir = nativeLibDir) else null
+//            },
             "GPU" to { Backend.GPU() to if (enableImage) Backend.GPU() else null },
             "CPU" to { Backend.CPU() to if (enableImage) Backend.CPU() else null },
         )
