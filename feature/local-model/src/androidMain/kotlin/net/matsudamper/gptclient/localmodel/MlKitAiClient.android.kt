@@ -7,6 +7,7 @@ import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import com.google.mlkit.genai.prompt.GenerationConfig
 import net.matsudamper.gptclient.client.AiClient
 
 internal class MlKitAiClient : AiClient {
@@ -15,7 +16,10 @@ internal class MlKitAiClient : AiClient {
         messages: List<AiClient.GptMessage>,
         format: AiClient.Format,
     ): AiClient.GptResult {
-        val client = Generation.getClient()
+        val client = Generation.getClient(
+            GenerationConfig.builder()
+                .build(),
+        )
 
         return try {
             val textParts = mutableListOf<String>()
@@ -53,12 +57,11 @@ internal class MlKitAiClient : AiClient {
             }
             val combinedText = textParts.joinToString("\n")
             val textPart = TextPart(combinedText)
-            val request =
-                if (firstImagePart != null) {
-                    GenerateContentRequest.Builder(firstImagePart, textPart).build()
-                } else {
-                    GenerateContentRequest.Builder(textPart).build()
-                }
+            val request = if (firstImagePart != null) {
+                GenerateContentRequest.Builder(firstImagePart, textPart)
+            } else {
+                GenerateContentRequest.Builder(textPart)
+            }.build()
 
             val response = client.generateContent(request)
             val text = response.candidates.firstOrNull()?.text.orEmpty()
