@@ -502,8 +502,8 @@ class ChatViewModel(
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
-        val localModelDefs: List<LocalModelDefinition> = emptyList(),
-        val engineLabels: Map<LocalModelId, String> = emptyMap(),
+        val localModelDefs: List<LocalModelDefinition> = listOf(),
+        val engineLabels: Map<LocalModelId, String> = mapOf(),
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom

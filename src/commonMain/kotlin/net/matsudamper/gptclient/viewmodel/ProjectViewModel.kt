@@ -438,7 +438,7 @@ class ProjectViewModel(
                 is ViewModelState.SystemInfoType.Project -> {
                     viewModelState.localModelDefs
                         .firstOrNull { it.matchesModelKey(systemInfo.project.modelName) }
-                        ?.toChatGptModel(systemInfo.project.modelName)
+                        ?.toChatGptModel(modelKey = systemInfo.project.modelName)
                         ?: ChatGptModel.findByModelKey(systemInfo.project.modelName)
                         ?: ChatGptModel.Remote.Gpt.Gpt5Nano
                 }
@@ -453,8 +453,8 @@ class ProjectViewModel(
         val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: SystemInfoType? = null,
         val overwriteModel: ChatGptModel? = null,
-        val activeLocalModelKeys: Set<LocalModelId> = emptySet(),
-        val localModelDefs: List<LocalModelDefinition> = emptyList(),
+        val activeLocalModelKeys: Set<LocalModelId> = setOf(),
+        val localModelDefs: List<LocalModelDefinition> = listOf(),
         val isLoading: Boolean = false,
     ) {
         sealed interface SystemInfoType {

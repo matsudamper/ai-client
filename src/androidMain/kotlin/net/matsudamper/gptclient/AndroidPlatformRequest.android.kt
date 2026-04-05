@@ -2,12 +2,12 @@ package net.matsudamper.gptclient
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.widget.Toast
-import android.content.Context
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import java.io.File
@@ -15,7 +15,6 @@ import java.io.FileNotFoundException
 import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
 
 class AndroidPlatformRequest(private val context: Context) : PlatformRequest {
 

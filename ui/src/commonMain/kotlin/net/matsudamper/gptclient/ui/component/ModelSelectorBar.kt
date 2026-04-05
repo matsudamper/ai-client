@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 
 data class ModelSelectorUiState(
     val selectedModelName: String,
-    val models: List<Item>,
+    val items: List<Item>,
     val thinkingEnabled: Boolean,
     val thinkingToggleEnabled: Boolean,
     val listener: Listener,
@@ -94,7 +94,7 @@ fun ModelSelectorBar(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
             ) {
-                for (model in uiState.models) {
+                for (model in uiState.items) {
                     DropdownMenuItem(
                         text = {
                             Text(

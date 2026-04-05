@@ -311,7 +311,7 @@ class NewChatViewModel(
         val projectNameDialog: NewChatUiState.ProjectNameDialog? = null,
         val projects: List<Project>? = null,
         val isLoading: Boolean = false,
-        val activeLocalModelKeys: Set<LocalModelId> = emptySet(),
-        val localModelDefs: List<LocalModelDefinition> = emptyList(),
+        val activeLocalModelKeys: Set<LocalModelId> = setOf(),
+        val localModelDefs: List<LocalModelDefinition> = listOf(),
     )
 }

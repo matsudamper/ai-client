@@ -367,7 +367,7 @@ internal fun NewChatPreviewContent() {
                     enableSend = false,
                     modelState = ModelSelectorUiState(
                         selectedModelName = "GPT-5.4 Nano",
-                        models = listOf(
+                        items = listOf(
                             ModelSelectorUiState.Item(
                                 modelName = "GPT-5.4 Nano",
                                 selected = true,

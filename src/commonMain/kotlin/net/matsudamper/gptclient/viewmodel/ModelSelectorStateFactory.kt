@@ -20,7 +20,7 @@ internal object ModelSelectorStateFactory {
 
         return ModelSelectorUiState(
             selectedModelName = selectedModel.displayName,
-            models = selectableModels.map { model ->
+            items = selectableModels.map { model ->
                 ModelSelectorUiState.Item(
                     modelName = model.displayName,
                     selected = model.selectionKey == selectedModel.selectionKey,
@@ -47,7 +47,7 @@ internal object ModelSelectorStateFactory {
     ): List<ChatGptModel> {
         return ChatGptModel.entries + activeLocalModelKeys.mapNotNull { key ->
             val def = localModelDefs.find { it.modelId == key } ?: return@mapNotNull null
-            def.toChatGptModel()
+            def.toChatGptModel(modelKey = key.value)
         }
     }
 }

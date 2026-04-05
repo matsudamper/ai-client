@@ -7,7 +7,7 @@ fun LocalModelDefinition.matchesModelKey(modelKey: String): Boolean {
 }
 
 fun LocalModelDefinition.toChatGptModel(
-    modelKey: String = modelId.value,
+    modelKey: String,
 ): ChatGptModel.Local {
     return ChatGptModel.Local(
         modelKey = modelKey,
