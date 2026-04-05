@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.clearText
@@ -40,12 +41,14 @@ import net.matsudamper.gptclient.ui.component.ChatFooterImage
 data class ChatListUiState(
     val items: List<Message>,
     val title: String,
+    val modelInfo: ModelInfo?,
     val selectedImage: List<ChatFooterImage>,
     val visibleMediaLoading: Boolean,
     val errorDialogMessage: String?,
     val enableSend: Boolean,
     val listener: Listener,
 ) {
+    data class ModelInfo(val modelName: String, val engineLabel: String?)
     sealed interface Message {
         val uiSet: ChatMessageComposableInterface
 
@@ -112,6 +115,14 @@ public fun ChatList(
                 modifier = Modifier.fillMaxWidth()
                     .weight(1f),
             ) {
+                if (uiState.modelInfo != null) {
+                    item {
+                        ModelInfoHeader(
+                            modifier = Modifier.fillMaxWidth(),
+                            modelInfo = uiState.modelInfo,
+                        )
+                    }
+                }
                 items(uiState.items) { item ->
                     Box(modifier = Modifier.padding(vertical = 4.dp)) {
                         when (item) {
@@ -188,6 +199,29 @@ private fun UserItem(
             contentAlignment = Alignment.CenterEnd,
         ) {
             item.uiSet.Content(Modifier.padding(horizontal = ChatHorizontalPadding))
+        }
+    }
+}
+
+@Composable
+private fun ModelInfoHeader(
+    modelInfo: ChatListUiState.ModelInfo,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = modelInfo.modelName,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        if (modelInfo.engineLabel != null) {
+            Text(
+                text = modelInfo.engineLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

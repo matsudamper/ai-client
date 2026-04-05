@@ -39,6 +39,8 @@ internal class LocalModelRepositoryImpl(
 
     override suspend fun getModels(): List<LocalModelDefinition> = AndroidLocalModels.entries.map { it.toDefinition() }
 
+    override fun observeEngineLabels(): Flow<Map<LocalModelId, String>> = LiteRtLmEngineStore.backendLabels
+
     override fun observeStatuses(): Flow<Map<LocalModelId, LocalModelState>> {
         val liteRtWorkInfoFlows =
             AndroidLocalModels.entries

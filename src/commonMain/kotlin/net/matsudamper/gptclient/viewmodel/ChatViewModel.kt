@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -20,6 +21,7 @@ import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -125,12 +127,18 @@ class ChatViewModel(
             listener = listener,
             errorDialogMessage = null,
             title = "",
+            modelInfo = null,
             enableSend = false,
         ),
     ).also { uiState ->
         viewModelScope.launch {
             val defs = localModelRepository.getModels()
             viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+        }
+        viewModelScope.launch {
+            localModelRepository.observeEngineLabels().collect { labels ->
+                viewModelStateFlow.update { it.copy(engineLabels = labels) }
+            }
         }
         viewModelScope.launch {
             viewModelStateFlow.map { it.roomInfo?.room?.id }
@@ -151,6 +159,19 @@ class ChatViewModel(
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
                     it.copy(
+                        modelInfo = run {
+                            val modelKey = viewModelState.roomInfo?.room?.modelKey ?: return@run null
+                            val model = findModel(modelKey) ?: return@run null
+                            val engineLabel = if (model is ChatGptModel.Local) {
+                                viewModelState.engineLabels[LocalModelId(model.modelKey)]
+                            } else {
+                                null
+                            }
+                            ChatListUiState.ModelInfo(
+                                modelName = model.displayName,
+                                engineLabel = engineLabel,
+                            )
+                        },
                         title = when (val roomInfo = viewModelState.roomInfo) {
                             is ViewModelState.RoomInfo.BuiltinProject -> {
                                 roomInfo.builtinProjectId.getName()
@@ -478,6 +499,7 @@ class ChatViewModel(
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
         val localModelDefs: List<LocalModelDefinition> = emptyList(),
+        val engineLabels: Map<LocalModelId, String> = emptyMap(),
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom
