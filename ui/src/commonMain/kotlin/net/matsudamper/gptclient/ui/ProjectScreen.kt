@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,20 +21,16 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -51,8 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -60,6 +53,8 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.ui.component.ChatFooter
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.ui.component.ModelSelectorBar
+import net.matsudamper.gptclient.ui.component.ModelSelectorUiState
 
 sealed interface ProjectScreenTestTag {
     object Root : ProjectScreenTestTag
@@ -76,25 +71,9 @@ data class ProjectUiState(
     val visibleMediaLoading: Boolean,
     val enableSend: Boolean,
     val chatRoomsState: ChatRoomsState,
-    val modelState: ModelState,
+    val modelState: ModelSelectorUiState,
     val listener: Listener,
 ) {
-    data class ModelState(
-        val selectedModel: String,
-        val models: List<Item>,
-    ) {
-        data class Item(
-            val modelName: String,
-            val selected: Boolean,
-            val listener: ItemListener,
-        )
-
-        @Immutable
-        interface ItemListener {
-            fun onClick()
-        }
-    }
-
     @Immutable
     sealed interface ChatRoomsState {
         object Loading : ChatRoomsState
@@ -140,7 +119,6 @@ fun ProjectScreen(
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val density = LocalDensity.current
     var visibleDeleteDialog by remember { mutableStateOf(false) }
     if (visibleDeleteDialog) {
         AlertDialog(
@@ -261,184 +239,121 @@ fun ProjectScreen(
                 .padding(innerPadding),
         ) {
             val itemHorizontalPadding = 12.dp
-            Box(
+            LazyColumn(
                 modifier = Modifier.fillMaxWidth()
                     .weight(1f),
             ) {
-                var menuHeight by remember { mutableStateOf(0.dp) }
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = menuHeight),
-                ) {
-                    when (uiState.chatRoomsState) {
-                        is ProjectUiState.ChatRoomsState.Loaded -> {
-                            item {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth()
-                                        .padding(horizontal = itemHorizontalPadding),
-                                ) {
-                                    Text(
-                                        style = MaterialTheme.typography.titleLarge,
-                                        text = "命令",
-                                    )
-                                    val state = rememberTextFieldState(uiState.systemMessage.text)
-                                    val collapsedMaxHeight = 160.dp
-                                    var expandedSystemMessage by remember { mutableStateOf(false) }
-                                    LaunchedEffect(state.text) {
-                                        uiState.systemMessage.listener.onChange(state.text.toString())
-                                    }
-                                    val canExpandSystemMessage = state.text.length > 200
-                                    val systemMessageModifier = if (expandedSystemMessage) {
-                                        Modifier.fillMaxWidth()
-                                    } else {
-                                        Modifier.fillMaxWidth().heightIn(max = collapsedMaxHeight)
-                                    }
-                                    BasicTextField(
-                                        modifier = systemMessageModifier
-                                            .clip(MaterialTheme.shapes.small)
-                                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                                            .padding(8.dp),
-                                        textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        ),
-                                        state = state,
-                                        enabled = uiState.systemMessage.editable,
-                                    )
-                                    if (canExpandSystemMessage && !expandedSystemMessage) {
-                                        OutlinedButton(
-                                            onClick = { expandedSystemMessage = true },
-                                        ) {
-                                            Text("展開")
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(24.dp))
-                                }
-                            }
-                            item {
+                when (uiState.chatRoomsState) {
+                    is ProjectUiState.ChatRoomsState.Loaded -> {
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(horizontal = itemHorizontalPadding),
+                            ) {
                                 Text(
-                                    modifier = Modifier.fillMaxWidth()
-                                        .padding(horizontal = itemHorizontalPadding),
                                     style = MaterialTheme.typography.titleLarge,
-                                    text = "履歴",
+                                    text = "命令",
                                 )
-                            }
-                            items(uiState.chatRoomsState.histories) { history ->
-                                Row(
-                                    modifier = Modifier.fillMaxSize()
-                                        .clickable {
-                                            history.listener.onClick()
-                                        }
-                                        .padding(
-                                            horizontal = itemHorizontalPadding,
-                                            vertical = 12.dp,
-                                        ),
-                                ) {
-                                    Icon(
-                                        imageVector = FeatherIcons.MessageSquare,
-                                        contentDescription = null,
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        history.text,
-                                        maxLines = 1,
-                                    )
+                                val state = rememberTextFieldState(uiState.systemMessage.text)
+                                val collapsedMaxHeight = 160.dp
+                                var expandedSystemMessage by remember { mutableStateOf(false) }
+                                LaunchedEffect(state.text) {
+                                    uiState.systemMessage.listener.onChange(state.text.toString())
                                 }
+                                val canExpandSystemMessage = state.text.length > 200
+                                val systemMessageModifier = if (expandedSystemMessage) {
+                                    Modifier.fillMaxWidth()
+                                } else {
+                                    Modifier.fillMaxWidth().heightIn(max = collapsedMaxHeight)
+                                }
+                                BasicTextField(
+                                    modifier = systemMessageModifier
+                                        .clip(MaterialTheme.shapes.small)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .padding(8.dp),
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    state = state,
+                                    enabled = uiState.systemMessage.editable,
+                                )
+                                if (canExpandSystemMessage && !expandedSystemMessage) {
+                                    OutlinedButton(
+                                        onClick = { expandedSystemMessage = true },
+                                    ) {
+                                        Text("展開")
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(24.dp))
                             }
                         }
+                        item {
+                            Text(
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(horizontal = itemHorizontalPadding),
+                                style = MaterialTheme.typography.titleLarge,
+                                text = "履歴",
+                            )
+                        }
+                        items(uiState.chatRoomsState.histories) { history ->
+                            Row(
+                                modifier = Modifier.fillMaxSize()
+                                    .clickable {
+                                        history.listener.onClick()
+                                    }
+                                    .padding(
+                                        horizontal = itemHorizontalPadding,
+                                        vertical = 12.dp,
+                                    ),
+                            ) {
+                                Icon(
+                                    imageVector = FeatherIcons.MessageSquare,
+                                    contentDescription = null,
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    history.text,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+                    }
 
-                        is ProjectUiState.ChatRoomsState.Loading -> {
-                            item {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    CircularProgressIndicator()
-                                }
+                    is ProjectUiState.ChatRoomsState.Loading -> {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
                             }
                         }
                     }
                 }
-                ModelMenu(
-                    uiState = uiState.modelState,
-                    modifier = Modifier.fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .onGloballyPositioned {
-                            menuHeight = with(density) {
-                                it.size.height.toDp()
-                            }
-                        },
-                )
             }
             val state = rememberTextFieldState()
-            ChatFooter(
+            Column(
                 modifier = Modifier.fillMaxWidth()
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .navigationBarsPadding(),
-                textFieldState = state,
-                onClickAddImage = { uiState.listener.selectMedia() },
-                onClickVoice = { uiState.listener.recordVoice() },
-                selectedMedia = uiState.selectedMedia,
-                visibleMediaLoading = uiState.visibleMediaLoading,
-                enableSend = uiState.enableSend,
-                onClickRetry = null,
-                onClickSend = {
-                    uiState.listener.send(state.text.toString())
-                    state.clearText()
-                },
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ModelMenu(
-    uiState: ProjectUiState.ModelState,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        var expanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally),
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-        ) {
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
             ) {
-                for (model in uiState.models) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(text = model.modelName)
-                        },
-                        onClick = {
-                            expanded = false
-                            model.listener.onClick()
-                        },
-                    )
-                }
-            }
-            OutlinedButton(
-                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                    .padding(8.dp),
-                onClick = { },
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(uiState.selectedModel)
-                    Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
-                }
+                ModelSelectorBar(
+                    uiState = uiState.modelState,
+                )
+                ChatFooter(
+                    modifier = Modifier.fillMaxWidth(),
+                    textFieldState = state,
+                    onClickAddImage = { uiState.listener.selectMedia() },
+                    onClickVoice = { uiState.listener.recordVoice() },
+                    selectedMedia = uiState.selectedMedia,
+                    visibleMediaLoading = uiState.visibleMediaLoading,
+                    enableSend = uiState.enableSend,
+                    onClickRetry = null,
+                    onClickSend = {
+                        uiState.listener.send(state.text.toString())
+                        state.clearText()
+                    },
+                )
             }
         }
     }

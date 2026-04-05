@@ -26,6 +26,7 @@ import net.matsudamper.gptclient.room.entity.Project
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.ui.component.ModelSelectorUiState
 import net.matsudamper.gptclient.util.EventSender
 
 class NewChatViewModel(
@@ -97,19 +98,7 @@ class NewChatViewModel(
             projects = builtinProjects,
             selectedMedia = listOf(),
             visibleMediaLoading = false,
-            models = ChatGptModel.entries.map { gptModel ->
-                NewChatUiState.Model(
-                    name = gptModel.displayName,
-                    listener = object : NewChatUiState.Model.Listener {
-                        override fun onClick() {
-                            viewModelStateFlow.update { viewModelState ->
-                                viewModelState.copy(selectedModel = gptModel)
-                            }
-                        }
-                    },
-                )
-            },
-            selectedModel = "",
+            modelState = createModelState(ChatGptModel.Remote.Gpt.Gpt5Nano),
             projectNameDialog = null,
             isLoading = false,
             enableSend = false,
@@ -242,36 +231,13 @@ class NewChatViewModel(
         viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
-                    val localDefs = viewModelState.localModelDefs
-                    val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
-                        val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
-                        ChatGptModel.Local(
-                            modelKey = def.modelId.value,
-                            displayName = def.displayName,
-                            enableImage = def.enableImage,
-                            supportedImageMimeTypes = def.supportedImageMimeTypes,
-                            defaultToken = def.defaultToken,
-                        )
-                    }
                     it.copy(
                         selectedMedia = viewModelState.mediaList,
                         visibleMediaLoading = viewModelState.mediaLoading,
-                        selectedModel = viewModelState.selectedModel.displayName,
+                        modelState = createModelState(viewModelState.selectedModel),
                         projectNameDialog = viewModelState.projectNameDialog,
                         isLoading = viewModelState.isLoading,
                         enableSend = !viewModelState.mediaLoading,
-                        models = allModels.map { gptModel ->
-                            NewChatUiState.Model(
-                                name = gptModel.displayName,
-                                listener = object : NewChatUiState.Model.Listener {
-                                    override fun onClick() {
-                                        viewModelStateFlow.update { viewModelState ->
-                                            viewModelState.copy(selectedModel = gptModel)
-                                        }
-                                    }
-                                },
-                            )
-                        },
                         projects = builtinProjects.plus(
                             viewModelState.projects.orEmpty().map { project ->
                                 NewChatUiState.Project(
@@ -296,6 +262,19 @@ class NewChatViewModel(
                 }
             }
         }
+    }
+
+    private fun createModelState(selectedModel: ChatGptModel): ModelSelectorUiState {
+        return ModelSelectorStateFactory.create(
+            selectedModel = selectedModel,
+            activeLocalModelKeys = viewModelStateFlow.value.activeLocalModelKeys,
+            localModelDefs = viewModelStateFlow.value.localModelDefs,
+            onSelectModel = { model ->
+                viewModelStateFlow.update {
+                    it.copy(selectedModel = model)
+                }
+            },
+        )
     }
 
     private inner class ChatFooterImageListener(private val imageUrl: String) : ChatFooterImage.Listener {

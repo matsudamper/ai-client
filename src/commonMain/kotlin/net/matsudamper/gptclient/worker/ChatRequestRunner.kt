@@ -13,6 +13,8 @@ import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.localmodel.LocalModelAiClientFactory
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.matchesModelKey
+import net.matsudamper.gptclient.localmodel.toChatGptModel
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
@@ -33,18 +35,12 @@ class ChatRequestRunner(
         return try {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val requestInfo = createRequestInfo(room)
-            val chatModel = ChatGptModel.entries.firstOrNull { it.modelKey == requestInfo.modelKey }
+            val chatModel = ChatGptModel.findByModelKey(requestInfo.modelKey)
                 ?: run {
                     val localDef = localModelRepository.getModels()
-                        .find { it.modelId.value == requestInfo.modelKey }
+                        .find { it.matchesModelKey(requestInfo.modelKey) }
                     if (localDef != null) {
-                        ChatGptModel.Local(
-                            modelKey = localDef.modelId.value,
-                            displayName = localDef.displayName,
-                            enableImage = localDef.enableImage,
-                            supportedImageMimeTypes = localDef.supportedImageMimeTypes,
-                            defaultToken = localDef.defaultToken,
-                        )
+                        localDef.toChatGptModel(modelKey = requestInfo.modelKey)
                     } else {
                         return fail(chatRoomId = chatRoomId, errorMessage = "モデルが見つかりません")
                     }
@@ -147,7 +143,10 @@ class ChatRequestRunner(
     }
 
     private fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
-        return localModelAiClientFactory.create(LocalModelId(model.modelKey))
+        return localModelAiClientFactory.create(
+            modelId = LocalModelId(model.baseModelKey),
+            enableThinking = model.thinkingEnabled,
+        )
     }
 
     private suspend fun writeResponse(

@@ -24,6 +24,8 @@ import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.matchesModelKey
+import net.matsudamper.gptclient.localmodel.toChatGptModel
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -446,18 +448,10 @@ class ChatViewModel(
     }
 
     private fun findModel(modelKey: String): ChatGptModel? {
-        return ChatGptModel.entries.firstOrNull { it.modelKey == modelKey }
+        return ChatGptModel.findByModelKey(modelKey)
             ?: viewModelStateFlow.value.localModelDefs
-                .firstOrNull { it.modelId.value == modelKey }
-                ?.let { def ->
-                    ChatGptModel.Local(
-                        modelKey = def.modelId.value,
-                        displayName = def.displayName,
-                        enableImage = def.enableImage,
-                        supportedImageMimeTypes = def.supportedImageMimeTypes,
-                        defaultToken = def.defaultToken,
-                    )
-                }
+                .firstOrNull { it.matchesModelKey(modelKey) }
+                ?.toChatGptModel(modelKey = modelKey)
     }
 
     private fun launchWithPlatformRequest(

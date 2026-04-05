@@ -9,6 +9,7 @@ data class LocalModelDefinition(
     val enableImage: Boolean,
     val supportedImageMimeTypes: List<String>,
     val defaultToken: Int,
+    val supportsThinking: Boolean,
     val canDelete: Boolean,
 )
 

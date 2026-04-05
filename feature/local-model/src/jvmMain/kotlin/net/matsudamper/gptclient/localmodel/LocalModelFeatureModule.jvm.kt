@@ -27,5 +27,5 @@ internal class JvmLocalModelRepository : LocalModelRepository {
 }
 
 internal object EmptyLocalModelAiClientFactory : LocalModelAiClientFactory {
-    override fun create(modelId: LocalModelId): AiClient? = null
+    override fun create(modelId: LocalModelId, enableThinking: Boolean): AiClient? = null
 }

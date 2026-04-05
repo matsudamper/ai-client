@@ -15,6 +15,7 @@ internal data class AndroidLocalModel(
     val enableImage: Boolean,
     val supportedImageMimeTypes: List<String>,
     val defaultToken: Int,
+    val supportsThinking: Boolean,
 ) {
     val canDelete: Boolean
         get() = providerId == LocalModelProviderId.LiteRtLm && fileName != null
@@ -27,6 +28,7 @@ internal data class AndroidLocalModel(
             enableImage = enableImage,
             supportedImageMimeTypes = supportedImageMimeTypes,
             defaultToken = defaultToken,
+            supportsThinking = supportsThinking,
             canDelete = canDelete,
         )
 }
@@ -41,6 +43,7 @@ internal object AndroidLocalModels {
             enableImage = true,
             supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
             defaultToken = 1024,
+            supportsThinking = false,
         )
 
     private val gemma4E4B =
@@ -54,6 +57,7 @@ internal object AndroidLocalModels {
             enableImage = true,
             supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 4096,
+            supportsThinking = true,
         )
 
     private val gemma4E2B =
@@ -67,6 +71,7 @@ internal object AndroidLocalModels {
             enableImage = true,
             supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 4096,
+            supportsThinking = true,
         )
 
     val entries: List<AndroidLocalModel> =

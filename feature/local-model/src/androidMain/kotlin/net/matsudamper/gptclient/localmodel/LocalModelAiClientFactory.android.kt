@@ -6,7 +6,7 @@ import net.matsudamper.gptclient.client.AiClient
 internal class AndroidLocalModelAiClientFactory(
     private val context: Context,
 ) : LocalModelAiClientFactory {
-    override fun create(modelId: LocalModelId): AiClient? {
+    override fun create(modelId: LocalModelId, enableThinking: Boolean): AiClient? {
         val modelDefinition = AndroidLocalModels.find(modelId) ?: return null
         return when (modelDefinition.providerId) {
             LocalModelProviderId.MlKitPrompt -> MlKitAiClient()
@@ -18,6 +18,7 @@ internal class AndroidLocalModelAiClientFactory(
                     context = context,
                     modelDefinition = modelDefinition,
                     modelFile = modelFile,
+                    enableThinking = enableThinking && modelDefinition.supportsThinking,
                 )
             }
         }

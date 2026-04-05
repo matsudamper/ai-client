@@ -20,6 +20,8 @@ import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.matchesModelKey
+import net.matsudamper.gptclient.localmodel.toChatGptModel
 import net.matsudamper.gptclient.navigation.AppNavigator
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
@@ -29,6 +31,7 @@ import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.ui.component.ModelSelectorUiState
 import net.matsudamper.gptclient.util.EventSender
 
 class ProjectViewModel(
@@ -151,7 +154,7 @@ class ProjectViewModel(
                 }
             }
             viewModelScope.launch {
-                val selectedModel = viewModelStateFlow.value.overwriteModel ?: systemInfo.getInfo().model
+                val selectedModel = resolveSelectedModel(viewModelStateFlow.value)
                 val imageFormat = selectedModel.preferredImageFormat ?: ImageFormat.Jpeg
                 appNavigator.navigate(
                     Navigator.Chat(
@@ -286,9 +289,7 @@ class ProjectViewModel(
                             )
                         },
                         modelState = createModelState(
-                            viewModelState.overwriteModel
-                                ?: viewModelState.systemInfo?.getInfo()?.model
-                                ?: ChatGptModel.Remote.Gpt.Gpt5Nano,
+                            resolveSelectedModel(viewModelState),
                         ),
                     )
                 }
@@ -399,52 +400,51 @@ class ProjectViewModel(
         }
     }
 
-    private fun createModelState(selectedModel: ChatGptModel): ProjectUiState.ModelState {
-        val localDefs = viewModelStateFlow.value.localModelDefs
-        val allModels = ChatGptModel.entries + viewModelStateFlow.value.activeLocalModelKeys.mapNotNull { key ->
-            val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
-            ChatGptModel.Local(
-                modelKey = def.modelId.value,
-                displayName = def.displayName,
-                enableImage = def.enableImage,
-                supportedImageMimeTypes = def.supportedImageMimeTypes,
-                defaultToken = def.defaultToken,
-            )
-        }
-        return ProjectUiState.ModelState(
-        selectedModel = selectedModel.displayName,
-        models = allModels.map { model ->
-            ProjectUiState.ModelState.Item(
-                modelName = model.displayName,
-                selected = model == selectedModel,
-                listener = object : ProjectUiState.ModelState.ItemListener {
-                    override fun onClick() {
-                        when (val info = viewModelStateFlow.value.systemInfo) {
-                            is ViewModelState.SystemInfoType.BuiltinInfo,
-                            null,
-                            -> {
-                                viewModelStateFlow.update {
-                                    it.copy(
-                                        overwriteModel = model,
-                                    )
-                                }
-                            }
-
-                            is ViewModelState.SystemInfoType.Project -> {
-                                viewModelScope.launch {
-                                    appDatabase.projectDao().update(
-                                        info.project.copy(
-                                            modelName = model.modelKey,
-                                        ),
-                                    )
-                                }
-                            }
+    private fun createModelState(selectedModel: ChatGptModel): ModelSelectorUiState {
+        return ModelSelectorStateFactory.create(
+            selectedModel = selectedModel,
+            activeLocalModelKeys = viewModelStateFlow.value.activeLocalModelKeys,
+            localModelDefs = viewModelStateFlow.value.localModelDefs,
+            onSelectModel = { model ->
+                when (val info = viewModelStateFlow.value.systemInfo) {
+                    is ViewModelState.SystemInfoType.BuiltinInfo,
+                    null,
+                    -> {
+                        viewModelStateFlow.update {
+                            it.copy(
+                                overwriteModel = model,
+                            )
                         }
                     }
-                },
-            )
-        },
-    )
+
+                    is ViewModelState.SystemInfoType.Project -> {
+                        viewModelScope.launch {
+                            appDatabase.projectDao().update(
+                                info.project.copy(
+                                    modelName = model.modelKey,
+                                ),
+                            )
+                        }
+                    }
+                }
+            },
+        )
+    }
+
+    private fun resolveSelectedModel(viewModelState: ViewModelState): ChatGptModel {
+        return viewModelState.overwriteModel
+            ?: when (val systemInfo = viewModelState.systemInfo) {
+                is ViewModelState.SystemInfoType.BuiltinInfo -> systemInfo.info.model
+                is ViewModelState.SystemInfoType.Project -> {
+                    viewModelState.localModelDefs
+                        .firstOrNull { it.matchesModelKey(systemInfo.project.modelName) }
+                        ?.toChatGptModel(systemInfo.project.modelName)
+                        ?: ChatGptModel.findByModelKey(systemInfo.project.modelName)
+                        ?: ChatGptModel.Remote.Gpt.Gpt5Nano
+                }
+
+                null -> ChatGptModel.Remote.Gpt.Gpt5Nano
+            }
     }
 
     private data class ViewModelState(
@@ -472,8 +472,7 @@ class ProjectViewModel(
                     systemMessage = project.systemMessage,
                     format = AiClient.Format.Text,
                     responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
-                    model = ChatGptModel.entries.firstOrNull { it.modelKey == project.modelName }
-                        ?: ChatGptModel.Remote.Gpt.Gpt5Nano,
+                    model = ChatGptModel.Remote.Gpt.Gpt5Nano,
                 )
             }
 

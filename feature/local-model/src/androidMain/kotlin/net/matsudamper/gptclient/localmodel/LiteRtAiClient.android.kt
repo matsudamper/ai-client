@@ -17,6 +17,7 @@ internal class LiteRtAiClient(
     private val context: Context,
     private val modelDefinition: AndroidLocalModel,
     private val modelFile: File,
+    private val enableThinking: Boolean,
 ) : AiClient {
     override suspend fun request(
         messages: List<AiClient.GptMessage>,
@@ -43,7 +44,7 @@ internal class LiteRtAiClient(
                 val responseMessage = conversation.sendMessage(
                     message = lastMessage,
                     extraContext = mapOf(
-                        "enable_thinking" to true,
+                        "enable_thinking" to enableThinking,
                     ),
                 )
                 responseMessage.toString().toSuccessResult()

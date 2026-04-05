@@ -11,8 +11,16 @@ interface ChatGptModel {
     val supportedImageMimeTypes: List<String>
     val defaultToken: Int
     val requireTemperature: Double?
+    val selectionKey: String
+        get() = modelKey
+    val thinkingToggleEnabled: Boolean
+        get() = false
+    val thinkingEnabled: Boolean
+        get() = false
     val preferredImageFormat: ImageFormat?
         get() = supportedImageMimeTypes.firstNotNullOfOrNull(ImageFormat::fromMimeType)
+
+    fun withThinking(enabled: Boolean): ChatGptModel = this
 
     @Serializable
     sealed interface Remote : ChatGptModel {
@@ -70,87 +78,249 @@ interface ChatGptModel {
             }
 
             @Serializable
-            data object Gemini3FlashLiteLatestHigh : Gemini {
+            data object Gemini3FlashLite : Gemini {
+                override val modelKey: String = "gemini-3.1-flash-lite-preview"
+                override val displayName: String = "Gemini 3.1 Flash Lite"
+                override val apiModelName: String = "gemini-3.1-flash-lite-preview"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val thinkingLevel: String? = null
+                override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3FlashLiteThinking else this
+                }
+            }
+
+            @Serializable
+            data object Gemini3FlashLiteThinking : Gemini {
+                override val modelKey: String = "gemini-3.1-flash-lite-preview-thinking"
+                override val displayName: String = "Gemini 3.1 Flash Lite"
+                override val apiModelName: String = "gemini-3.1-flash-lite-preview"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini3FlashLite.modelKey
+                override val thinkingLevel: String = "low"
+                override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) this else Gemini3FlashLite
+                }
+            }
+
+            @Serializable
+            data object Gemini3FlashLiteLegacyHigh : Gemini {
                 override val modelKey: String = "gemini-3.1-flash-lite-preview-high"
-                override val displayName: String = "Gemini 3.1 Flash Lite(High)"
+                override val displayName: String = "Gemini 3.1 Flash Lite"
                 override val apiModelName: String = "gemini-3.1-flash-lite-preview"
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
-                override val thinkingLevel: String = "high"
+                override val selectionKey: String = Gemini3FlashLite.modelKey
+                override val thinkingLevel: String = "low"
                 override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3FlashLiteThinking else Gemini3FlashLite
+                }
             }
 
             @Serializable
-            data object Gemini3FlashLiteLatestLow : Gemini {
+            data object Gemini3FlashLiteLegacyLow : Gemini {
                 override val modelKey: String = "gemini-3.1-flash-lite-preview-low"
-                override val displayName: String = "Gemini 3.1 Flash Lite(Low)"
+                override val displayName: String = "Gemini 3.1 Flash Lite"
                 override val apiModelName: String = "gemini-3.1-flash-lite-preview"
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini3FlashLite.modelKey
                 override val thinkingLevel: String = "low"
                 override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3FlashLiteThinking else Gemini3FlashLite
+                }
             }
 
             @Serializable
-            data object Gemini3ProThinkingHigh : Gemini {
+            data object Gemini3Pro : Gemini {
+                override val modelKey: String = "gemini-3.1-pro-preview"
+                override val displayName: String = "Gemini 3.1 Pro★"
+                override val apiModelName: String = "gemini-3.1-pro-preview"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val thinkingLevel: String? = null
+                override val requireBillingKey: Boolean = true
+                override val thinkingToggleEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3ProThinking else this
+                }
+            }
+
+            @Serializable
+            data object Gemini3ProThinking : Gemini {
+                override val modelKey: String = "gemini-3.1-pro-preview-thinking"
+                override val displayName: String = "Gemini 3.1 Pro★"
+                override val apiModelName: String = "gemini-3.1-pro-preview"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini3Pro.modelKey
+                override val thinkingLevel: String = "low"
+                override val requireBillingKey: Boolean = true
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) this else Gemini3Pro
+                }
+            }
+
+            @Serializable
+            data object Gemini3ProLegacyHigh : Gemini {
                 override val modelKey: String = "gemini-3.1-pro-preview-thinking-high"
-                override val displayName: String = "Gemini 3.1 Pro (Thinking High)★"
+                override val displayName: String = "Gemini 3.1 Pro★"
                 override val apiModelName: String = "gemini-3.1-pro-preview"
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini3Pro.modelKey
                 override val thinkingLevel: String = "high"
                 override val requireBillingKey: Boolean = true
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3ProThinking else Gemini3Pro
+                }
             }
 
             @Serializable
-            data object Gemini3ProThinkingLow : Gemini {
+            data object Gemini3ProLegacyLow : Gemini {
                 override val modelKey: String = "gemini-3.1-pro-preview-thinking-low"
-                override val displayName: String = "Gemini 3.1 Pro (Thinking Low)★"
+                override val displayName: String = "Gemini 3.1 Pro★"
                 override val apiModelName: String = "gemini-3.1-pro-preview"
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini3Pro.modelKey
                 override val thinkingLevel: String = "low"
                 override val requireBillingKey: Boolean = true
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3ProThinking else Gemini3Pro
+                }
             }
 
             @Serializable
-            data object Gemini3FlashThinkingHigh : Gemini {
-                override val modelKey: String = "gemini-3-flash-preview-thinking-high"
-                override val displayName: String = "Gemini 3 Flash (Thinking High)"
+            data object Gemini3Flash : Gemini {
+                override val modelKey: String = "gemini-3-flash-preview"
+                override val displayName: String = "Gemini 3 Flash"
                 override val apiModelName: String = "gemini-3-flash-preview"
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
+                override val thinkingLevel: String? = null
+                override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3FlashThinking else this
+                }
+            }
+
+            @Serializable
+            data object Gemini3FlashThinking : Gemini {
+                override val modelKey: String = "gemini-3-flash-preview-thinking"
+                override val displayName: String = "Gemini 3 Flash"
+                override val apiModelName: String = "gemini-3-flash-preview"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini3Flash.modelKey
                 override val thinkingLevel: String = "high"
                 override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) this else Gemini3Flash
+                }
             }
 
             @Serializable
-            data object Gemini3FlashThinkingLow : Gemini {
-                override val modelKey: String = "gemini-3-flash-preview-thinking-low"
-                override val displayName: String = "Gemini 3 Flash (Thinking Low)"
+            data object Gemini3FlashLegacyHigh : Gemini {
+                override val modelKey: String = "gemini-3-flash-preview-thinking-high"
+                override val displayName: String = "Gemini 3 Flash"
                 override val apiModelName: String = "gemini-3-flash-preview"
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini3Flash.modelKey
+                override val thinkingLevel: String = "high"
+                override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3FlashThinking else Gemini3Flash
+                }
+            }
+
+            @Serializable
+            data object Gemini3FlashLegacyLow : Gemini {
+                override val modelKey: String = "gemini-3-flash-preview-thinking-low"
+                override val displayName: String = "Gemini 3 Flash"
+                override val apiModelName: String = "gemini-3-flash-preview"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini3Flash.modelKey
                 override val thinkingLevel: String = "low"
                 override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini3FlashThinking else Gemini3Flash
+                }
             }
 
             companion object {
                 val entries: List<Gemini> by lazy {
                     listOf(
                         GeminiFlashLiteLatest,
-                        Gemini3FlashLiteLatestHigh,
-                        Gemini3FlashLiteLatestLow,
-                        Gemini3ProThinkingHigh,
-                        Gemini3ProThinkingLow,
-                        Gemini3FlashThinkingHigh,
-                        Gemini3FlashThinkingLow,
+                        Gemini3FlashLite,
+                        Gemini3Pro,
+                        Gemini3Flash,
+                    )
+                }
+
+                // 既存DBに保存済みの modelKey を引き続き解決するために legacy も保持する。
+                val allEntries: List<Gemini> by lazy {
+                    entries + listOf(
+                        Gemini3FlashLiteThinking,
+                        Gemini3FlashLiteLegacyHigh,
+                        Gemini3FlashLiteLegacyLow,
+                        Gemini3ProThinking,
+                        Gemini3ProLegacyHigh,
+                        Gemini3ProLegacyLow,
+                        Gemini3FlashThinking,
+                        Gemini3FlashLegacyHigh,
+                        Gemini3FlashLegacyLow,
                     )
                 }
             }
@@ -158,6 +328,7 @@ interface ChatGptModel {
 
         companion object {
             val entries: List<Remote> by lazy { Gpt.entries + Gemini.entries }
+            val allEntries: List<Remote> by lazy { Gpt.entries + Gemini.allEntries }
         }
     }
 
@@ -169,9 +340,43 @@ interface ChatGptModel {
         override val supportedImageMimeTypes: List<String> = emptyList(),
         override val defaultToken: Int = 1024,
         override val requireTemperature: Double? = null,
-    ) : ChatGptModel
+        val supportsThinking: Boolean = false,
+    ) : ChatGptModel {
+        val baseModelKey: String
+            get() = normalizeModelKey(modelKey)
+
+        override val selectionKey: String
+            get() = baseModelKey
+
+        override val thinkingToggleEnabled: Boolean
+            get() = supportsThinking
+
+        override val thinkingEnabled: Boolean
+            get() = supportsThinking && modelKey.endsWith(THINKING_SUFFIX)
+
+        override fun withThinking(enabled: Boolean): ChatGptModel {
+            return copy(
+                modelKey = if (supportsThinking && enabled) {
+                    "$baseModelKey$THINKING_SUFFIX"
+                } else {
+                    baseModelKey
+                },
+            )
+        }
+
+        companion object {
+            private const val THINKING_SUFFIX = "#thinking"
+
+            fun normalizeModelKey(modelKey: String): String = modelKey.removeSuffix(THINKING_SUFFIX)
+        }
+    }
 
     companion object {
         val entries: List<ChatGptModel> by lazy { Remote.entries }
+        val allEntries: List<ChatGptModel> by lazy { Remote.allEntries }
+
+        fun findByModelKey(modelKey: String): ChatGptModel? {
+            return allEntries.firstOrNull { it.modelKey == modelKey }
+        }
     }
 }
