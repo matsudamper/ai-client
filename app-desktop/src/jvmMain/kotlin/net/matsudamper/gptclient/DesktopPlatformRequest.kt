@@ -1,14 +1,10 @@
 package net.matsudamper.gptclient
 
 import java.awt.Desktop
-import java.awt.EventQueue
-import java.awt.FileDialog
-import java.awt.Frame
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.awt.image.BufferedImage
 import java.io.File
-import java.io.FilenameFilter
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -17,28 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class DesktopPlatformRequest : PlatformRequest {
-    override suspend fun getMediaList(): List<String> = withContext(Dispatchers.IO) {
-        var result: List<String> = emptyList()
-        EventQueue.invokeAndWait {
-            val owner = Frame()
-            try {
-                val dialog = FileDialog(owner, "画像を選択", FileDialog.LOAD).apply {
-                    isMultipleMode = true
-                    filenameFilter = FilenameFilter { _, name ->
-                        supportedImageExtensions.any { extension ->
-                            name.endsWith(".$extension", ignoreCase = true)
-                        }
-                    }
-                }
-                dialog.isVisible = true
-                result = dialog.files.map { it.absolutePath }
-            } finally {
-                owner.dispose()
-            }
-        }
-        result
-    }
-
     override suspend fun readImageData(uri: String): PlatformRequest.ImageData? {
         return withContext(Dispatchers.IO) {
             runCatching {
@@ -188,9 +162,5 @@ class DesktopPlatformRequest : PlatformRequest {
 
     private fun ByteArray.toHexString(): String {
         return joinToString(separator = "") { byte -> "%02x".format(byte.toInt() and 0xff) }
-    }
-
-    private companion object {
-        private val supportedImageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp", "webp")
     }
 }

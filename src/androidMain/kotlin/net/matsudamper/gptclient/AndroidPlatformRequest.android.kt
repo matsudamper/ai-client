@@ -7,43 +7,28 @@ import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Context
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import java.io.File
 import java.io.FileNotFoundException
 import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 
-class AndroidPlatformRequest(private val activity: ComponentActivity) : PlatformRequest {
-    private val mediaLauncher = object {
-        private val resultFlow = Channel<List<String>>(Channel.RENDEZVOUS)
-        private val launcher = activity.registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
-            resultFlow.trySend(it.map { uri -> uri.toString() })
-        }
 
-        suspend fun launch(): List<String> {
-            launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            return resultFlow.receive()
-        }
-    }
-
-    override suspend fun getMediaList(): List<String> = mediaLauncher.launch()
+class AndroidPlatformRequest(private val context: Context) : PlatformRequest {
 
     override suspend fun readImageData(uri: String): PlatformRequest.ImageData? {
         return withContext(Dispatchers.IO) {
             val parsedUri = uri.toUri()
             val bytes = try {
-                activity.contentResolver.openInputStream(parsedUri)?.use { input -> input.readBytes() }
+                context.contentResolver.openInputStream(parsedUri)?.use { input -> input.readBytes() }
             } catch (_: FileNotFoundException) {
                 null
             } ?: return@withContext null
 
-            val mimeType = activity.contentResolver.getType(parsedUri)
+            val mimeType = context.contentResolver.getType(parsedUri)
                 ?: parsedUri.toMimeType()
                 ?: return@withContext null
 
@@ -55,11 +40,11 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
     }
 
     override fun openLink(url: String) {
-        activity.startActivity(
+        context.startActivity(
             Intent(
                 Intent.ACTION_VIEW,
                 url.toUri(),
-            ),
+            ).also { it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) },
         )
     }
 
@@ -68,17 +53,17 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
             val parsedUri = uri.toUri()
             when (parsedUri.scheme) {
                 "file" -> parsedUri.toFile().delete()
-                else -> activity.contentResolver.delete(parsedUri, null, null) > 0
+                else -> context.contentResolver.delete(parsedUri, null, null) > 0
             }
         }.getOrNull() == true
     }
 
     override fun showToast(text: String) {
-        Toast.makeText(activity, text, Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
     }
 
     override fun copyToClipboard(text: String) {
-        val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
         val clip = android.content.ClipData.newPlainText("Copied Text", text)
         clipboard.setPrimaryClip(clip)
     }
@@ -90,7 +75,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
     ): String? {
         return withContext(Dispatchers.IO) {
             try {
-                val source = ImageDecoder.createSource(activity.contentResolver, uri.toUri())
+                val source = ImageDecoder.createSource(context.contentResolver, uri.toUri())
                 val bitmap = ImageDecoder.decodeBitmap(source)
                 val outputBitmap = cropRect?.let { bitmap.crop(it) } ?: bitmap
                 val cacheKey = buildString {
@@ -106,7 +91,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
                     append('|')
                     append(imageFormat.name)
                 }.sha256Hex()
-                val file = File(activity.cacheDir, "$cacheKey.${imageFormat.fileExtension}")
+                val file = File(context.cacheDir, "$cacheKey.${imageFormat.fileExtension}")
 
                 if (!file.exists()) {
                     file.writeBitmap(outputBitmap, imageFormat)
@@ -128,7 +113,7 @@ class AndroidPlatformRequest(private val activity: ComponentActivity) : Platform
             description = descriptionText
         }
         val notificationManager: NotificationManager =
-            activity.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
+            context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
 

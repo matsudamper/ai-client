@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.ImageFormat
+import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
@@ -42,6 +43,7 @@ class ProjectViewModel(
 
     interface Event {
         fun providePlatformRequest(): PlatformRequest
+        fun provideMediaRequest(): MediaRequest
     }
 
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
@@ -106,7 +108,7 @@ class ProjectViewModel(
                     viewModelStateFlow.update {
                         it.copy(mediaLoading = true)
                     }
-                    val uriList = withPlatformRequest {
+                    val uriList = withMediaRequest {
                         getMediaList()
                     }
                     viewModelStateFlow.update {
@@ -340,6 +342,14 @@ class ProjectViewModel(
     ): R {
         return eventSender.send { event ->
             event.providePlatformRequest().block()
+        }
+    }
+
+    private suspend fun <R> withMediaRequest(
+        block: suspend MediaRequest.() -> R,
+    ): R {
+        return eventSender.send { event ->
+            event.provideMediaRequest().block()
         }
     }
 

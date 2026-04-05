@@ -28,6 +28,7 @@ import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
 import net.matsudamper.gptclient.viewmodel.NewChatViewModel
 import net.matsudamper.gptclient.viewmodel.ProjectViewModel
 import net.matsudamper.gptclient.viewmodel.SettingViewModel
+import net.matsudamper.gptclient.MediaRequest
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
@@ -99,6 +100,7 @@ fun App(
                             viewModel.eventHandler.collect(
                                 object : NewChatViewModel.Event {
                                     override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                    override fun provideMediaRequest(): MediaRequest = getKoin().get()
                                 },
                             )
                         }
@@ -122,6 +124,7 @@ fun App(
                             viewModel.eventHandler.collect(
                                 object : ChatViewModel.Event {
                                     override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                    override fun provideMediaRequest(): MediaRequest = getKoin().get()
                                 },
                             )
                         }
@@ -190,6 +193,7 @@ fun App(
                             viewModel.eventHandler.collect(
                                 object : ProjectViewModel.Event {
                                     override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                    override fun provideMediaRequest(): MediaRequest = getKoin().get()
                                 },
                             )
                         }

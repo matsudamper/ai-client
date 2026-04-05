@@ -1,10 +1,6 @@
 package net.matsudamper.gptclient
 
 interface PlatformRequest {
-    /**
-     * @return プラットフォーム依存の画像参照文字列
-     */
-    suspend fun getMediaList(): List<String>
     suspend fun readImageData(uri: String): ImageData?
     fun openLink(url: String)
 

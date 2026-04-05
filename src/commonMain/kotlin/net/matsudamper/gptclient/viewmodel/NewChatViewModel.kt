@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.ImageFormat
+import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.Calendar
@@ -38,6 +39,7 @@ class NewChatViewModel(
 
     interface Event {
         fun providePlatformRequest(): PlatformRequest
+        fun provideMediaRequest(): MediaRequest
     }
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val builtinProjects = listOf(
@@ -160,7 +162,7 @@ class NewChatViewModel(
                             viewModelStateFlow.update {
                                 it.copy(mediaLoading = true)
                             }
-                            val imageUrlList = eventSender.send { it.providePlatformRequest().getMediaList() }
+                            val imageUrlList = eventSender.send { it.provideMediaRequest().getMediaList() }
                             viewModelStateFlow.update {
                                 it.copy(
                                     mediaList = imageUrlList.map { imageUrl ->

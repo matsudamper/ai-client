@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.ImageFormat
+import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.getName
@@ -47,6 +48,7 @@ class ChatViewModel(
 
     interface Event {
         fun providePlatformRequest(): PlatformRequest
+        fun provideMediaRequest(): MediaRequest
     }
 
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
@@ -57,7 +59,7 @@ class ChatViewModel(
                     viewModelStateFlow.update {
                         it.copy(isMediaLoading = true)
                     }
-                    val images = withPlatformRequest {
+                    val images = withMediaRequest {
                         getMediaList()
                     }
                     viewModelStateFlow.update { viewModelState ->
@@ -432,6 +434,14 @@ class ChatViewModel(
     ): R {
         return eventSender.send { event ->
             event.providePlatformRequest().block()
+        }
+    }
+
+    private suspend fun <R> withMediaRequest(
+        block: suspend MediaRequest.() -> R,
+    ): R {
+        return eventSender.send { event ->
+            event.provideMediaRequest().block()
         }
     }
 

@@ -19,6 +19,7 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
     val appDatabasePath = JvmAppStorage.resolve("app-database").absolutePath
     val settingDataStorePath = JvmAppStorage.resolve("setting.pb").absolutePath
     val desktopPlatformRequest = DesktopPlatformRequest()
+    val mediaRequest = DesktopMediaRequest()
 
     startKoin {
         modules(
@@ -38,6 +39,7 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
                 single<PlatformRequest> {
                     desktopPlatformRequest
                 }
+                single<MediaRequest> { mediaRequest }
                 single<AddRequestUseCase.WorkManagerScheduler> {
                     JvmWorkManagerScheduler(
                         appDatabase = get(),

@@ -11,16 +11,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.runtime.mutableStateOf
 import net.matsudamper.gptclient.localmodel.EXTRA_OPEN_LOCAL_MODEL_SETTINGS
-import net.matsudamper.gptclient.localmodel.LOCAL_MODEL_DOWNLOAD_NOTIFICATION_CHANNEL_ID
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import org.koin.android.ext.android.getKoin
 import org.koin.dsl.module
 
 class MainActivity : ComponentActivity() {
-    private val platformRequest = AndroidPlatformRequest(
-        activity = this,
-    )
+    private val mediaRequest = AndroidMediaRequest(this)
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -34,13 +31,10 @@ class MainActivity : ComponentActivity() {
         getKoin().loadModules(
             listOf(
                 module {
-                    factory<PlatformRequest> { platformRequest }
+                    factory<MediaRequest> { mediaRequest }
                 },
             ),
         )
-
-        platformRequest.createNotificationChannel(GPT_CLIENT_NOTIFICATION_CHANNEL_ID)
-        platformRequest.createNotificationChannel(LOCAL_MODEL_DOWNLOAD_NOTIFICATION_CHANNEL_ID)
 
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -55,7 +49,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             App(
                 launchNavigationRequest = launchNavigationRequestState.value,
-                providePlatformRequest = { platformRequest },
+                providePlatformRequest = { getKoin().get() },
             )
         }
     }
