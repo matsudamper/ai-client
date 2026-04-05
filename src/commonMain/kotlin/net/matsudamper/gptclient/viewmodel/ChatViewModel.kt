@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -15,10 +16,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.matsudamper.gptclient.ImageFormat
+import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.entity.ChatGptModel
-import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.entity.getName
+import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelId
+import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.matchesModelKey
+import net.matsudamper.gptclient.localmodel.toChatGptModel
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
@@ -36,7 +43,6 @@ class ChatViewModel(
     openContext: Navigator.Chat.ChatOpenContext,
     private val appDatabase: AppDatabase,
     private val insertDataAndAddRequestUseCase: AddRequestUseCase,
-    private val settingDataStore: net.matsudamper.gptclient.datastore.SettingDataStore,
     private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
     private val eventSender = EventSender<Event>()
@@ -44,6 +50,7 @@ class ChatViewModel(
 
     interface Event {
         fun providePlatformRequest(): PlatformRequest
+        fun provideMediaRequest(): MediaRequest
     }
 
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
@@ -54,7 +61,7 @@ class ChatViewModel(
                     viewModelStateFlow.update {
                         it.copy(isMediaLoading = true)
                     }
-                    val images = withPlatformRequest {
+                    val images = withMediaRequest {
                         getMediaList()
                     }
                     viewModelStateFlow.update { viewModelState ->
@@ -81,21 +88,27 @@ class ChatViewModel(
 
         override fun onClickSend(text: String) {
             viewModelScope.launch {
+                val imageFormat = viewModelStateFlow.value.roomInfo
+                    ?.room
+                    ?.modelKey
+                    ?.let(::findModel)
+                    ?.preferredImageFormat
+                    ?: ImageFormat.Jpeg
                 addRequest(
                     message = text,
                     uris = viewModelStateFlow.value.selectedMedia.mapNotNull map@{
-                        val rect = it.rect ?: return@map it.imageUri
-                        val platformCropRect = PlatformRequest.CropRect(
-                            left = rect.left,
-                            top = rect.top,
-                            right = rect.right,
-                            bottom = rect.bottom,
-                        )
-
                         withPlatformRequest {
-                            cropImage(
+                            prepareImage(
                                 uri = it.imageUri,
-                                cropRect = platformCropRect,
+                                cropRect = it.rect?.let { rect ->
+                                    PlatformRequest.CropRect(
+                                        left = rect.left,
+                                        top = rect.top,
+                                        right = rect.right,
+                                        bottom = rect.bottom,
+                                    )
+                                },
+                                imageFormat = imageFormat,
                             )
                         }
                     },
@@ -117,19 +130,19 @@ class ChatViewModel(
             visibleMediaLoading = false,
             listener = listener,
             errorDialogMessage = null,
-            modelLoadingState = ChatListUiState.ModelLoadingState.Loading,
             title = "",
+            modelInfo = null,
             enableSend = false,
         ),
     ).also { uiState ->
         viewModelScope.launch {
-            settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
-                viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }
-            }
-        }
-        viewModelScope.launch {
             val defs = localModelRepository.getModels()
             viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+        }
+        viewModelScope.launch {
+            localModelRepository.observeEngineLabels().collect { labels ->
+                viewModelStateFlow.update { it.copy(engineLabels = labels) }
+            }
         }
         viewModelScope.launch {
             viewModelStateFlow.map { it.roomInfo?.room?.id }
@@ -150,6 +163,19 @@ class ChatViewModel(
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
                     it.copy(
+                        modelInfo = run {
+                            val modelKey = viewModelState.roomInfo?.room?.modelKey ?: return@run null
+                            val model = findModel(modelKey) ?: return@run null
+                            val engineLabel = if (model is ChatGptModel.Local) {
+                                viewModelState.engineLabels[LocalModelId(model.baseModelKey)]
+                            } else {
+                                null
+                            }
+                            ChatListUiState.ModelInfo(
+                                modelName = model.displayName,
+                                engineLabel = engineLabel,
+                            )
+                        },
                         title = when (val roomInfo = viewModelState.roomInfo) {
                             is ViewModelState.RoomInfo.BuiltinProject -> {
                                 roomInfo.builtinProjectId.getName()
@@ -161,38 +187,6 @@ class ChatViewModel(
 
                             is ViewModelState.RoomInfo.Normal -> ""
                             null -> ""
-                        },
-                        modelLoadingState = run {
-                            val roomInfo = viewModelState.roomInfo ?: return@run ChatListUiState.ModelLoadingState.Loading
-                            val localDefs = viewModelState.localModelDefs
-                            val allModels = ChatGptModel.entries + viewModelState.activeLocalModelKeys.mapNotNull { key ->
-                                val def = localDefs.find { it.modelId == key } ?: return@mapNotNull null
-                                ChatGptModel.Local(
-                                    modelKey = def.modelId,
-                                    displayName = def.displayName,
-                                    enableImage = def.enableImage,
-                                    defaultToken = def.defaultToken,
-                                )
-                            }
-                            ChatListUiState.ModelLoadingState.Loaded(
-                                allModels.map { model ->
-                                    ChatListUiState.Model(
-                                        modelName = model.displayName,
-                                        selected = model.modelKey == roomInfo.room.modelKey,
-                                        listener = object : ChatListUiState.Model.Listener {
-                                            override fun onClick() {
-                                                viewModelScope.launch {
-                                                    appDatabase.chatRoomDao().update(
-                                                        roomInfo.room.copy(
-                                                            modelKey = model.modelKey,
-                                                        ),
-                                                    )
-                                                }
-                                            }
-                                        },
-                                    )
-                                },
-                            )
                         },
                         selectedImage = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
@@ -445,6 +439,21 @@ class ChatViewModel(
         }
     }
 
+    private suspend fun <R> withMediaRequest(
+        block: suspend MediaRequest.() -> R,
+    ): R {
+        return eventSender.send { event ->
+            event.provideMediaRequest().block()
+        }
+    }
+
+    private fun findModel(modelKey: String): ChatGptModel? {
+        return ChatGptModel.findByModelKey(modelKey)
+            ?: viewModelStateFlow.value.localModelDefs
+                .firstOrNull { it.matchesModelKey(modelKey) }
+                ?.toChatGptModel(modelKey = modelKey)
+    }
+
     private fun launchWithPlatformRequest(
         block: suspend PlatformRequest.() -> Unit,
     ) {
@@ -493,8 +502,8 @@ class ChatViewModel(
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
-        val activeLocalModelKeys: Set<String> = emptySet(),
-        val localModelDefs: List<net.matsudamper.gptclient.localmodel.LocalModelDefinition> = emptyList(),
+        val localModelDefs: List<LocalModelDefinition> = listOf(),
+        val engineLabels: Map<LocalModelId, String> = mapOf(),
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom

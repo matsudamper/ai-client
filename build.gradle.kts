@@ -44,8 +44,10 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                api(projects.common)
                 api(projects.ui)
                 api(projects.room)
+                api(projects.feature.localModel)
                 implementation(libs.androidxRoomRuntime)
                 implementation(libs.composeRuntime)
                 implementation(libs.composeUi)
@@ -89,9 +91,6 @@ kotlin {
                 api(libs.composeFoundation)
                 api(libs.koinAndroid)
                 api(libs.koinCore)
-                api(libs.androidxWorkRuntime)
-                api(libs.mlkitGenai)
-                api(libs.mediapipeGenai)
             }
         }
     }

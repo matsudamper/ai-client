@@ -5,6 +5,8 @@ import androidx.datastore.core.okio.OkioStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import net.matsudamper.gptclient.localmodel.LocalModelId
+import net.matsudamper.gptclient.localmodel.toLocalModelIds
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
@@ -47,13 +49,13 @@ class SettingDataStore(
 
     fun getThemeModeFlow(): Flow<ThemeMode> = store.data.map { it.themeMode }
 
-    suspend fun addActiveLocalModelKey(key: String) {
-        store.updateData { it.copy(activeLocalModelKeys = it.activeLocalModelKeys + key) }
+    suspend fun addActiveLocalModelKey(key: LocalModelId) {
+        store.updateData { it.copy(activeLocalModelKeys = it.activeLocalModelKeys + key.value) }
     }
 
-    suspend fun removeActiveLocalModelKey(key: String) {
-        store.updateData { it.copy(activeLocalModelKeys = it.activeLocalModelKeys - key) }
+    suspend fun removeActiveLocalModelKey(key: LocalModelId) {
+        store.updateData { it.copy(activeLocalModelKeys = it.activeLocalModelKeys - key.value) }
     }
 
-    fun getActiveLocalModelKeysFlow(): Flow<Set<String>> = store.data.map { it.activeLocalModelKeys }
+    fun getActiveLocalModelKeysFlow(): Flow<Set<LocalModelId>> = store.data.map { it.activeLocalModelKeys.toLocalModelIds() }
 }

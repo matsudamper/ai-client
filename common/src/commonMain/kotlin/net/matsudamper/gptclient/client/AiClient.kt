@@ -1,12 +1,9 @@
 package net.matsudamper.gptclient.client
 
-import net.matsudamper.gptclient.entity.ChatGptModel
-
 interface AiClient {
     suspend fun request(
         messages: List<GptMessage>,
         format: Format,
-        model: ChatGptModel,
     ): GptResult
 
     sealed interface GptResult {

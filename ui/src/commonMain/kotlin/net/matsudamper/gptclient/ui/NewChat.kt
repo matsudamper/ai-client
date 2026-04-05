@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,18 +22,13 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,10 +37,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +51,8 @@ import compose.icons.feathericons.CreditCard
 import compose.icons.feathericons.Menu
 import net.matsudamper.gptclient.ui.component.ChatFooter
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.ui.component.ModelSelectorBar
+import net.matsudamper.gptclient.ui.component.ModelSelectorUiState
 
 sealed interface NewChatTestTag {
     object Root : NewChatTestTag
@@ -82,8 +74,7 @@ public data class NewChatUiState(
     val selectedMedia: List<ChatFooterImage>,
     val visibleMediaLoading: Boolean,
     val enableSend: Boolean,
-    val models: List<Model>,
-    val selectedModel: String,
+    val modelState: ModelSelectorUiState,
     val projectNameDialog: ProjectNameDialog?,
     val isLoading: Boolean,
     val listener: Listener,
@@ -94,15 +85,6 @@ public data class NewChatUiState(
         interface Listener {
             fun onDone(text: String)
             fun onCancel()
-        }
-    }
-
-    data class Model(
-        val name: String,
-        val listener: Listener,
-    ) {
-        interface Listener {
-            fun onClick()
         }
     }
 
@@ -300,60 +282,30 @@ public fun NewChat(
                         )
                     }
                 }
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                ) {
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                    ) {
-                        for (model in uiState.models) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(text = model.name)
-                                },
-                                onClick = {
-                                    expanded = false
-                                    model.listener.onClick()
-                                },
-                            )
-                        }
-                    }
-                    OutlinedButton(
-                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                        onClick = { },
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(uiState.selectedModel)
-                            Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
                 val state = rememberTextFieldState()
-                ChatFooter(
-                    textFieldState = state,
-                    onClickAddImage = { uiState.listener.onClickSelectMedia() },
-                    onClickVoice = { uiState.listener.onClickVoice() },
-                    onClickSend = {
-                        uiState.listener.send(state.text.toString())
-                        state.clearText()
-                    },
-                    selectedMedia = uiState.selectedMedia,
-                    visibleMediaLoading = uiState.visibleMediaLoading,
-                    onClickRetry = null,
-                    enableSend = uiState.enableSend || state.text.isNotBlank(),
+                Column(
                     modifier = Modifier.fillMaxWidth()
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                         .navigationBarsPadding(),
-                )
+                ) {
+                    ModelSelectorBar(
+                        uiState = uiState.modelState,
+                    )
+                    ChatFooter(
+                        textFieldState = state,
+                        onClickAddImage = { uiState.listener.onClickSelectMedia() },
+                        onClickVoice = { uiState.listener.onClickVoice() },
+                        onClickSend = {
+                            uiState.listener.send(state.text.toString())
+                            state.clearText()
+                        },
+                        selectedMedia = uiState.selectedMedia,
+                        visibleMediaLoading = uiState.visibleMediaLoading,
+                        onClickRetry = null,
+                        enableSend = uiState.enableSend && state.text.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
             if (uiState.isLoading) {
                 Box(
@@ -413,15 +365,23 @@ internal fun NewChatPreviewContent() {
                     selectedMedia = emptyList(),
                     visibleMediaLoading = false,
                     enableSend = false,
-                    models = listOf(
-                        NewChatUiState.Model(
-                            name = "gpt-4o-mini",
-                            listener = object : NewChatUiState.Model.Listener {
-                                override fun onClick() = Unit
-                            },
+                    modelState = ModelSelectorUiState(
+                        selectedModelName = "GPT-5.4 Nano",
+                        items = listOf(
+                            ModelSelectorUiState.Item(
+                                modelName = "GPT-5.4 Nano",
+                                selected = true,
+                                listener = object : ModelSelectorUiState.ItemListener {
+                                    override fun onClick() = Unit
+                                },
+                            ),
                         ),
+                        thinkingEnabled = false,
+                        thinkingToggleEnabled = false,
+                        listener = object : ModelSelectorUiState.Listener {
+                            override fun onChangeThinking(enabled: Boolean) = Unit
+                        },
                     ),
-                    selectedModel = "gpt-4o-mini",
                     projectNameDialog = null,
                     isLoading = false,
                     listener = object : NewChatUiState.Listener {

@@ -68,7 +68,7 @@ class GetBuiltinProjectInfoUseCase {
                         val parsed = CalendarResponseParser().parse(response)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
                     },
-                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteLatestLow,
+                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteThinking,
                 )
             }
 
@@ -104,7 +104,7 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = AiClient.Format.Json,
                     responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
-                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteLatestLow,
+                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteThinking,
                     summaryProvider = { _, _, response ->
                         val parsed = MoneyResponseParser().parse(response)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
@@ -127,7 +127,7 @@ class GetBuiltinProjectInfoUseCase {
                     responseTransformer = {
                         EmojiResponseParser().getEmojiList(it, onCopyEmoji)
                     },
-                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteLatestLow,
+                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteThinking,
                     summaryProvider = { _, lastInstruction, response ->
                         val emoji = runCatching {
                             Json.decodeFromString<EmojiGptResponse>(response).results.firstOrNull()

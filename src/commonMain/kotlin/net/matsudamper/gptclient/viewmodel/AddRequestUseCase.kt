@@ -5,15 +5,12 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.client.AiClient
-import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 
 class AddRequestUseCase(
     private val appDatabase: AppDatabase,
-    private val gptClientProvider: (secretKey: String) -> AiClient,
-    private val settingDataStore: SettingDataStore,
     private val workManagerScheduler: WorkManagerScheduler,
 ) {
     suspend fun addRequest(
@@ -64,8 +61,6 @@ class AddRequestUseCase(
 
             val workId = workManagerScheduler.scheduleWork(
                 chatRoomId = chatRoomId,
-                message = message,
-                uris = uris,
             )
             appDatabase.chatRoomDao().update(
                 room.copy(
@@ -85,21 +80,12 @@ class AddRequestUseCase(
 
             val chats = appDatabase.chatDao().get(chatRoomId = chatRoomId.value).first()
 
-            val lastUserMessage = chats.lastOrNull { it.role == Chat.Role.User }
-            if (lastUserMessage == null) {
+            if (chats.none { it.role == Chat.Role.User }) {
                 return@withContext Result.IsLastUserChat
             }
 
-            val lastUserMessages = chats.filter {
-                it.role == Chat.Role.User && it.index == lastUserMessage.index
-            }
-            val message = lastUserMessages.firstOrNull { it.textMessage != null }?.textMessage.orEmpty()
-            val uris = lastUserMessages.mapNotNull { it.imageUri }
-
             val workId = workManagerScheduler.scheduleWork(
                 chatRoomId = chatRoomId,
-                message = message,
-                uris = uris,
             )
             appDatabase.chatRoomDao().update(
                 room.copy(
@@ -120,8 +106,6 @@ class AddRequestUseCase(
     interface WorkManagerScheduler {
         fun scheduleWork(
             chatRoomId: ChatRoomId,
-            message: String,
-            uris: List<String>,
         ): String
 
         fun isWorkRunning(workId: String): Boolean

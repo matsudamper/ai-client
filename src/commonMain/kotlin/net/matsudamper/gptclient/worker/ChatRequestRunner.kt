@@ -7,11 +7,14 @@ import kotlinx.coroutines.flow.firstOrNull
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.client.gemini.GeminiClient
-import net.matsudamper.gptclient.client.local.createLocalAiClient
 import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.localmodel.LocalModelAiClientFactory
+import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
+import net.matsudamper.gptclient.localmodel.matchesModelKey
+import net.matsudamper.gptclient.localmodel.toChatGptModel
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
@@ -24,26 +27,20 @@ class ChatRequestRunner(
     private val platformRequest: PlatformRequest,
     private val settingDataStore: SettingDataStore,
     private val localModelRepository: LocalModelRepository,
+    private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) {
     suspend fun run(
         chatRoomId: ChatRoomId,
-        message: String,
-        uris: List<String>,
     ): Result {
         return try {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val requestInfo = createRequestInfo(room)
-            val chatModel = ChatGptModel.entries.firstOrNull { it.modelKey == requestInfo.modelKey }
+            val chatModel = ChatGptModel.findByModelKey(requestInfo.modelKey)
                 ?: run {
                     val localDef = localModelRepository.getModels()
-                        .find { it.modelId == requestInfo.modelKey }
+                        .find { it.matchesModelKey(requestInfo.modelKey) }
                     if (localDef != null) {
-                        ChatGptModel.Local(
-                            modelKey = localDef.modelId,
-                            displayName = localDef.displayName,
-                            enableImage = localDef.enableImage,
-                            defaultToken = localDef.defaultToken,
-                        )
+                        localDef.toChatGptModel(modelKey = requestInfo.modelKey)
                     } else {
                         return fail(chatRoomId = chatRoomId, errorMessage = "モデルが見つかりません")
                     }
@@ -67,7 +64,6 @@ class ChatRequestRunner(
                         chatRoomId = chatRoomId,
                     ),
                     format = requestInfo.format,
-                    model = chatModel,
                 )
             ) {
                 is AiClient.GptResult.Error -> {
@@ -129,6 +125,7 @@ class ChatRequestRunner(
         return when (chatModel) {
             is ChatGptModel.Remote.Gpt -> ChatGptClient(
                 secretKey = settingDataStore.getSecretKey(),
+                model = chatModel,
             )
 
             is ChatGptModel.Remote.Gemini -> {
@@ -137,12 +134,19 @@ class ChatRequestRunner(
                 } else {
                     settingDataStore.getGeminiSecretKey()
                 }
-                apiKey.takeIf { it.isNotBlank() }?.let { GeminiClient(apiKey = it) }
+                apiKey.takeIf { it.isNotBlank() }?.let { GeminiClient(apiKey = it, model = chatModel) }
             }
 
             is ChatGptModel.Local -> createLocalAiClient(chatModel)
             else -> null
         }
+    }
+
+    private fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
+        return localModelAiClientFactory.create(
+            modelId = LocalModelId(model.baseModelKey),
+            enableThinking = model.thinkingEnabled,
+        )
     }
 
     private suspend fun writeResponse(

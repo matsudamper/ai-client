@@ -1,15 +1,10 @@
 package net.matsudamper.gptclient
 
 import java.awt.Desktop
-import java.awt.EventQueue
-import java.awt.FileDialog
-import java.awt.Frame
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FilenameFilter
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -18,37 +13,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class DesktopPlatformRequest : PlatformRequest {
-    override suspend fun getMediaList(): List<String> = withContext(Dispatchers.IO) {
-        var result: List<String> = emptyList()
-        EventQueue.invokeAndWait {
-            val owner = Frame()
-            try {
-                val dialog = FileDialog(owner, "画像を選択", FileDialog.LOAD).apply {
-                    isMultipleMode = true
-                    filenameFilter = FilenameFilter { _, name ->
-                        supportedImageExtensions.any { extension ->
-                            name.endsWith(".$extension", ignoreCase = true)
-                        }
-                    }
-                }
-                dialog.isVisible = true
-                result = dialog.files
-                    .map { it.absolutePath }
-            } finally {
-                owner.dispose()
-            }
-        }
-        result
-    }
-
     override suspend fun readImageData(uri: String): PlatformRequest.ImageData? {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val file = File(uri)
-                val image = ImageIO.read(file) ?: return@withContext null
+                val mimeType = file.toMimeType() ?: return@withContext null
                 PlatformRequest.ImageData(
-                    bytes = image.toJpegByteArray(),
-                    mimeType = COMPRESSED_IMAGE_MIME_TYPE,
+                    bytes = file.readBytes(),
+                    mimeType = mimeType,
                 )
             }.getOrNull()
         }
@@ -77,45 +49,41 @@ class DesktopPlatformRequest : PlatformRequest {
         Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, selection)
     }
 
-    override suspend fun cropImage(
+    override suspend fun prepareImage(
         uri: String,
-        cropRect: PlatformRequest.CropRect,
+        cropRect: PlatformRequest.CropRect?,
+        imageFormat: ImageFormat,
     ): String? {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val file = File(uri)
                 val image = ImageIO.read(file) ?: return@withContext null
-
-                val imageWidth = image.width
-                val imageHeight = image.height
-
-                val left = (cropRect.left * imageWidth).toInt().coerceIn(0, imageWidth)
-                val top = (cropRect.top * imageHeight).toInt().coerceIn(0, imageHeight)
-                val right = (cropRect.right * imageWidth).toInt().coerceIn(0, imageWidth)
-                val bottom = (cropRect.bottom * imageHeight).toInt().coerceIn(0, imageHeight)
-                val cropWidth = right - left
-                val cropHeight = bottom - top
-
-                val cropped = image.getSubimage(left, top, cropWidth, cropHeight)
-
+                val outputImage = cropRect?.let { image.crop(it) } ?: image
+                val outputFormat = imageFormat.toWritableFormat()
                 val hash = buildString {
-                    append(file.toURI())
+                    append(file.absolutePath)
                     append('|')
-                    append(left)
+                    append(cropRect?.left)
                     append(',')
-                    append(top)
+                    append(cropRect?.top)
                     append(',')
-                    append(cropWidth)
+                    append(cropRect?.right)
                     append(',')
-                    append(cropHeight)
+                    append(cropRect?.bottom)
+                    append('|')
+                    append(outputFormat.name)
                     append('|')
                     append(file.lastModified())
                     append('|')
                     append(file.sha256Hex())
                 }.sha256Hex()
-                val outputFile = File(System.getProperty("java.io.tmpdir"), "cropped_$hash.jpg")
+                val outputFile = File(
+                    System.getProperty("java.io.tmpdir"),
+                    "prepared_$hash.${outputFormat.fileExtension}",
+                )
+
                 if (!outputFile.exists()) {
-                    ImageIO.write(cropped, "jpg", outputFile)
+                    outputFile.writeImage(outputImage, outputFormat)
                 }
 
                 outputFile.absolutePath
@@ -127,10 +95,48 @@ class DesktopPlatformRequest : PlatformRequest {
         // デスクトップでは何もしない
     }
 
-    private fun BufferedImage.toJpegByteArray(): ByteArray {
-        return ByteArrayOutputStream().use { outputStream ->
-            ImageIO.write(this, "jpg", outputStream)
-            outputStream.toByteArray()
+    private fun BufferedImage.crop(cropRect: PlatformRequest.CropRect): BufferedImage {
+        val left = (cropRect.left * width).toInt().coerceIn(0, width)
+        val top = (cropRect.top * height).toInt().coerceIn(0, height)
+        val right = (cropRect.right * width).toInt().coerceIn(0, width)
+        val bottom = (cropRect.bottom * height).toInt().coerceIn(0, height)
+        val cropWidth = right - left
+        val cropHeight = bottom - top
+
+        if (cropWidth <= 0 || cropHeight <= 0) {
+            return this
+        }
+
+        return getSubimage(left, top, cropWidth, cropHeight)
+    }
+
+    private fun File.writeImage(
+        image: BufferedImage,
+        imageFormat: ImageFormat,
+    ) {
+        val writerFormat = when (imageFormat) {
+            ImageFormat.Jpeg -> "jpg"
+            ImageFormat.Png -> "png"
+            ImageFormat.Webp -> error("DesktopPlatformRequest does not support WebP output")
+        }
+        ImageIO.write(image, writerFormat, this)
+    }
+
+    private fun ImageFormat.toWritableFormat(): ImageFormat {
+        return when (this) {
+            ImageFormat.Webp -> ImageFormat.Png
+            ImageFormat.Jpeg,
+            ImageFormat.Png,
+            -> this
+        }
+    }
+
+    private fun File.toMimeType(): String? {
+        return when (extension.lowercase()) {
+            "jpg", "jpeg" -> ImageFormat.Jpeg.mimeType
+            "png" -> ImageFormat.Png.mimeType
+            "webp" -> ImageFormat.Webp.mimeType
+            else -> null
         }
     }
 
@@ -156,10 +162,5 @@ class DesktopPlatformRequest : PlatformRequest {
 
     private fun ByteArray.toHexString(): String {
         return joinToString(separator = "") { byte -> "%02x".format(byte.toInt() and 0xff) }
-    }
-
-    private companion object {
-        private const val COMPRESSED_IMAGE_MIME_TYPE = "image/jpeg"
-        private val supportedImageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp", "webp")
     }
 }

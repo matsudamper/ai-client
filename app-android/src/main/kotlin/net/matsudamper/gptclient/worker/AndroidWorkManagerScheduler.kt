@@ -14,13 +14,9 @@ class AndroidWorkManagerScheduler(
 
     override fun scheduleWork(
         chatRoomId: ChatRoomId,
-        message: String,
-        uris: List<String>,
     ): String {
         val inputData = ChatRequestWorker.createInputData(
             chatRoomId = chatRoomId,
-            message = message,
-            uris = uris,
         )
 
         val workRequest = OneTimeWorkRequestBuilder<ChatRequestWorker>()

@@ -13,11 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.matsudamper.gptclient.client.openai.ChatGptClient
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.ThemeMode
 import net.matsudamper.gptclient.navigation.Navigator
-import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.NewChatUiState
 import net.matsudamper.gptclient.ui.ProjectUiState
@@ -30,11 +28,12 @@ import net.matsudamper.gptclient.viewmodel.MainScreenViewModel
 import net.matsudamper.gptclient.viewmodel.NewChatViewModel
 import net.matsudamper.gptclient.viewmodel.ProjectViewModel
 import net.matsudamper.gptclient.viewmodel.SettingViewModel
+import net.matsudamper.gptclient.MediaRequest
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
 fun App(
-    initialChatRoomId: ChatRoomId? = null,
+    launchNavigationRequest: LaunchNavigationRequest = LaunchNavigationRequest.none(),
     providePlatformRequest: () -> PlatformRequest,
 ) {
     val settingDataStore: SettingDataStore = remember { getKoin().get() }
@@ -70,10 +69,16 @@ fun App(
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         }
         val appNavigationViewModel = viewModel(viewModelStoreOwner) {
-            AppNavigationViewModel(initialChatRoomId = initialChatRoomId)
+            AppNavigationViewModel()
         }
         val backStack = appNavigationViewModel.backStack
         val appNavigator = appNavigationViewModel.appNavigator
+
+        LaunchedEffect(launchNavigationRequest.id) {
+            launchNavigationRequest.navigator?.let { navigator ->
+                appNavigator.navigateClearToStart(navigator)
+            }
+        }
 
         MainScreen(
             modifier = Modifier.fillMaxSize(),
@@ -95,6 +100,7 @@ fun App(
                             viewModel.eventHandler.collect(
                                 object : NewChatViewModel.Event {
                                     override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                    override fun provideMediaRequest(): MediaRequest = getKoin().get()
                                 },
                             )
                         }
@@ -111,7 +117,6 @@ fun App(
                                 openContext = navigator.openContext,
                                 insertDataAndAddRequestUseCase = createInsertDataAndAddRequestUseCase(),
                                 appDatabase = koin.get(),
-                                settingDataStore = koin.get(),
                                 localModelRepository = koin.get(),
                             )
                         }
@@ -119,6 +124,7 @@ fun App(
                             viewModel.eventHandler.collect(
                                 object : ChatViewModel.Event {
                                     override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                    override fun provideMediaRequest(): MediaRequest = getKoin().get()
                                 },
                             )
                         }
@@ -187,6 +193,7 @@ fun App(
                             viewModel.eventHandler.collect(
                                 object : ProjectViewModel.Event {
                                     override fun providePlatformRequest(): PlatformRequest = providePlatformRequest()
+                                    override fun provideMediaRequest(): MediaRequest = getKoin().get()
                                 },
                             )
                         }
@@ -198,8 +205,6 @@ fun App(
                         val koin = getKoin()
                         return AddRequestUseCase(
                             appDatabase = koin.get(),
-                            gptClientProvider = { secretKey -> ChatGptClient(secretKey) },
-                            settingDataStore = koin.get(),
                             workManagerScheduler = koin.get(),
                         )
                     }
