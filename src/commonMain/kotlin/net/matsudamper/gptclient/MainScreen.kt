@@ -337,17 +337,21 @@ private fun SidePanel(
                 }
             }
         }
-        Row(
-            modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer)
-                .navigationBarsPadding()
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.secondaryContainer,
         ) {
-            IconButton(onClick = onClickSettings) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = null,
-                )
+            Row(
+                modifier = Modifier.navigationBarsPadding()
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(onClick = onClickSettings) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = null,
+                    )
+                }
             }
         }
     }

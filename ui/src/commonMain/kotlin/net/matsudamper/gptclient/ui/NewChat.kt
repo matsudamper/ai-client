@@ -39,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
@@ -134,11 +133,10 @@ public fun NewChat(
                     }
                 },
                 text = {
-                    Box(
-                        modifier = Modifier.fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center,
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         BasicTextField(
                             modifier = Modifier.fillMaxWidth()
@@ -283,28 +281,30 @@ public fun NewChat(
                     }
                 }
                 val state = rememberTextFieldState()
-                Column(
+                Surface(
                     modifier = Modifier.fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
                         .navigationBarsPadding(),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
                 ) {
-                    ModelSelectorBar(
-                        uiState = uiState.modelState,
-                    )
-                    ChatFooter(
-                        textFieldState = state,
-                        onClickAddImage = { uiState.listener.onClickSelectMedia() },
-                        onClickVoice = { uiState.listener.onClickVoice() },
-                        onClickSend = {
-                            uiState.listener.send(state.text.toString())
-                            state.clearText()
-                        },
-                        selectedMedia = uiState.selectedMedia,
-                        visibleMediaLoading = uiState.visibleMediaLoading,
-                        onClickRetry = null,
-                        enableSend = uiState.enableSend && state.text.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    Column {
+                        ModelSelectorBar(
+                            uiState = uiState.modelState,
+                        )
+                        ChatFooter(
+                            textFieldState = state,
+                            onClickAddImage = { uiState.listener.onClickSelectMedia() },
+                            onClickVoice = { uiState.listener.onClickVoice() },
+                            onClickSend = {
+                                uiState.listener.send(state.text.toString())
+                                state.clearText()
+                            },
+                            selectedMedia = uiState.selectedMedia,
+                            visibleMediaLoading = uiState.visibleMediaLoading,
+                            onClickRetry = null,
+                            enableSend = uiState.enableSend && state.text.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
             if (uiState.isLoading) {

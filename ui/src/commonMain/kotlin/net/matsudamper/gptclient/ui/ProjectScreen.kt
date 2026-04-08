@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -331,28 +332,30 @@ fun ProjectScreen(
                 }
             }
             val state = rememberTextFieldState()
-            Column(
+            Surface(
                 modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
                     .navigationBarsPadding(),
+                color = MaterialTheme.colorScheme.secondaryContainer,
             ) {
-                ModelSelectorBar(
-                    uiState = uiState.modelState,
-                )
-                ChatFooter(
-                    modifier = Modifier.fillMaxWidth(),
-                    textFieldState = state,
-                    onClickAddImage = { uiState.listener.selectMedia() },
-                    onClickVoice = { uiState.listener.recordVoice() },
-                    selectedMedia = uiState.selectedMedia,
-                    visibleMediaLoading = uiState.visibleMediaLoading,
-                    enableSend = uiState.enableSend,
-                    onClickRetry = null,
-                    onClickSend = {
-                        uiState.listener.send(state.text.toString())
-                        state.clearText()
-                    },
-                )
+                Column {
+                    ModelSelectorBar(
+                        uiState = uiState.modelState,
+                    )
+                    ChatFooter(
+                        modifier = Modifier.fillMaxWidth(),
+                        textFieldState = state,
+                        onClickAddImage = { uiState.listener.selectMedia() },
+                        onClickVoice = { uiState.listener.recordVoice() },
+                        selectedMedia = uiState.selectedMedia,
+                        visibleMediaLoading = uiState.visibleMediaLoading,
+                        enableSend = uiState.enableSend,
+                        onClickRetry = null,
+                        onClickSend = {
+                            uiState.listener.send(state.text.toString())
+                            state.clearText()
+                        },
+                    )
+                }
             }
         }
     }

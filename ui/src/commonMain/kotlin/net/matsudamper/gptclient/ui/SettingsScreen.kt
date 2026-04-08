@@ -1,6 +1,5 @@
 package net.matsudamper.gptclient.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +36,6 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
@@ -263,79 +261,81 @@ private fun LocalModelCard(
     model: SettingsScreenUiState.LocalModelItem,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(12.dp),
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
-        Text(
-            text = model.displayName,
-            style = MaterialTheme.typography.titleSmall,
-        )
-        Text(
-            text = model.description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier = Modifier.padding(12.dp),
+        ) {
+            Text(
+                text = model.displayName,
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = model.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-        when (model.status) {
-            SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE -> {
-                Text(
-                    text = "このデバイスでは利用できません",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-
-            SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED -> {
-                OutlinedButton(
-                    onClick = { model.listener.onClickDownload() },
-                ) {
-                    Text("ダウンロード")
-                }
-            }
-
-            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING -> {
-                Text(
-                    text = model.downloadProgress
-                        ?.let { "ダウンロード中... ${(it * 100).toInt()}%" }
-                        ?: "ダウンロード中...",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
-
-            SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED -> {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+            when (model.status) {
+                SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE -> {
                     Text(
-                        text = "有効にする",
+                        text = "このデバイスでは利用できません",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+
+                SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED -> {
+                    OutlinedButton(
+                        onClick = { model.listener.onClickDownload() },
+                    ) {
+                        Text("ダウンロード")
+                    }
+                }
+
+                SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING -> {
+                    Text(
+                        text = model.downloadProgress
+                            ?.let { "ダウンロード中... ${(it * 100).toInt()}%" }
+                            ?: "ダウンロード中...",
                         style = MaterialTheme.typography.bodyMedium,
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+
+                SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED -> {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Switch(
-                            checked = model.isActive,
-                            onCheckedChange = { model.listener.onToggleActive(it) },
+                        Text(
+                            text = "有効にする",
+                            style = MaterialTheme.typography.bodyMedium,
                         )
-                        if (model.canDelete) {
-                            IconButton(
-                                modifier = Modifier.size(40.dp),
-                                onClick = { model.listener.onClickDelete() },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Model",
-                                )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Switch(
+                                checked = model.isActive,
+                                onCheckedChange = { model.listener.onToggleActive(it) },
+                            )
+                            if (model.canDelete) {
+                                IconButton(
+                                    modifier = Modifier.size(40.dp),
+                                    onClick = { model.listener.onClickDelete() },
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete Model",
+                                    )
+                                }
                             }
                         }
                     }
@@ -401,14 +401,16 @@ private fun ApiKeySettingItem(
                 modifier = Modifier.fillMaxWidth(),
                 state = state,
                 decorator = {
-                    Box(
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .padding(8.dp),
-                        contentAlignment = Alignment.CenterStart,
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
-                        it()
+                        Box(
+                            modifier = Modifier.padding(8.dp),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            it()
+                        }
                     }
                 },
             )
