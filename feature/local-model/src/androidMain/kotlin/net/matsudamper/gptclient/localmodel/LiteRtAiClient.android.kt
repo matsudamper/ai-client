@@ -3,15 +3,15 @@ package net.matsudamper.gptclient.localmodel
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import java.io.ByteArrayOutputStream
+import java.io.File
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SamplerConfig
-import java.io.ByteArrayOutputStream
-import java.io.File
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import net.matsudamper.gptclient.client.AiClient
 
 internal class LiteRtAiClient(
@@ -53,7 +53,7 @@ internal class LiteRtAiClient(
                         "enable_thinking" to enableThinking,
                     ),
                 )
-                responseMessage.toString().toSuccessResult()
+                responseMessage.extractText().stripMarkdownFence().toSuccessResult()
             }
         }.getOrElse { throwable ->
             AiClient.GptResult.Error(
@@ -65,7 +65,7 @@ internal class LiteRtAiClient(
     }
 
     private fun addJsonFormatInstruction(messages: List<AiClient.GptMessage>): List<AiClient.GptMessage> {
-        val jsonInstruction = "応答はそのままJSONパーサに渡されます。マークダウンのコードブロックや余分なテキストを含めず、有効なJSONのみを返してください。"
+        val jsonInstruction = "応答はそのままJSONパーサに渡されます。マークダウンのコードブロック（```json, ``` など）を絶対に使用しないでください。有効なJSONオブジェクトのみを、追加テキスト無しで返してください。"
         return messages.indexOfFirst { it.role == AiClient.GptMessage.Role.System }
             .takeIf { it >= 0 }
             ?.let { systemIndex ->
@@ -130,6 +130,18 @@ internal class LiteRtAiClient(
             compress(Bitmap.CompressFormat.PNG, PNG_QUALITY, outputStream)
             outputStream.toByteArray()
         }
+    }
+
+    private fun Message.extractText(): String {
+        return contents.contents
+            .filterIsInstance<Content.Text>()
+            .joinToString(separator = "") { it.text }
+    }
+
+    private fun String.stripMarkdownFence(): String {
+        val trimmed = trim()
+        val fenceRegex = Regex("^```(?:json5?)?\\s*\\n?([\\s\\S]*?)\\n?```\\s*$")
+        return fenceRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
     }
 
     private fun String.toSuccessResult(): AiClient.GptResult.Success {
