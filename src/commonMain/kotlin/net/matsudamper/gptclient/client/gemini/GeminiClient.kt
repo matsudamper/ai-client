@@ -81,7 +81,6 @@ class GeminiClient(
                 GeminiRequest.Content(role = role, parts = parts)
             }
 
-
         val thinkingConfig = model.thinkingLevel?.let { level ->
             GeminiRequest.ThinkingConfig(thinkingLevel = level)
         }
