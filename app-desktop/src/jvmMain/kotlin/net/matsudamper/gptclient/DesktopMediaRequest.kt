@@ -33,4 +33,4 @@ class DesktopMediaRequest : MediaRequest {
     private companion object {
         private val supportedImageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp", "webp")
     }
-} 
+}

@@ -1,13 +1,13 @@
 package net.matsudamper.gptclient.localmodel
 
 import android.graphics.BitmapFactory
-import com.google.mlkit.genai.prompt.GenerateContentRequest
-import com.google.mlkit.genai.prompt.Generation
-import com.google.mlkit.genai.prompt.ImagePart
-import com.google.mlkit.genai.prompt.TextPart
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import com.google.mlkit.genai.prompt.GenerateContentRequest
+import com.google.mlkit.genai.prompt.Generation
 import com.google.mlkit.genai.prompt.GenerationConfig
+import com.google.mlkit.genai.prompt.ImagePart
+import com.google.mlkit.genai.prompt.TextPart
 import net.matsudamper.gptclient.client.AiClient
 
 internal class MlKitAiClient : AiClient {
