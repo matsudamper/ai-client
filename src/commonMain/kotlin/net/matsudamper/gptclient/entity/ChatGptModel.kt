@@ -259,3 +259,11 @@ interface ChatGptModel {
         }
     }
 }
+
+fun ChatGptModel.getDisplayNameForChat(): String {
+    return if (thinkingToggleEnabled) {
+        "$displayName Thinking"
+    } else {
+        displayName
+    }
+}
