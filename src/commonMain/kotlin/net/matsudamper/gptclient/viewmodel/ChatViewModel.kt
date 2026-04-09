@@ -21,6 +21,7 @@ import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.getDisplayNameForChat
 import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
@@ -180,7 +181,7 @@ class ChatViewModel(
                                 else -> null
                             }
                             ChatListUiState.ModelInfo(
-                                modelName = model.displayName,
+                                modelName = model.getDisplayNameForChat(),
                                 description = description,
                             )
                         },

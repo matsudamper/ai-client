@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient.viewmodel
 
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.getDisplayNameForChat
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.toChatGptModel
@@ -21,7 +22,7 @@ internal object ModelSelectorStateFactory {
         )
 
         return ModelSelectorUiState(
-            selectedModelName = selectedModel?.displayName ?: "モデルを選択",
+            selectedModelName = selectedModel?.getDisplayNameForChat() ?: "モデルを選択",
             items = selectableModels.map { model ->
                 ModelSelectorUiState.Item(
                     modelName = model.displayName,
