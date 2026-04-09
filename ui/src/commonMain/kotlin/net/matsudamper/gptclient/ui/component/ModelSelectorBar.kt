@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 data class ModelSelectorUiState(
@@ -99,6 +100,7 @@ fun ModelSelectorBar(
                     modifier = Modifier.weight(1f),
                     text = uiState.selectedModelName,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
@@ -109,6 +111,7 @@ fun ModelSelectorBar(
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
+                matchAnchorWidth = false,
             ) {
                 for (model in uiState.items) {
                     DropdownMenuItem(
@@ -117,6 +120,7 @@ fun ModelSelectorBar(
                                 modifier = Modifier.fillMaxWidth(),
                                 text = model.modelName,
                                 maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         },
                         leadingIcon = {
