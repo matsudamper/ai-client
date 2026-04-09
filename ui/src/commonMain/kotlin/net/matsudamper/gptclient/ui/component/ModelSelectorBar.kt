@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -26,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 data class ModelSelectorUiState(
@@ -33,6 +37,7 @@ data class ModelSelectorUiState(
     val items: List<Item>,
     val thinkingEnabled: Boolean,
     val thinkingToggleEnabled: Boolean,
+    val overflowMenu: OverflowMenu,
     val listener: Listener,
 ) {
     data class Item(
@@ -49,6 +54,18 @@ data class ModelSelectorUiState(
     @Immutable
     interface Listener {
         fun onChangeThinking(enabled: Boolean)
+    }
+
+    @Immutable
+    sealed interface OverflowMenu {
+        data object None : OverflowMenu
+
+        @Immutable
+        data class Gemini(
+            val billingKeyEnabled: Boolean,
+            val billingKeyToggleEnabled: Boolean,
+            val onChangeBillingKey: (Boolean) -> Unit,
+        ) : OverflowMenu
     }
 }
 
@@ -83,6 +100,7 @@ fun ModelSelectorBar(
                     modifier = Modifier.weight(1f),
                     text = uiState.selectedModelName,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
@@ -93,6 +111,7 @@ fun ModelSelectorBar(
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
+                matchAnchorWidth = false,
             ) {
                 for (model in uiState.items) {
                     DropdownMenuItem(
@@ -101,6 +120,7 @@ fun ModelSelectorBar(
                                 modifier = Modifier.fillMaxWidth(),
                                 text = model.modelName,
                                 maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         },
                         leadingIcon = {
@@ -139,6 +159,49 @@ fun ModelSelectorBar(
                 enabled = uiState.thinkingToggleEnabled,
                 onCheckedChange = uiState.listener::onChangeThinking,
             )
+            when (val overflow = uiState.overflowMenu) {
+                ModelSelectorUiState.OverflowMenu.None -> Unit
+                is ModelSelectorUiState.OverflowMenu.Gemini -> {
+                    GeminiOverflowMenu(state = overflow)
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun GeminiOverflowMenu(
+    state: ModelSelectorUiState.OverflowMenu.Gemini,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    IconButton(onClick = { menuExpanded = true }) {
+        Icon(
+            imageVector = Icons.Default.Menu,
+            contentDescription = null,
+        )
+    }
+    DropdownMenu(
+        expanded = menuExpanded,
+        onDismissRequest = { menuExpanded = false },
+    ) {
+        DropdownMenuItem(
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = "Billing",
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Switch(
+                        checked = state.billingKeyEnabled,
+                        enabled = state.billingKeyToggleEnabled,
+                        onCheckedChange = state.onChangeBillingKey,
+                    )
+                }
+            },
+            onClick = {},
+        )
     }
 }

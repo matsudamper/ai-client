@@ -23,4 +23,5 @@ data class ChatRoom(
     @ColumnInfo(name = "create_date_at") val createDateAt: Instant = Instant.now(),
     @ColumnInfo(name = "worker_id") val workerId: String? = null,
     @ColumnInfo(name = "latest_error_message") val latestErrorMessage: String? = null,
+    @ColumnInfo(name = "use_gemini_billing_key") val useGeminiBillingKey: Boolean? = null,
 )

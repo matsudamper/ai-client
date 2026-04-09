@@ -46,12 +46,13 @@ class ChatRequestRunner(
                     }
                 }
 
-            val gptClient = createClient(chatModel)
+            val gptClient = createClient(chatModel, requestInfo.useGeminiBillingKey)
                 ?: return fail(
                     chatRoomId = chatRoomId,
                     errorMessage = when {
                         chatModel is ChatGptModel.Local -> "モデルファイルが見つかりません。ダウンロードしてください"
-                        chatModel is ChatGptModel.Remote.Gemini && chatModel.requireBillingKey -> "Gemini Billing Key が未設定です"
+                        chatModel is ChatGptModel.Remote.Gemini &&
+                            shouldUseGeminiBillingKey(chatModel, requestInfo.useGeminiBillingKey) -> "Gemini Billing Key が未設定です"
                         chatModel is ChatGptModel.Remote.Gemini -> "Gemini API Key が未設定です"
                         else -> "APIキーが未設定です"
                     },
@@ -94,6 +95,7 @@ class ChatRequestRunner(
                         format = AiClient.Format.Text,
                         systemMessage = null,
                         modelKey = room.modelKey,
+                        useGeminiBillingKey = room.useGeminiBillingKey,
                     )
                 }
 
@@ -103,6 +105,7 @@ class ChatRequestRunner(
                         format = AiClient.Format.Text,
                         systemMessage = project?.systemMessage,
                         modelKey = room.modelKey,
+                        useGeminiBillingKey = room.useGeminiBillingKey,
                     )
                 }
             }
@@ -116,12 +119,16 @@ class ChatRequestRunner(
                     format = builtinProjectInfo.format,
                     systemMessage = builtinProjectInfo.systemMessage,
                     modelKey = room.modelKey,
+                    useGeminiBillingKey = room.useGeminiBillingKey,
                 )
             }
         }
     }
 
-    private suspend fun createClient(chatModel: ChatGptModel): AiClient? {
+    private suspend fun createClient(
+        chatModel: ChatGptModel,
+        useGeminiBillingKey: Boolean?,
+    ): AiClient? {
         return when (chatModel) {
             is ChatGptModel.Remote.Gpt -> ChatGptClient(
                 secretKey = settingDataStore.getSecretKey(),
@@ -129,7 +136,7 @@ class ChatRequestRunner(
             )
 
             is ChatGptModel.Remote.Gemini -> {
-                val apiKey = if (chatModel.requireBillingKey) {
+                val apiKey = if (shouldUseGeminiBillingKey(chatModel, useGeminiBillingKey)) {
                     settingDataStore.getGeminiBillingKey()
                 } else {
                     settingDataStore.getGeminiSecretKey()
@@ -140,6 +147,13 @@ class ChatRequestRunner(
             is ChatGptModel.Local -> createLocalAiClient(chatModel)
             else -> null
         }
+    }
+
+    private fun shouldUseGeminiBillingKey(
+        model: ChatGptModel.Remote.Gemini,
+        storedFlag: Boolean?,
+    ): Boolean {
+        return storedFlag ?: model.requireBillingKey
     }
 
     private fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
@@ -302,6 +316,7 @@ class ChatRequestRunner(
         val format: AiClient.Format,
         val systemMessage: String?,
         val modelKey: String,
+        val useGeminiBillingKey: Boolean?,
     )
 
     sealed interface Result {

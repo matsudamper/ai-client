@@ -8,8 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.ContextCompat
 import net.matsudamper.gptclient.localmodel.EXTRA_OPEN_LOCAL_MODEL_SETTINGS
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.room.entity.ChatRoomId

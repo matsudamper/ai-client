@@ -11,7 +11,9 @@ internal object ModelSelectorStateFactory {
         selectedModel: ChatGptModel?,
         activeLocalModelKeys: Set<LocalModelId>,
         localModelDefs: List<LocalModelDefinition>,
+        geminiBillingKeyOverrideSelectionKeys: Set<String>,
         onSelectModel: (ChatGptModel) -> Unit,
+        onChangeGeminiBillingKey: (selectionKey: String, enabled: Boolean) -> Unit,
     ): ModelSelectorUiState {
         val selectableModels = createSelectableModels(
             activeLocalModelKeys = activeLocalModelKeys,
@@ -33,11 +35,35 @@ internal object ModelSelectorStateFactory {
             },
             thinkingEnabled = selectedModel?.thinkingEnabled ?: false,
             thinkingToggleEnabled = selectedModel?.thinkingToggleEnabled ?: false,
+            overflowMenu = createOverflowMenu(
+                selectedModel = selectedModel,
+                geminiBillingKeyOverrideSelectionKeys = geminiBillingKeyOverrideSelectionKeys,
+                onChangeGeminiBillingKey = onChangeGeminiBillingKey,
+            ),
             listener = object : ModelSelectorUiState.Listener {
                 override fun onChangeThinking(enabled: Boolean) {
                     selectedModel ?: return
                     onSelectModel(selectedModel.withThinking(enabled))
                 }
+            },
+        )
+    }
+
+    private fun createOverflowMenu(
+        selectedModel: ChatGptModel?,
+        geminiBillingKeyOverrideSelectionKeys: Set<String>,
+        onChangeGeminiBillingKey: (selectionKey: String, enabled: Boolean) -> Unit,
+    ): ModelSelectorUiState.OverflowMenu {
+        if (selectedModel !is ChatGptModel.Remote.Gemini) {
+            return ModelSelectorUiState.OverflowMenu.None
+        }
+        val selectionKey = selectedModel.selectionKey
+        val requireBilling = selectedModel.requireBillingKey
+        return ModelSelectorUiState.OverflowMenu.Gemini(
+            billingKeyEnabled = requireBilling || selectionKey in geminiBillingKeyOverrideSelectionKeys,
+            billingKeyToggleEnabled = !requireBilling,
+            onChangeBillingKey = { enabled ->
+                onChangeGeminiBillingKey(selectionKey, enabled)
             },
         )
     }
