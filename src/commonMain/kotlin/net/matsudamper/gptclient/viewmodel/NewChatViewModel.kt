@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.ImageFormat
 import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
@@ -229,6 +230,11 @@ class NewChatViewModel(
             viewModelStateFlow.update { it.copy(localModelDefs = defs) }
         }
         viewModelScope.launch {
+            GeminiBillingKeyOverrideStore.enabledSelectionKeys.collectLatest { keys ->
+                viewModelStateFlow.update { it.copy(geminiBillingKeyOverrideSelectionKeys = keys) }
+            }
+        }
+        viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
                 uiState.update {
                     it.copy(
@@ -269,10 +275,14 @@ class NewChatViewModel(
             selectedModel = selectedModel,
             activeLocalModelKeys = viewModelStateFlow.value.activeLocalModelKeys,
             localModelDefs = viewModelStateFlow.value.localModelDefs,
+            geminiBillingKeyOverrideSelectionKeys = viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys,
             onSelectModel = { model ->
                 viewModelStateFlow.update {
                     it.copy(selectedModel = model)
                 }
+            },
+            onChangeGeminiBillingKey = { selectionKey, enabled ->
+                GeminiBillingKeyOverrideStore.setEnabled(selectionKey, enabled)
             },
         )
     }
@@ -313,5 +323,6 @@ class NewChatViewModel(
         val isLoading: Boolean = false,
         val activeLocalModelKeys: Set<LocalModelId> = setOf(),
         val localModelDefs: List<LocalModelDefinition> = listOf(),
+        val geminiBillingKeyOverrideSelectionKeys: Set<String> = setOf(),
     )
 }

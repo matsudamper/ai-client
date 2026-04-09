@@ -378,6 +378,7 @@ internal fun NewChatPreviewContent() {
                         ),
                         thinkingEnabled = false,
                         thinkingToggleEnabled = false,
+                        overflowMenu = ModelSelectorUiState.OverflowMenu.None,
                         listener = object : ModelSelectorUiState.Listener {
                             override fun onChangeThinking(enabled: Boolean) = Unit
                         },

@@ -15,6 +15,7 @@ import net.matsudamper.gptclient.ImageFormat
 import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
+import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
@@ -218,6 +219,11 @@ class ProjectViewModel(
             viewModelStateFlow.update { it.copy(localModelDefs = defs) }
         }
         viewModelScope.launch {
+            GeminiBillingKeyOverrideStore.enabledSelectionKeys.collectLatest { keys ->
+                viewModelStateFlow.update { it.copy(geminiBillingKeyOverrideSelectionKeys = keys) }
+            }
+        }
+        viewModelScope.launch {
             when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
                     appDatabase.chatRoomDao().getFromBuiltInChatRoomId(
@@ -407,6 +413,10 @@ class ProjectViewModel(
             selectedModel = selectedModel,
             activeLocalModelKeys = viewModelStateFlow.value.activeLocalModelKeys,
             localModelDefs = viewModelStateFlow.value.localModelDefs,
+            geminiBillingKeyOverrideSelectionKeys = viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys,
+            onChangeGeminiBillingKey = { selectionKey, enabled ->
+                GeminiBillingKeyOverrideStore.setEnabled(selectionKey, enabled)
+            },
             onSelectModel = { model ->
                 when (val info = viewModelStateFlow.value.systemInfo) {
                     is ViewModelState.SystemInfoType.BuiltinInfo,
@@ -462,6 +472,7 @@ class ProjectViewModel(
         val overwriteModel: ChatGptModel? = null,
         val activeLocalModelKeys: Set<LocalModelId> = setOf(),
         val localModelDefs: List<LocalModelDefinition> = listOf(),
+        val geminiBillingKeyOverrideSelectionKeys: Set<String> = setOf(),
         val isLoading: Boolean = false,
     ) {
         sealed interface SystemInfoType {

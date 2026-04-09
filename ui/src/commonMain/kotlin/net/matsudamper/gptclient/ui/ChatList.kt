@@ -48,7 +48,7 @@ data class ChatListUiState(
     val enableSend: Boolean,
     val listener: Listener,
 ) {
-    data class ModelInfo(val modelName: String, val engineLabel: String?)
+    data class ModelInfo(val modelName: String, val description: String?)
     sealed interface Message {
         val uiSet: ChatMessageComposableInterface
 
@@ -216,9 +216,9 @@ private fun ModelInfoHeader(
             text = modelInfo.modelName,
             style = MaterialTheme.typography.titleMedium,
         )
-        if (modelInfo.engineLabel != null) {
+        if (modelInfo.description != null) {
             Text(
-                text = modelInfo.engineLabel,
+                text = modelInfo.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.ImageFormat
 import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
+import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
@@ -164,16 +165,23 @@ class ChatViewModel(
                 uiState.update {
                     it.copy(
                         modelInfo = run {
-                            val modelKey = viewModelState.roomInfo?.room?.modelKey ?: return@run null
-                            val model = findModel(modelKey) ?: return@run null
-                            val engineLabel = if (model is ChatGptModel.Local) {
-                                viewModelState.engineLabels[LocalModelId(model.baseModelKey)]
-                            } else {
-                                null
+                            val room = viewModelState.roomInfo?.room ?: return@run null
+                            val model = findModel(room.modelKey) ?: return@run null
+                            val description = when (model) {
+                                is ChatGptModel.Local -> {
+                                    viewModelState.engineLabels[LocalModelId(model.baseModelKey)]
+                                }
+
+                                is ChatGptModel.Remote.Gemini -> {
+                                    val useBilling = room.useGeminiBillingKey ?: model.requireBillingKey
+                                    if (useBilling) "Billing Key" else null
+                                }
+
+                                else -> null
                             }
                             ChatListUiState.ModelInfo(
                                 modelName = model.displayName,
-                                engineLabel = engineLabel,
+                                description = description,
                             )
                         },
                         title = when (val roomInfo = viewModelState.roomInfo) {
@@ -378,11 +386,18 @@ class ChatViewModel(
         projectId: ProjectId?,
         model: ChatGptModel,
     ): ChatRoom = withContext(Dispatchers.IO) {
+        val useGeminiBillingKey: Boolean? = if (model is ChatGptModel.Remote.Gemini) {
+            model.requireBillingKey ||
+                model.selectionKey in GeminiBillingKeyOverrideStore.enabledSelectionKeys.value
+        } else {
+            null
+        }
         val room = ChatRoom(
             modelKey = model.modelKey,
             builtInProjectId = builtinProjectId,
             projectId = projectId,
             summary = null,
+            useGeminiBillingKey = useGeminiBillingKey,
         )
         room.copy(
             id = ChatRoomId(appDatabase.chatRoomDao().insert(room)),
