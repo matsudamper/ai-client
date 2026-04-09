@@ -56,7 +56,7 @@ internal object AndroidLocalModels {
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true",
             enableImage = true,
             supportedImageMimeTypes = listOf("image/png"),
-            defaultToken = 4096,
+            defaultToken = 2000,
             supportsThinking = true,
         )
 
@@ -70,7 +70,7 @@ internal object AndroidLocalModels {
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm?download=true",
             enableImage = true,
             supportedImageMimeTypes = listOf("image/png"),
-            defaultToken = 4096,
+            defaultToken = 2000,
             supportsThinking = true,
         )
 

@@ -7,6 +7,7 @@ import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.SamplerConfig
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.io.encoding.Base64
@@ -39,6 +40,11 @@ internal class LiteRtAiClient(
             engine.createConversation(
                 ConversationConfig(
                     initialMessages = historyMessages,
+                    samplerConfig = SamplerConfig(
+                        topK = 5,
+                        topP = 0.95,
+                        temperature = 0.0,
+                    ),
                 ),
             ).use { conversation ->
                 val responseMessage = conversation.sendMessage(
