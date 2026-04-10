@@ -50,7 +50,7 @@ jobs:
           echo "apk_path=app-android/build/outputs/apk/debug/$APK_NAME" >> "$GITHUB_OUTPUT"
 
       - id: upload_apk
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ steps.rename_apk.outputs.apk_name }}
           path: ${{ steps.rename_apk.outputs.apk_path }}
@@ -67,7 +67,7 @@ jobs:
       - name: Build release APK (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./gradlew :app-android:assembleRelease
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: release-apk
