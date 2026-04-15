@@ -76,7 +76,8 @@ class AndroidPlatformRequest(private val context: Context) : PlatformRequest {
             try {
                 val source = ImageDecoder.createSource(context.contentResolver, uri.toUri())
                 val bitmap = ImageDecoder.decodeBitmap(source)
-                val outputBitmap = cropRect?.let { bitmap.crop(it) } ?: bitmap
+                val outputBitmap = (cropRect?.let { bitmap.crop(it) } ?: bitmap)
+                    .resizeIfNeeded(MAX_IMAGE_DIMENSION)
                 val cacheKey = buildString {
                     append(uri)
                     append('|')
@@ -89,6 +90,10 @@ class AndroidPlatformRequest(private val context: Context) : PlatformRequest {
                     append(cropRect?.bottom)
                     append('|')
                     append(imageFormat.name)
+                    append('|')
+                    append(MAX_IMAGE_DIMENSION)
+                    append('|')
+                    append(LOSSY_IMAGE_QUALITY)
                 }.sha256Hex()
                 val file = File(context.cacheDir, "$cacheKey.${imageFormat.fileExtension}")
 
@@ -114,6 +119,14 @@ class AndroidPlatformRequest(private val context: Context) : PlatformRequest {
         val notificationManager: NotificationManager =
             context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun Bitmap.resizeIfNeeded(maxDimension: Int): Bitmap {
+        if (width <= maxDimension && height <= maxDimension) return this
+        val scale = maxDimension.toFloat() / maxOf(width, height)
+        val newWidth = (width * scale).toInt()
+        val newHeight = (height * scale).toInt()
+        return Bitmap.createScaledBitmap(this, newWidth, newHeight, true)
     }
 
     private fun Bitmap.crop(cropRect: PlatformRequest.CropRect): Bitmap {
@@ -182,6 +195,7 @@ class AndroidPlatformRequest(private val context: Context) : PlatformRequest {
     }
 
     private companion object {
-        private const val LOSSY_IMAGE_QUALITY = 85
+        private const val MAX_IMAGE_DIMENSION = 1920
+        private const val LOSSY_IMAGE_QUALITY = 75
     }
 }

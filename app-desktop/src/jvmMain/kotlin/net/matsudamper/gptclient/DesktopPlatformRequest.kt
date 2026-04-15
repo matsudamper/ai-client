@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient
 
 import java.awt.Desktop
+import java.awt.RenderingHints
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.awt.image.BufferedImage
@@ -8,7 +9,10 @@ import java.io.File
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import javax.imageio.IIOImage
 import javax.imageio.ImageIO
+import javax.imageio.ImageWriteParam
+import javax.imageio.stream.FileImageOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -58,7 +62,8 @@ class DesktopPlatformRequest : PlatformRequest {
             runCatching {
                 val file = File(uri)
                 val image = ImageIO.read(file) ?: return@withContext null
-                val outputImage = cropRect?.let { image.crop(it) } ?: image
+                val outputImage = (cropRect?.let { image.crop(it) } ?: image)
+                    .resizeIfNeeded(MAX_IMAGE_DIMENSION)
                 val outputFormat = imageFormat.toWritableFormat()
                 val hash = buildString {
                     append(file.absolutePath)
@@ -76,6 +81,10 @@ class DesktopPlatformRequest : PlatformRequest {
                     append(file.lastModified())
                     append('|')
                     append(file.sha256Hex())
+                    append('|')
+                    append(MAX_IMAGE_DIMENSION)
+                    append('|')
+                    append(LOSSY_IMAGE_QUALITY)
                 }.sha256Hex()
                 val outputFile = File(
                     System.getProperty("java.io.tmpdir"),
@@ -93,6 +102,19 @@ class DesktopPlatformRequest : PlatformRequest {
 
     override fun createNotificationChannel(channelId: String) {
         // デスクトップでは何もしない
+    }
+
+    private fun BufferedImage.resizeIfNeeded(maxDimension: Int): BufferedImage {
+        if (width <= maxDimension && height <= maxDimension) return this
+        val scale = maxDimension.toDouble() / maxOf(width, height)
+        val newWidth = (width * scale).toInt()
+        val newHeight = (height * scale).toInt()
+        val resized = BufferedImage(newWidth, newHeight, type)
+        val g2d = resized.createGraphics()
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+        g2d.drawImage(this, 0, 0, newWidth, newHeight, null)
+        g2d.dispose()
+        return resized
     }
 
     private fun BufferedImage.crop(cropRect: PlatformRequest.CropRect): BufferedImage {
@@ -114,12 +136,22 @@ class DesktopPlatformRequest : PlatformRequest {
         image: BufferedImage,
         imageFormat: ImageFormat,
     ) {
-        val writerFormat = when (imageFormat) {
-            ImageFormat.Jpeg -> "jpg"
-            ImageFormat.Png -> "png"
+        when (imageFormat) {
+            ImageFormat.Jpeg -> {
+                val writer = ImageIO.getImageWritersByFormatName("jpg").next()
+                val param = writer.defaultWriteParam.apply {
+                    compressionMode = ImageWriteParam.MODE_EXPLICIT
+                    compressionQuality = LOSSY_IMAGE_QUALITY / 100f
+                }
+                FileImageOutputStream(this).use { outputStream ->
+                    writer.output = outputStream
+                    writer.write(null, IIOImage(image, null, null), param)
+                    writer.dispose()
+                }
+            }
+            ImageFormat.Png -> ImageIO.write(image, "png", this)
             ImageFormat.Webp -> error("DesktopPlatformRequest does not support WebP output")
         }
-        ImageIO.write(image, writerFormat, this)
     }
 
     private fun ImageFormat.toWritableFormat(): ImageFormat {
@@ -162,5 +194,10 @@ class DesktopPlatformRequest : PlatformRequest {
 
     private fun ByteArray.toHexString(): String {
         return joinToString(separator = "") { byte -> "%02x".format(byte.toInt() and 0xff) }
+    }
+
+    private companion object {
+        private const val MAX_IMAGE_DIMENSION = 1920
+        private const val LOSSY_IMAGE_QUALITY = 75
     }
 }
