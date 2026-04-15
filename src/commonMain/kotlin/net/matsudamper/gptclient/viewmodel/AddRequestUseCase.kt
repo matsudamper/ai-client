@@ -103,12 +103,23 @@ class AddRequestUseCase(
         return room.workerId?.let { workManagerScheduler.isWorkRunning(it) } ?: false
     }
 
+    suspend fun cancelRequest(chatRoomId: ChatRoomId) {
+        withContext(Dispatchers.IO) {
+            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+            val workerId = room.workerId ?: return@withContext
+            workManagerScheduler.cancelWork(workerId)
+            appDatabase.chatRoomDao().update(room.copy(workerId = null))
+        }
+    }
+
     interface WorkManagerScheduler {
         fun scheduleWork(
             chatRoomId: ChatRoomId,
         ): String
 
         fun isWorkRunning(workId: String): Boolean
+
+        fun cancelWork(workId: String)
     }
 
     sealed interface Result {

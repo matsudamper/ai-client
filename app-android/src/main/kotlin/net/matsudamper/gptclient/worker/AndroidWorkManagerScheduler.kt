@@ -40,6 +40,10 @@ class AndroidWorkManagerScheduler(
         }.getOrDefault(false)
     }
 
+    override fun cancelWork(workId: String) {
+        workManager.cancelWorkById(UUID.fromString(workId))
+    }
+
     fun getChatRequestWorkerId(chatRoomId: ChatRoomId): String {
         return "chat_request_${chatRoomId.value}"
     }

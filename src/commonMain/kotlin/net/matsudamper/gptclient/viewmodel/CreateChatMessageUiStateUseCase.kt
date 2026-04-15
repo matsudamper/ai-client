@@ -13,6 +13,7 @@ class CreateChatMessageUiStateUseCase {
         chats: List<Chat>,
         agentTransformer: (String) -> ChatMessageComposableInterface = { TextMessageComposableInterface(AnnotatedString(it)) },
         isChatLoading: Boolean,
+        onCancel: () -> Unit = {},
     ): List<ChatListUiState.Message> {
         return chats.mapNotNull { chat ->
             sequence {
@@ -72,7 +73,7 @@ class CreateChatMessageUiStateUseCase {
                 .firstOrNull()
         }.plus(
             ChatListUiState.Message.Agent(
-                uiSet = LoadingMessageComposableInterface,
+                uiSet = LoadingMessageComposableInterface(onCancel),
             ).takeIf { isChatLoading },
         ).filterNotNull()
     }

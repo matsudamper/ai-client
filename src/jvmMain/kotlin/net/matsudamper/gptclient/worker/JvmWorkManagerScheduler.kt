@@ -50,4 +50,8 @@ class JvmWorkManagerScheduler(
     override fun isWorkRunning(workId: String): Boolean {
         return jobs[workId]?.isActive == true
     }
+
+    override fun cancelWork(workId: String) {
+        jobs[workId]?.cancel()
+    }
 }

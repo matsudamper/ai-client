@@ -203,6 +203,7 @@ class ChatViewModel(
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isWorkInProgress,
+                            onCancel = { cancelAiRequest() },
                             agentTransformer = {
                                 when (val info = viewModelState.roomInfo) {
                                     is ViewModelState.RoomInfo.BuiltinProject -> {
@@ -325,6 +326,14 @@ class ChatViewModel(
                     }
                 }
             }
+        }
+    }
+
+    private fun cancelAiRequest() {
+        val roomInfo = viewModelStateFlow.value.roomInfo ?: return
+        val chatRoomId = roomInfo.room.id
+        viewModelScope.launch {
+            insertDataAndAddRequestUseCase.cancelRequest(chatRoomId)
         }
     }
 

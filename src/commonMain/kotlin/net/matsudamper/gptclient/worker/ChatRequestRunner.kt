@@ -2,8 +2,11 @@ package net.matsudamper.gptclient.worker
 
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.client.gemini.GeminiClient
@@ -78,6 +81,11 @@ class ChatRequestRunner(
             clearWorkerState(chatRoomId = chatRoomId)
 
             Result.Success
+        } catch (e: CancellationException) {
+            withContext(NonCancellable) {
+                clearWorkerState(chatRoomId = chatRoomId)
+            }
+            throw e
         } catch (throwable: Throwable) {
             throwable.printStackTrace()
             fail(
