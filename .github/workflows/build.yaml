@@ -71,8 +71,8 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: apk-qr-code-github
           path: qrcode-github.png
+          archive: false
       - name: Generate S3 QR code
         if: github.event_name == 'pull_request' && steps.upload_s3.outputs.url != ''
         run: |
@@ -82,8 +82,8 @@ jobs:
         if: github.event_name == 'pull_request' && steps.upload_s3.outputs.url != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: apk-qr-code-s3
           path: qrcode-s3.png
+          archive: false
       - name: Comment APK download URL
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
