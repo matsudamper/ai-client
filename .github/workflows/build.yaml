@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+      id-token: write
     env:
       GRADLE_OPTS: -Dkotlin.compiler.execution.strategy=in-process -Dkotlin.incremental=false -Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs="-Xmx4500m"
       DEBUG_KEYSTORE_FILE: debug.keystore
@@ -54,16 +55,50 @@ jobs:
         with:
           name: ${{ steps.rename_apk.outputs.apk_name }}
           path: ${{ steps.rename_apk.outputs.apk_path }}
+      - id: upload_s3
+        name: Upload APK to S3
+        uses: matsudamper/actions/upload-matsudamper-s3@a1ecf81b1a0ce320824a49711e456f396e4e8fea
+        continue-on-error: true
+        with:
+          file_path: ${{ steps.rename_apk.outputs.apk_path }}
+      - name: Generate GitHub QR code
+        if: github.event_name == 'pull_request'
+        run: |
+          pip install "qrcode[pil]" --quiet
+          python3 -c "import qrcode, sys; qrcode.make(sys.argv[1]).save('qrcode-github.png')" "${{ steps.upload_apk.outputs.artifact-url }}"
+      - id: github_qr_artifact
+        name: Upload GitHub QR artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: apk-qr-code-github
+          path: qrcode-github.png
+      - name: Generate S3 QR code
+        if: github.event_name == 'pull_request' && steps.upload_s3.outputs.url != ''
+        run: |
+          python3 -c "import qrcode, sys; qrcode.make(sys.argv[1]).save('qrcode-s3.png')" "${{ steps.upload_s3.outputs.url }}"
+      - id: s3_qr_artifact
+        name: Upload S3 QR artifact
+        if: github.event_name == 'pull_request' && steps.upload_s3.outputs.url != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: apk-qr-code-s3
+          path: qrcode-s3.png
       - name: Comment APK download URL
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
         with:
           header: apk-download
           message: |
-            ✅ Debug APK artifact is ready.
+            ✅ **Debug APK is ready!**
 
-            - Download URL: ${{ steps.upload_apk.outputs.artifact-url }}
-            - Artifact Name: `${{ steps.rename_apk.outputs.apk_name }}`
+            | Storage | Download Link | QR Code |
+            | :--- | :--- | :--- |
+            | 🐙 GitHub Artifacts | [Download](${{ steps.upload_apk.outputs.artifact-url }}) | [View](${{ steps.github_qr_artifact.outputs.artifact-url }}) |
+            ${{ steps.upload_s3.outputs.url && format('| ☁️ S3 | [Download]({0}) | [View]({1}) |', steps.upload_s3.outputs.url, steps.s3_qr_artifact.outputs.artifact-url) || '' }}
+
+            ---
+            *Artifact Name: `${{ steps.rename_apk.outputs.apk_name }}`*
       - name: Build release APK (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./gradlew :app-android:assembleRelease
