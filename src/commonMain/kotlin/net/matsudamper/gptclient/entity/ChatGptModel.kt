@@ -81,7 +81,7 @@ interface ChatGptModel {
             data object Gemini3FlashLite : Gemini {
                 override val modelKey: String = "gemini-3.1-flash-lite-preview"
                 override val displayName: String = "Gemini 3.1 Flash Lite"
-                override val apiModelName: String = "gemini-3.1-flash-lite-preview"
+                override val apiModelName: String = "gemini-3.1-flash-lite"
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
@@ -98,7 +98,7 @@ interface ChatGptModel {
             data object Gemini3FlashLiteThinking : Gemini {
                 override val modelKey: String = "gemini-3.1-flash-lite-preview-thinking"
                 override val displayName: String = "Gemini 3.1 Flash Lite"
-                override val apiModelName: String = "gemini-3.1-flash-lite-preview"
+                override val apiModelName: String = "gemini-3.1-flash-lite"
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
