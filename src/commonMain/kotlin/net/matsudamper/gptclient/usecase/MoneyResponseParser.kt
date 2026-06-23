@@ -17,20 +17,20 @@ class MoneyResponseParser {
     fun toUiNode(original: String): UiNode = try {
         val response = Json.decodeFromString<MoneyGptResponse>(original)
         if (response.results.isEmpty()) {
-            UiNode.Txt(v = response.errorMessage ?: original)
+            UiNode.Text(value = response.errorMessage ?: original)
         } else {
-            UiNode.Col(c = buildList {
+            UiNode.Column(children = buildList {
                 for ((index, result) in response.results.withIndex()) {
                     val dateTime = DateTimeFormatterBuilder()
                         .appendPattern("yyyy-MM-dd HH:mm")
                         .toFormatter()
                         .format(result.date)
 
-                    add(UiNode.Txt(v = result.title, s = "h"))
-                    add(UiNode.Kv(k = "日時", v = dateTime))
-                    add(UiNode.Kv(k = "金額", v = result.amount.toString()))
+                    add(UiNode.Text(value = result.title, style = "h"))
+                    add(UiNode.KeyValue(key = "日時", value = dateTime))
+                    add(UiNode.KeyValue(key = "金額", value = result.amount.toString()))
                     if (result.description != null) {
-                        add(UiNode.Kv(k = "説明", v = result.description))
+                        add(UiNode.KeyValue(key = "説明", value = result.description))
                     }
                     val url = "https://money.matsudamper.net/add/money-usage" +
                         "?action=TEMPLATE" +
@@ -38,15 +38,15 @@ class MoneyResponseParser {
                         "&date=${result.date}" +
                         "&price=${result.amount}" +
                         "&description=${result.description.orEmpty().encodeURLParameter()}"
-                    add(UiNode.Lnk(v = "家計簿への追加リンク", u = url))
+                    add(UiNode.Link(label = "家計簿への追加リンク", url = url))
                     if (index < response.results.size - 1) {
-                        add(UiNode.Div)
+                        add(UiNode.Divider)
                     }
                 }
             })
         }
     } catch (e: Throwable) {
         e.printStackTrace()
-        UiNode.Txt(v = original)
+        UiNode.Text(value = original)
     }
 }

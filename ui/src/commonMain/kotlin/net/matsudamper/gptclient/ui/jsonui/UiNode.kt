@@ -11,31 +11,40 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 sealed interface UiNode {
     @Serializable
     @SerialName("col")
-    data class Col(val c: List<UiNode> = emptyList()) : UiNode
+    data class Column(@SerialName("c") val children: List<UiNode> = emptyList()) : UiNode
 
     @Serializable
     @SerialName("row")
-    data class Row(val c: List<UiNode> = emptyList()) : UiNode
+    data class Row(@SerialName("c") val children: List<UiNode> = emptyList()) : UiNode
 
     @Serializable
     @SerialName("txt")
-    data class Txt(val v: String, val s: String? = null) : UiNode
+    data class Text(
+        @SerialName("v") val value: String,
+        @SerialName("s") val style: String? = null,
+    ) : UiNode
 
     @Serializable
     @SerialName("lnk")
-    data class Lnk(val v: String, val u: String) : UiNode
+    data class Link(
+        @SerialName("v") val label: String,
+        @SerialName("u") val url: String,
+    ) : UiNode
 
     @Serializable
     @SerialName("kv")
-    data class Kv(val k: String, val v: String) : UiNode
+    data class KeyValue(
+        @SerialName("k") val key: String,
+        @SerialName("v") val value: String,
+    ) : UiNode
 
     @Serializable
     @SerialName("chips")
-    data class Chips(val v: List<String>) : UiNode
+    data class Chips(@SerialName("v") val values: List<String>) : UiNode
 
     @Serializable
     @SerialName("div")
-    data object Div : UiNode
+    data object Divider : UiNode
 
     companion object {
         val FORMAT_INSTRUCTION =

@@ -26,12 +26,12 @@ fun JsonUiRenderer(
     onChipClick: ((String) -> Unit)? = null,
 ) {
     when (node) {
-        is UiNode.Col -> {
+        is UiNode.Column -> {
             Column(
                 modifier = modifier,
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                for (child in node.c) {
+                for (child in node.children) {
                     JsonUiRenderer(node = child, onChipClick = onChipClick)
                 }
             }
@@ -43,14 +43,14 @@ fun JsonUiRenderer(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                for (child in node.c) {
+                for (child in node.children) {
                     JsonUiRenderer(node = child, onChipClick = onChipClick)
                 }
             }
         }
 
-        is UiNode.Txt -> {
-            val style = when (node.s) {
+        is UiNode.Text -> {
+            val textStyle = when (node.style) {
                 "h" -> MaterialTheme.typography.titleMedium
                 "b" -> MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                 "sm" -> MaterialTheme.typography.bodySmall
@@ -58,32 +58,32 @@ fun JsonUiRenderer(
             }
             Text(
                 modifier = modifier,
-                text = node.v,
-                style = style,
+                text = node.value,
+                style = textStyle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
-        is UiNode.Lnk -> {
+        is UiNode.Link -> {
             val uriHandler = LocalUriHandler.current
             TextButton(
-                onClick = { uriHandler.openUri(node.u) },
+                onClick = { uriHandler.openUri(node.url) },
                 contentPadding = PaddingValues(horizontal = 0.dp),
             ) {
-                Text(text = node.v)
+                Text(text = node.label)
             }
         }
 
-        is UiNode.Kv -> {
+        is UiNode.KeyValue -> {
             Row(modifier = modifier) {
                 Text(
-                    text = "${node.k}: ",
+                    text = "${node.key}: ",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = node.v,
+                    text = node.value,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -96,7 +96,7 @@ fun JsonUiRenderer(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                for (chip in node.v) {
+                for (chip in node.values) {
                     OutlinedButton(
                         onClick = { onChipClick?.invoke(chip) },
                     ) {
@@ -109,7 +109,7 @@ fun JsonUiRenderer(
             }
         }
 
-        is UiNode.Div -> {
+        is UiNode.Divider -> {
             HorizontalDivider(modifier = modifier.padding(vertical = 4.dp))
         }
     }

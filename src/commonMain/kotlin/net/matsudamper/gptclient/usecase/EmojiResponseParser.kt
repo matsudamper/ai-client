@@ -14,12 +14,12 @@ class EmojiResponseParser {
             .decodeFromString<EmojiGptResponse>(original)
         Log.d("RESPONSE", response.toString())
         if (response.results.isEmpty()) {
-            UiNode.Txt(v = response.errorMessage ?: original)
+            UiNode.Text(value = response.errorMessage ?: original)
         } else {
-            UiNode.Chips(v = response.results)
+            UiNode.Chips(values = response.results)
         }
     } catch (e: Throwable) {
         e.printStackTrace()
-        UiNode.Txt(v = original)
+        UiNode.Text(value = original)
     }
 }

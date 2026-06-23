@@ -20,17 +20,17 @@ class CalendarResponseParser {
     fun toUiNode(original: String): UiNode = try {
         val response = Json.decodeFromString<CalendarGptResponse>(original)
         if (response.results.isEmpty()) {
-            UiNode.Txt(v = response.errorMessage ?: original)
+            UiNode.Text(value = response.errorMessage ?: original)
         } else {
-            UiNode.Col(c = buildList {
+            UiNode.Column(children = buildList {
                 for ((index, result) in response.results.withIndex()) {
-                    add(UiNode.Txt(v = result.title, s = "h"))
-                    add(UiNode.Kv(k = "日時", v = "${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}"))
+                    add(UiNode.Text(value = result.title, style = "h"))
+                    add(UiNode.KeyValue(key = "日時", value = "${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}"))
                     if (result.location != null) {
-                        add(UiNode.Kv(k = "場所", v = result.location))
+                        add(UiNode.KeyValue(key = "場所", value = result.location))
                     }
                     if (result.description != null) {
-                        add(UiNode.Kv(k = "説明", v = result.description))
+                        add(UiNode.KeyValue(key = "説明", value = result.description))
                     }
                     val googleCalendarUrl = "https://calendar.google.com/calendar/render" +
                         "?action=TEMPLATE" +
@@ -38,16 +38,16 @@ class CalendarResponseParser {
                         "&dates=${result.startDate.toGoogleCalendarFormat()}/${result.endDate.toGoogleCalendarFormat()}" +
                         "&details=${result.description.orEmpty().encodeURLParameter()}" +
                         "&location=${result.location.orEmpty().encodeURLParameter()}"
-                    add(UiNode.Lnk(v = "Google Calendar追加リンク", u = googleCalendarUrl))
+                    add(UiNode.Link(label = "Google Calendar追加リンク", url = googleCalendarUrl))
                     if (index < response.results.size - 1) {
-                        add(UiNode.Div)
+                        add(UiNode.Divider)
                     }
                 }
             })
         }
     } catch (e: Throwable) {
         e.printStackTrace()
-        UiNode.Txt(v = original)
+        UiNode.Text(value = original)
     }
 
     private fun LocalDateTime.toGoogleCalendarFormat(): String {
