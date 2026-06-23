@@ -94,6 +94,7 @@ public fun MainScreen(
     backStack: SnapshotStateList<Navigator>,
     uiStateProvider: UiStateProvider,
     modifier: Modifier = Modifier,
+    onFinish: () -> Unit = {},
 ) {
     val rootUiState = uiStateProvider.provideMainScreenUiState()
 
@@ -156,6 +157,7 @@ public fun MainScreen(
                             uiStateProvider = uiStateProvider,
                             onClickMenu = { isVisibleSidePanel = true },
                             requestBack = { isVisibleSidePanel = false },
+                            onFinish = onFinish,
                         )
                     }
                     val alpha by animateFloatAsState(if (isVisibleSidePanel) 0.4f else 0f, tween(250))
@@ -182,10 +184,17 @@ private fun Navigation(
     onClickMenu: () -> Unit,
     enableNavigationBack: Boolean,
     requestBack: () -> Unit,
+    onFinish: () -> Unit = {},
 ) {
     NavDisplay(
         backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = {
+            if (backStack.size > 1) {
+                backStack.removeLastOrNull()
+            } else {
+                onFinish()
+            }
+        },
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),

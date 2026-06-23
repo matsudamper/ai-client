@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
             App(
                 launchNavigationRequest = launchNavigationRequestState.value,
                 providePlatformRequest = { getKoin().get() },
+                onFinish = { finish() },
             )
         }
     }

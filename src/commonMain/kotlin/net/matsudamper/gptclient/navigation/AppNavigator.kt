@@ -13,9 +13,7 @@ class AppNavigator(private val backStack: SnapshotStateList<Navigator>) {
     }
 
     fun navigateClearToStart(route: Navigator) {
-        while (backStack.size > 1) {
-            backStack.removeLast()
-        }
+        backStack.clear()
         backStack.add(route)
     }
 

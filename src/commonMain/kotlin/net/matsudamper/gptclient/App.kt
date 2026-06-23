@@ -35,6 +35,7 @@ import org.koin.java.KoinJavaComponent.getKoin
 fun App(
     launchNavigationRequest: LaunchNavigationRequest = LaunchNavigationRequest.none(),
     providePlatformRequest: () -> PlatformRequest,
+    onFinish: () -> Unit = {},
 ) {
     val settingDataStore: SettingDataStore = remember { getKoin().get() }
     val themeMode = settingDataStore.getThemeModeFlow()
@@ -83,6 +84,7 @@ fun App(
         MainScreen(
             modifier = Modifier.fillMaxSize(),
             backStack = backStack,
+            onFinish = onFinish,
             uiStateProvider = remember(appNavigator) {
                 object : UiStateProvider {
                     @Composable
