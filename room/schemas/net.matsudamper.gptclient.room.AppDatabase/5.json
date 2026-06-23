@@ -118,7 +118,7 @@
       },
       {
         "tableName": "project",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `index` INTEGER NOT NULL, `name` TEXT NOT NULL, `model_name` TEXT NOT NULL, `system_message` TEXT NOT NULL, `json_ui` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `index` INTEGER NOT NULL, `name` TEXT NOT NULL, `model_name` TEXT NOT NULL, `system_message` TEXT NOT NULL, `json_ui` INTEGER NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -154,7 +154,8 @@
             "fieldPath": "jsonUi",
             "columnName": "json_ui",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {

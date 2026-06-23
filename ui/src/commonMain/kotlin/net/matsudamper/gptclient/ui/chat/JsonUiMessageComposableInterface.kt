@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 
@@ -75,7 +76,7 @@ data class JsonUiMessageComposableInterface(
                 OutlinedButton(
                     onClick = {
                         node.copyText?.let { onCopy(it) }
-                        node.url?.let { url -> runCatching { uriHandler.openUri(url) } }
+                        openAllowedUri(uriHandler, node.url)
                     },
                 ) {
                     Text(node.value)
@@ -85,7 +86,7 @@ data class JsonUiMessageComposableInterface(
             is JsonUiNode.Link -> {
                 val uriHandler = LocalUriHandler.current
                 Text(
-                    modifier = Modifier.clickable { runCatching { uriHandler.openUri(node.url) } },
+                    modifier = Modifier.clickable { openAllowedUri(uriHandler, node.url) },
                     text = node.value,
                     color = MaterialTheme.colorScheme.primary,
                     textDecoration = TextDecoration.Underline,
@@ -96,5 +97,11 @@ data class JsonUiMessageComposableInterface(
                 HorizontalDivider(modifier = Modifier.fillMaxWidth())
             }
         }
+    }
+
+    private fun openAllowedUri(uriHandler: UriHandler, rawUrl: String?) {
+        val url = rawUrl?.trim() ?: return
+        if (!url.startsWith("https://") && !url.startsWith("http://")) return
+        runCatching { uriHandler.openUri(url) }
     }
 }

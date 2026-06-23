@@ -212,15 +212,18 @@ class ChatViewModel(
                                     }
 
                                     is ViewModelState.RoomInfo.Project -> {
-                                        if (info.project.jsonUi) {
-                                            JsonUiParser.parseOrNull(response)?.let { node ->
-                                                JsonUiMessageComposableInterface(
-                                                    root = node,
-                                                    onCopy = { text ->
-                                                        launchWithPlatformRequest { copyToClipboard(text) }
-                                                    },
-                                                )
-                                            } ?: TextMessageComposableInterface(AnnotatedString(response))
+                                        val node = if (info.project.jsonUi) {
+                                            JsonUiParser.parseOrNull(response)
+                                        } else {
+                                            null
+                                        }
+                                        if (node != null) {
+                                            JsonUiMessageComposableInterface(
+                                                root = node,
+                                                onCopy = { text ->
+                                                    launchWithPlatformRequest { copyToClipboard(text) }
+                                                },
+                                            )
                                         } else {
                                             TextMessageComposableInterface(AnnotatedString(response))
                                         }

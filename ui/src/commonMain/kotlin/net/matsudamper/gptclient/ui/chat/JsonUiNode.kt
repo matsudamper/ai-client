@@ -19,13 +19,13 @@ sealed interface JsonUiNode {
     @Serializable
     @SerialName("col")
     data class Column(
-        @SerialName("c") val children: List<JsonUiNode> = emptyList(),
+        @SerialName("c") val children: List<JsonUiNode> = listOf(),
     ) : JsonUiNode
 
     @Serializable
     @SerialName("row")
     data class Row(
-        @SerialName("c") val children: List<JsonUiNode> = emptyList(),
+        @SerialName("c") val children: List<JsonUiNode> = listOf(),
     ) : JsonUiNode
 
     @Serializable
@@ -61,6 +61,7 @@ object JsonUiParser {
         ignoreUnknownKeys = true
         isLenient = true
     }
+    private val fencedJsonRegex = Regex("^```(?:\\w+)?\\s*([\\s\\S]*?)\\s*```$")
 
     /**
      * AIの応答文字列をUIノードに変換する。
@@ -72,9 +73,11 @@ object JsonUiParser {
     }
 
     private fun stripCodeFence(text: String): String {
-        if (!text.startsWith("```")) return text
-        val withoutOpening = text.substringAfter('\n', missingDelimiterValue = "")
-        return withoutOpening.substringBeforeLast("```").trim()
+        return fencedJsonRegex.matchEntire(text)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.trim()
+            ?: text
     }
 
     /** ノードツリーからテキストを抽出する。履歴のサマリ表示などに利用する。 */
@@ -89,8 +92,8 @@ object JsonUiParser {
             is JsonUiNode.Column -> node.children.forEach { collectText(it, out) }
             is JsonUiNode.Row -> node.children.forEach { collectText(it, out) }
             is JsonUiNode.Text -> node.value.takeIf { it.isNotBlank() }?.let { out.add(it) }
-            is JsonUiNode.Button -> Unit
-            is JsonUiNode.Link -> Unit
+            is JsonUiNode.Button -> node.value.takeIf { it.isNotBlank() }?.let { out.add(it) }
+            is JsonUiNode.Link -> node.value.takeIf { it.isNotBlank() }?.let { out.add(it) }
             JsonUiNode.Divider -> Unit
         }
     }
