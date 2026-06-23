@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.ktlingGradle) apply false
+    alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.composeCompiler)
 }
 
@@ -49,12 +50,12 @@ kotlin {
                 api(projects.room)
                 api(projects.feature.localModel)
                 implementation(libs.androidxRoomRuntime)
-                implementation(libs.composeRuntime)
-                implementation(libs.composeUi)
-                implementation(libs.composeMaterial3)
-                implementation(libs.composeMaterial)
+                implementation(compose.runtime)
+                implementation(compose.ui)
+                implementation(compose.material3)
+                implementation(compose.material)
                 implementation(libs.composeMaterialIconsExtended)
-                implementation(libs.composeFoundation)
+                implementation(compose.foundation)
                 implementation(libs.composeIcons)
                 implementation(libs.navigation3Ui)
                 implementation(libs.lifecycleViewmodelNavigation3)
@@ -70,17 +71,17 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation(libs.composeUi)
-                implementation(libs.composeMaterial3)
+                implementation(compose.ui)
+                implementation(compose.material3)
                 implementation(libs.kotlinxCoroutineSwing)
                 implementation(libs.koinCore)
             }
         }
         val androidMain by getting {
             dependencies {
-                api(libs.composeRuntime)
-                api(libs.composeUi)
-                api(libs.composeMaterial3)
+                api(compose.runtime)
+                api(compose.ui)
+                api(compose.material3)
                 api(libs.androidActivityActivityCompose)
                 api(libs.androidActivityKtx)
                 api(libs.androidxCoreKtx)
@@ -88,7 +89,7 @@ kotlin {
                 api(libs.androidxLifecycleViewModelCompose)
                 api(libs.androidxLifecycleRuntimeCompose)
                 api(libs.googleMaterial)
-                api(libs.composeFoundation)
+                api(compose.foundation)
                 api(libs.koinAndroid)
                 api(libs.koinCore)
             }
