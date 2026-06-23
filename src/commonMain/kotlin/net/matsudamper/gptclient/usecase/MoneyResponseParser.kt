@@ -1,14 +1,9 @@
 package net.matsudamper.gptclient.usecase
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import java.time.format.DateTimeFormatterBuilder
 import kotlinx.serialization.json.Json
 import io.ktor.http.encodeURLParameter
+import net.matsudamper.gptclient.ui.jsonui.UiNode
 import net.matsudamper.gptclient.viewmodel.calendar.MoneyGptResponse
 
 class MoneyResponseParser {
@@ -19,43 +14,39 @@ class MoneyResponseParser {
         null
     }
 
-    fun toAnnotatedString(original: String): AnnotatedString = try {
+    fun toUiNode(original: String): UiNode = try {
         val response = Json.decodeFromString<MoneyGptResponse>(original)
         if (response.results.isEmpty()) {
-            AnnotatedString(response.errorMessage ?: original)
+            UiNode.Txt(v = response.errorMessage ?: original)
         } else {
-            buildAnnotatedString {
+            UiNode.Col(c = buildList {
                 for ((index, result) in response.results.withIndex()) {
                     val dateTime = DateTimeFormatterBuilder()
                         .appendPattern("yyyy-MM-dd HH:mm")
                         .toFormatter()
                         .format(result.date)
 
-                    appendLine("タイトル: ${result.title}")
-                    appendLine("日時: $dateTime")
-                    appendLine("金額: ${result.amount}")
-                    appendLine("説明: ${result.description}")
-
-                    val googleCalendarUrl = "https://money.matsudamper.net/add/money-usage" +
+                    add(UiNode.Txt(v = result.title, s = "h"))
+                    add(UiNode.Kv(k = "日時", v = dateTime))
+                    add(UiNode.Kv(k = "金額", v = result.amount.toString()))
+                    if (result.description != null) {
+                        add(UiNode.Kv(k = "説明", v = result.description))
+                    }
+                    val url = "https://money.matsudamper.net/add/money-usage" +
                         "?action=TEMPLATE" +
                         "&title=${result.title.encodeURLParameter()}" +
                         "&date=${result.date}" +
                         "&price=${result.amount}" +
                         "&description=${result.description.orEmpty().encodeURLParameter()}"
-                    pushLink(LinkAnnotation.Url(googleCalendarUrl))
-                    withStyle(SpanStyle(color = Color.Blue)) {
-                        append("家計簿への追加リンク")
-                    }
-                    pop()
+                    add(UiNode.Lnk(v = "家計簿への追加リンク", u = url))
                     if (index < response.results.size - 1) {
-                        appendLine()
-                        appendLine()
+                        add(UiNode.Div)
                     }
                 }
-            }
+            })
         }
     } catch (e: Throwable) {
         e.printStackTrace()
-        AnnotatedString(original)
+        UiNode.Txt(v = original)
     }
 }

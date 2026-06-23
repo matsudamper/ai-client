@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
+import kotlinx.serialization.json.Json
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +38,9 @@ import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.chat.ChatErrorMessageRetryComposableInterface
+import net.matsudamper.gptclient.ui.chat.JsonUiMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
+import net.matsudamper.gptclient.ui.jsonui.UiNode
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 import net.matsudamper.gptclient.util.EventSender
 
@@ -47,6 +50,17 @@ class ChatViewModel(
     private val insertDataAndAddRequestUseCase: AddRequestUseCase,
     private val localModelRepository: LocalModelRepository,
 ) : ViewModel() {
+    private val jsonUiFormat = Json { ignoreUnknownKeys = true }
+
+    private fun tryParseJsonUi(response: String): JsonUiMessageComposableInterface? {
+        if (!response.trimStart().startsWith("{")) return null
+        return runCatching {
+            JsonUiMessageComposableInterface(
+                node = jsonUiFormat.decodeFromString<UiNode>(response),
+            )
+        }.getOrNull()
+    }
+
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
 
@@ -212,7 +226,8 @@ class ChatViewModel(
                                     is ViewModelState.RoomInfo.Project,
                                     is ViewModelState.RoomInfo.Normal,
                                     null,
-                                    -> TextMessageComposableInterface(AnnotatedString(it))
+                                    -> tryParseJsonUi(it)
+                                        ?: TextMessageComposableInterface(AnnotatedString(it))
                                 }
                             },
                         ).let { items ->

@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
+import kotlinx.serialization.json.Json
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +31,9 @@ import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ChatRoomWithSummary
 import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.JsonUiMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
+import net.matsudamper.gptclient.ui.jsonui.UiNode
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 import net.matsudamper.gptclient.ui.component.ModelSelectorUiState
 import net.matsudamper.gptclient.util.EventSender
@@ -486,10 +489,22 @@ class ProjectViewModel(
             }
 
             data class Project(val project: net.matsudamper.gptclient.room.entity.Project) : SystemInfoType {
+                private val jsonUiFormat = Json { ignoreUnknownKeys = true }
+
                 override fun getInfo(): Info = Info(
                     systemMessage = project.systemMessage,
                     format = AiClient.Format.Text,
-                    responseTransformer = { TextMessageComposableInterface(AnnotatedString(it)) },
+                    responseTransformer = { response ->
+                        if (response.trimStart().startsWith("{")) {
+                            runCatching {
+                                JsonUiMessageComposableInterface(
+                                    node = jsonUiFormat.decodeFromString<UiNode>(response),
+                                )
+                            }.getOrNull()
+                        } else {
+                            null
+                        } ?: TextMessageComposableInterface(AnnotatedString(response))
+                    },
                     model = ChatGptModel.Remote.Gpt.Gpt5Nano,
                 )
             }
