@@ -67,6 +67,25 @@ class ProjectViewModel(
             }
         }
     }
+    private val jsonUiListener = object : ProjectUiState.JsonUi.Listener {
+        override fun onChange(enabled: Boolean) {
+            when (val info = viewModelStateFlow.value.systemInfo) {
+                is ViewModelState.SystemInfoType.BuiltinInfo,
+                null,
+                -> Unit
+
+                is ViewModelState.SystemInfoType.Project -> {
+                    val updatedProject = info.project.copy(jsonUi = enabled)
+                    viewModelStateFlow.update {
+                        it.copy(systemInfo = ViewModelState.SystemInfoType.Project(updatedProject))
+                    }
+                    viewModelScope.launch {
+                        appDatabase.projectDao().update(updatedProject)
+                    }
+                }
+            }
+        }
+    }
     private val listener = object : ProjectUiState.Listener {
         override fun recordVoice() {
         }
@@ -204,6 +223,7 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
+            jsonUi = null,
             modelState = createModelState(null),
             enableSend = false,
             listener = listener,
@@ -275,6 +295,16 @@ class ProjectViewModel(
                             editable = editable,
                             listener = systemMessageListener,
                         ),
+                        jsonUi = when (val info = viewModelState.systemInfo) {
+                            is ViewModelState.SystemInfoType.Project -> ProjectUiState.JsonUi(
+                                enabled = info.project.jsonUi,
+                                listener = jsonUiListener,
+                            )
+
+                            is ViewModelState.SystemInfoType.BuiltinInfo,
+                            null,
+                            -> null
+                        },
                         selectedMedia = viewModelState.uriList,
                         visibleMediaLoading = viewModelState.mediaLoading,
                         enableSend = !viewModelState.mediaLoading && selectedModel != null,

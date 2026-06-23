@@ -37,6 +37,8 @@ import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.room.entity.ProjectId
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.chat.ChatErrorMessageRetryComposableInterface
+import net.matsudamper.gptclient.ui.chat.JsonUiMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.JsonUiParser
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 import net.matsudamper.gptclient.util.EventSender
@@ -203,16 +205,30 @@ class ChatViewModel(
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isWorkInProgress,
-                            agentTransformer = {
+                            agentTransformer = { response ->
                                 when (val info = viewModelState.roomInfo) {
                                     is ViewModelState.RoomInfo.BuiltinProject -> {
-                                        info.builtinProjectInfo.responseTransformer(it)
+                                        info.builtinProjectInfo.responseTransformer(response)
                                     }
 
-                                    is ViewModelState.RoomInfo.Project,
+                                    is ViewModelState.RoomInfo.Project -> {
+                                        if (info.project.jsonUi) {
+                                            JsonUiParser.parseOrNull(response)?.let { node ->
+                                                JsonUiMessageComposableInterface(
+                                                    root = node,
+                                                    onCopy = { text ->
+                                                        launchWithPlatformRequest { copyToClipboard(text) }
+                                                    },
+                                                )
+                                            } ?: TextMessageComposableInterface(AnnotatedString(response))
+                                        } else {
+                                            TextMessageComposableInterface(AnnotatedString(response))
+                                        }
+                                    }
+
                                     is ViewModelState.RoomInfo.Normal,
                                     null,
-                                    -> TextMessageComposableInterface(AnnotatedString(it))
+                                    -> TextMessageComposableInterface(AnnotatedString(response))
                                 }
                             },
                         ).let { items ->
@@ -310,18 +326,33 @@ class ChatViewModel(
                         .get(chatRoomId = openContext.chatRoomId.value)
                         .first()
                     val builtInProjectId = room.builtInProjectId
-                    viewModelStateFlow.update {
-                        it.copy(
-                            roomInfo = if (builtInProjectId != null) {
-                                ViewModelState.RoomInfo.BuiltinProject(
+                    val projectId = room.projectId
+                    val roomInfo = when {
+                        builtInProjectId != null -> {
+                            ViewModelState.RoomInfo.BuiltinProject(
+                                room = room,
+                                builtinProjectId = builtInProjectId,
+                                builtinProjectInfo = createBuiltinProjectInfo(builtInProjectId),
+                            )
+                        }
+
+                        projectId != null -> {
+                            val project = appDatabase.projectDao().get(projectId = projectId.id).first()
+                            if (project != null) {
+                                ViewModelState.RoomInfo.Project(
                                     room = room,
-                                    builtinProjectId = builtInProjectId,
-                                    builtinProjectInfo = createBuiltinProjectInfo(builtInProjectId),
+                                    projectId = projectId,
+                                    project = project,
                                 )
                             } else {
                                 ViewModelState.RoomInfo.Normal(room = room)
-                            },
-                        )
+                            }
+                        }
+
+                        else -> ViewModelState.RoomInfo.Normal(room = room)
+                    }
+                    viewModelStateFlow.update {
+                        it.copy(roomInfo = roomInfo)
                     }
                 }
             }

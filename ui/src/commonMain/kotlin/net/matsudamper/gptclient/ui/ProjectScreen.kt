@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -68,6 +69,7 @@ data class ProjectUiState(
     val projectName: String,
     val selectedMedia: List<ChatFooterImage>,
     val systemMessage: SystemMessage,
+    val jsonUi: JsonUi?,
     val visibleMediaLoading: Boolean,
     val enableSend: Boolean,
     val chatRoomsState: ChatRoomsState,
@@ -89,6 +91,16 @@ data class ProjectUiState(
     ) {
         interface Listener {
             fun onChange(text: String)
+        }
+    }
+
+    data class JsonUi(
+        val enabled: Boolean,
+        val listener: Listener,
+    ) {
+        @Immutable
+        interface Listener {
+            fun onChange(enabled: Boolean)
         }
     }
 
@@ -282,6 +294,30 @@ fun ProjectScreen(
                                         onClick = { expandedSystemMessage = true },
                                     ) {
                                         Text("展開")
+                                    }
+                                }
+                                if (uiState.jsonUi != null) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth()
+                                            .padding(top = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "JSONでUIを組み立てる",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                            )
+                                            Text(
+                                                text = "応答をJSONで受け取り、UIとして表示します。形式の指示は自動で追加されます。",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Switch(
+                                            checked = uiState.jsonUi.enabled,
+                                            onCheckedChange = { uiState.jsonUi.listener.onChange(it) },
+                                        )
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(24.dp))

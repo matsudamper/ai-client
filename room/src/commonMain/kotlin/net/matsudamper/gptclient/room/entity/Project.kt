@@ -13,4 +13,5 @@ data class Project(
     @ColumnInfo("name") val name: String,
     @ColumnInfo("model_name") val modelName: String,
     @ColumnInfo("system_message") val systemMessage: String,
+    @ColumnInfo("json_ui") val jsonUi: Boolean = false,
 )

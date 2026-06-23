@@ -19,6 +19,8 @@ import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
+import net.matsudamper.gptclient.ui.chat.JsonUiParser
+import net.matsudamper.gptclient.ui.chat.JsonUiPrompt
 import net.matsudamper.gptclient.util.Log
 import net.matsudamper.gptclient.viewmodel.GetBuiltinProjectInfoUseCase
 
@@ -101,9 +103,17 @@ class ChatRequestRunner(
 
                 else -> {
                     val project = appDatabase.projectDao().get(projectId.id).first()
+                    val jsonUi = project?.jsonUi == true
                     RequestInfo(
-                        format = AiClient.Format.Text,
-                        systemMessage = project?.systemMessage,
+                        format = if (jsonUi) AiClient.Format.Json else AiClient.Format.Text,
+                        systemMessage = if (jsonUi) {
+                            listOfNotNull(
+                                project?.systemMessage?.takeIf { it.isNotBlank() },
+                                JsonUiPrompt.INSTRUCTION,
+                            ).joinToString("\n\n")
+                        } else {
+                            project?.systemMessage
+                        },
                         modelKey = room.modelKey,
                         useGeminiBillingKey = room.useGeminiBillingKey,
                     )
@@ -215,8 +225,17 @@ class ChatRequestRunner(
 
         val summary = when (val builtinProjectId = room.builtInProjectId) {
             null -> {
-                message.content.take(50).takeIf { it.isNotBlank() }?.let { summary ->
-                    if (summary.length == 50 && message.content.length > 50) "$summary..." else summary
+                val project = room.projectId?.let { appDatabase.projectDao().get(it.id).first() }
+                val base = if (project?.jsonUi == true) {
+                    JsonUiParser.parseOrNull(message.content)
+                        ?.let { JsonUiParser.summarize(it) }
+                        ?.takeIf { it.isNotBlank() }
+                        ?: message.content
+                } else {
+                    message.content
+                }
+                base.take(50).takeIf { it.isNotBlank() }?.let { summary ->
+                    if (summary.length == 50 && base.length > 50) "$summary..." else summary
                 }
             }
 
