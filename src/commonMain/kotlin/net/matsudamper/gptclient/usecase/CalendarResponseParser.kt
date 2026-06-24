@@ -24,14 +24,10 @@ class CalendarResponseParser {
         } else {
             UiNode.Column(children = buildList {
                 for ((index, result) in response.results.withIndex()) {
-                    add(UiNode.Text(value = result.title, style = "h"))
+                    add(UiNode.Text(value = result.title))
                     add(UiNode.KeyValue(key = "日時", value = "${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}"))
-                    if (result.location != null) {
-                        add(UiNode.KeyValue(key = "場所", value = result.location))
-                    }
-                    if (result.description != null) {
-                        add(UiNode.KeyValue(key = "説明", value = result.description))
-                    }
+                    add(UiNode.KeyValue(key = "場所", value = result.location.toString()))
+                    add(UiNode.KeyValue(key = "説明", value = result.description.toString()))
                     val googleCalendarUrl = "https://calendar.google.com/calendar/render" +
                         "?action=TEMPLATE" +
                         "&text=${result.title.encodeURLParameter()}" +

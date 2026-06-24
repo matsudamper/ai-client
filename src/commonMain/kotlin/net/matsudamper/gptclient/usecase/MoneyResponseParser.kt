@@ -26,12 +26,10 @@ class MoneyResponseParser {
                         .toFormatter()
                         .format(result.date)
 
-                    add(UiNode.Text(value = result.title, style = "h"))
+                    add(UiNode.KeyValue(key = "タイトル", value = result.title))
                     add(UiNode.KeyValue(key = "日時", value = dateTime))
                     add(UiNode.KeyValue(key = "金額", value = result.amount.toString()))
-                    if (result.description != null) {
-                        add(UiNode.KeyValue(key = "説明", value = result.description))
-                    }
+                    add(UiNode.KeyValue(key = "説明", value = result.description.toString()))
                     val url = "https://money.matsudamper.net/add/money-usage" +
                         "?action=TEMPLATE" +
                         "&title=${result.title.encodeURLParameter()}" +
