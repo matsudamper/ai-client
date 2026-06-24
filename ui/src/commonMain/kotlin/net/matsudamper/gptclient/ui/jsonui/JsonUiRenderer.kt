@@ -67,6 +67,7 @@ fun JsonUiRenderer(
         is UiNode.Link -> {
             val uriHandler = LocalUriHandler.current
             TextButton(
+                modifier = modifier,
                 onClick = { uriHandler.openUri(node.url) },
                 contentPadding = PaddingValues(horizontal = 0.dp),
             ) {
