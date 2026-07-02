@@ -18,6 +18,7 @@ import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.projectUsageKey
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
@@ -209,6 +210,16 @@ class ProjectViewModel(
             listener = listener,
         ),
     ).also { uiStateFlow ->
+        viewModelScope.launch {
+            val usageKey = when (val type = navigator.type) {
+                is Navigator.Project.ProjectType.Builtin -> projectUsageKey(type.builtinProjectId)
+                is Navigator.Project.ProjectType.Project -> projectUsageKey(type.projectId)
+            }
+            settingDataStore.recordProjectUsage(
+                key = usageKey,
+                usedAt = System.currentTimeMillis(),
+            )
+        }
         viewModelScope.launch {
             settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
                 viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) }

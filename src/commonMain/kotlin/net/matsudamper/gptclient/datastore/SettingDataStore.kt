@@ -58,4 +58,10 @@ class SettingDataStore(
     }
 
     fun getActiveLocalModelKeysFlow(): Flow<Set<LocalModelId>> = store.data.map { it.activeLocalModelKeys.toLocalModelIds() }
+
+    suspend fun recordProjectUsage(key: String, usedAt: Long) {
+        store.updateData { it.copy(projectLastUsedAt = it.projectLastUsedAt + (key to usedAt)) }
+    }
+
+    fun getProjectLastUsedAtFlow(): Flow<Map<String, Long>> = store.data.map { it.projectLastUsedAt }
 }

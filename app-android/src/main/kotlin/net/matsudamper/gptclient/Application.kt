@@ -3,6 +3,8 @@ package net.matsudamper.gptclient
 import android.app.Application
 import android.content.Context
 import androidx.work.WorkManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import net.matsudamper.gptclient.datastore.AndroidSettingsEncryptor
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.datastore.SettingsEncryptor
@@ -17,6 +19,8 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
 class Application : Application() {
+    private val applicationScope = CoroutineScope(SupervisorJob())
+
     override fun onCreate() {
         super.onCreate()
 
@@ -51,5 +55,11 @@ class Application : Application() {
         val platformRequest = get<PlatformRequest>()
         platformRequest.createNotificationChannel(GPT_CLIENT_NOTIFICATION_CHANNEL_ID)
         platformRequest.createNotificationChannel(LOCAL_MODEL_DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+
+        ProjectShortcutPublisher(
+            context = applicationContext,
+            appDatabase = get(),
+            settingDataStore = get(),
+        ).start(applicationScope)
     }
 }
