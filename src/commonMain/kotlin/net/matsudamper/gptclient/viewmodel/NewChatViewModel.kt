@@ -16,6 +16,7 @@ import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
+import net.matsudamper.gptclient.entity.getProjectTitle
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
@@ -46,13 +47,13 @@ class NewChatViewModel(
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
     private val builtinProjects = listOf(
         NewChatUiState.Project(
-            name = "カレンダー追加",
+            name = BuiltinProjectId.Calendar.getProjectTitle(),
             icon = NewChatUiState.Project.Icon.Calendar,
             listener = object : NewChatUiState.Project.Listener {
                 override fun onClick() {
                     appNavigator.navigate(
                         Navigator.Project(
-                            title = "カレンダー追加",
+                            title = BuiltinProjectId.Calendar.getProjectTitle(),
                             type = Navigator.Project.ProjectType.Builtin(
                                 BuiltinProjectId.Calendar,
                             ),
@@ -62,13 +63,13 @@ class NewChatViewModel(
             },
         ),
         NewChatUiState.Project(
-            name = "家計簿追加",
+            name = BuiltinProjectId.Money.getProjectTitle(),
             icon = NewChatUiState.Project.Icon.Card,
             listener = object : NewChatUiState.Project.Listener {
                 override fun onClick() {
                     appNavigator.navigate(
                         Navigator.Project(
-                            title = "家計簿追加",
+                            title = BuiltinProjectId.Money.getProjectTitle(),
                             type = Navigator.Project.ProjectType.Builtin(
                                 BuiltinProjectId.Money,
                             ),
@@ -78,13 +79,13 @@ class NewChatViewModel(
             },
         ),
         NewChatUiState.Project(
-            name = "絵文字",
+            name = BuiltinProjectId.Emoji.getProjectTitle(),
             icon = NewChatUiState.Project.Icon.Emoji,
             listener = object : NewChatUiState.Project.Listener {
                 override fun onClick() {
                     appNavigator.navigate(
                         Navigator.Project(
-                            title = "絵文字",
+                            title = BuiltinProjectId.Emoji.getProjectTitle(),
                             type = Navigator.Project.ProjectType.Builtin(
                                 BuiltinProjectId.Emoji,
                             ),
