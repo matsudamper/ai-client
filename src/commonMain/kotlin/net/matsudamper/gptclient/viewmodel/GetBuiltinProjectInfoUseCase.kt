@@ -11,7 +11,7 @@ import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.room.entity.BuiltinProjectId
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
-import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.JsonUiMessageComposableInterface
 import net.matsudamper.gptclient.usecase.CalendarResponseParser
 import net.matsudamper.gptclient.usecase.EmojiResponseParser
 import net.matsudamper.gptclient.usecase.MoneyResponseParser
@@ -62,7 +62,9 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = AiClient.Format.Json,
                     responseTransformer = {
-                        TextMessageComposableInterface(CalendarResponseParser().toAnnotatedString(it))
+                        JsonUiMessageComposableInterface(
+                            node = CalendarResponseParser().toUiNode(it),
+                        )
                     },
                     summaryProvider = { _, _, response ->
                         val parsed = CalendarResponseParser().parse(response)
@@ -103,7 +105,11 @@ class GetBuiltinProjectInfoUseCase {
                         ```
                     """.trimIndent(),
                     format = AiClient.Format.Json,
-                    responseTransformer = { TextMessageComposableInterface(MoneyResponseParser().toAnnotatedString(it)) },
+                    responseTransformer = {
+                        JsonUiMessageComposableInterface(
+                            node = MoneyResponseParser().toUiNode(it),
+                        )
+                    },
                     model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteThinking,
                     summaryProvider = { _, _, response ->
                         val parsed = MoneyResponseParser().parse(response)
@@ -125,7 +131,10 @@ class GetBuiltinProjectInfoUseCase {
                     """.trimIndent(),
                     format = AiClient.Format.Json,
                     responseTransformer = {
-                        EmojiResponseParser().getEmojiList(it, onCopyEmoji)
+                        JsonUiMessageComposableInterface(
+                            node = EmojiResponseParser().toUiNode(it),
+                            onChipClick = onCopyEmoji,
+                        )
                     },
                     model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteThinking,
                     summaryProvider = { _, lastInstruction, response ->

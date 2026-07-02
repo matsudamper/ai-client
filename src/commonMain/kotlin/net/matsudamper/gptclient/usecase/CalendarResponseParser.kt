@@ -1,17 +1,12 @@
 package net.matsudamper.gptclient.usecase
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.temporal.ChronoField
 import kotlinx.serialization.json.Json
 import io.ktor.http.encodeURLParameter
+import net.matsudamper.gptclient.ui.jsonui.UiNode
 import net.matsudamper.gptclient.viewmodel.calendar.CalendarGptResponse
 
 class CalendarResponseParser {
@@ -22,41 +17,33 @@ class CalendarResponseParser {
         null
     }
 
-    fun toAnnotatedString(original: String): AnnotatedString = try {
+    fun toUiNode(original: String): UiNode = try {
         val response = Json.decodeFromString<CalendarGptResponse>(original)
         if (response.results.isEmpty()) {
-            AnnotatedString(response.errorMessage ?: original)
+            UiNode.Text(value = response.errorMessage ?: original)
         } else {
-            buildAnnotatedString {
+            UiNode.Column(children = buildList {
                 for ((index, result) in response.results.withIndex()) {
-                    appendLine(result.title)
-                    appendLine("日時: ${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}")
-                    appendLine("場所: ${result.location}")
-                    appendLine("説明: ${result.description}")
-
+                    add(UiNode.Text(value = result.title))
+                    add(UiNode.KeyValue(key = "日時", value = "${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}"))
+                    add(UiNode.KeyValue(key = "場所", value = result.location.toString()))
+                    add(UiNode.KeyValue(key = "説明", value = result.description.toString()))
                     val googleCalendarUrl = "https://calendar.google.com/calendar/render" +
                         "?action=TEMPLATE" +
                         "&text=${result.title.encodeURLParameter()}" +
                         "&dates=${result.startDate.toGoogleCalendarFormat()}/${result.endDate.toGoogleCalendarFormat()}" +
-                        "&details=${
-                            result.description.orEmpty().encodeURLParameter()
-                        }" +
+                        "&details=${result.description.orEmpty().encodeURLParameter()}" +
                         "&location=${result.location.orEmpty().encodeURLParameter()}"
-                    pushLink(LinkAnnotation.Url(googleCalendarUrl))
-                    withStyle(SpanStyle(color = Color.Blue)) {
-                        append("Google Calendar追加リンク")
-                    }
-                    pop()
+                    add(UiNode.Link(label = "Google Calendar追加リンク", url = googleCalendarUrl))
                     if (index < response.results.size - 1) {
-                        appendLine()
-                        appendLine()
+                        add(UiNode.Divider)
                     }
                 }
-            }
+            })
         }
     } catch (e: Throwable) {
         e.printStackTrace()
-        AnnotatedString(original)
+        UiNode.Text(value = original)
     }
 
     private fun LocalDateTime.toGoogleCalendarFormat(): String {
