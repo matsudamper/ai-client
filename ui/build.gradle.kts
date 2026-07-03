@@ -22,7 +22,6 @@ kotlin {
                 implementation(compose.ui)
                 implementation(compose.uiUtil)
                 implementation(compose.material3)
-                implementation(compose.material)
                 implementation(libs.composeMaterialIconsExtended)
                 implementation(compose.foundation)
                 implementation(libs.composeIcons)

@@ -95,7 +95,6 @@ composeRuntime = { module = "org.jetbrains.compose.runtime:runtime", version.ref
 composeUi = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
 composeFoundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
 composeMaterial3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose" }
-composeMaterial = { module = "org.jetbrains.compose.material:material", version.ref = "compose" }
 composeMaterialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeIcons" }
 composeUiUtil = { module = "org.jetbrains.compose.ui:ui-util", version.ref = "compose" }
 composeComponentsResources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
