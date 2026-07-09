@@ -106,7 +106,7 @@ class ChatGptClient(
             AiClient.GptResult.Success(gptResponse.toAiResponse())
         } catch (e: SerializationException) {
             e.printStackTrace()
-            AiClient.GptResult.Error(AiClient.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
+            AiClient.GptResult.Error(AiClient.GptResult.ErrorReason.Unknown(responseJson))
         }
     }
 
