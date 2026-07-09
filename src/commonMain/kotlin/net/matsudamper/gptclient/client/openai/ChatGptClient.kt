@@ -103,7 +103,19 @@ class ChatGptClient(
         Log.d("Response", responseJson)
         return try {
             val gptResponse = Json.decodeFromString(GptResponse.serializer(), responseJson)
-            AiClient.GptResult.Success(gptResponse.toAiResponse())
+            if (gptResponse.error != null) {
+                AiClient.GptResult.Error(
+                    AiClient.GptResult.ErrorReason.Unknown(
+                        gptResponse.error.message ?: "OpenAI API Error: ${gptResponse.error.type}",
+                    ),
+                )
+            } else if (gptResponse.choices.isEmpty()) {
+                AiClient.GptResult.Error(
+                    AiClient.GptResult.ErrorReason.Unknown("No response choices returned"),
+                )
+            } else {
+                AiClient.GptResult.Success(gptResponse.toAiResponse())
+            }
         } catch (e: SerializationException) {
             e.printStackTrace()
             AiClient.GptResult.Error(AiClient.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
