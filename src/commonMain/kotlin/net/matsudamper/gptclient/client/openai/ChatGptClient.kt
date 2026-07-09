@@ -5,6 +5,8 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -102,18 +104,16 @@ class ChatGptClient(
         val responseJson = response.bodyAsText()
         Log.d("Response", responseJson)
         return try {
-            val gptResponse = Json.decodeFromString(GptResponse.serializer(), responseJson)
-            if (gptResponse.error != null) {
+            val jsonElement = Json.parseToJsonElement(responseJson)
+            if (jsonElement is JsonObject && "error" in jsonElement) {
+                val errorResponse = Json.decodeFromJsonElement(GptErrorResponse.serializer(), jsonElement)
                 AiClient.GptResult.Error(
                     AiClient.GptResult.ErrorReason.Unknown(
-                        gptResponse.error.message ?: "OpenAI API Error: ${gptResponse.error.type}",
+                        errorResponse.error.message ?: "OpenAI API Error: ${errorResponse.error.type}",
                     ),
                 )
-            } else if (gptResponse.choices.isEmpty()) {
-                AiClient.GptResult.Error(
-                    AiClient.GptResult.ErrorReason.Unknown("No response choices returned"),
-                )
             } else {
+                val gptResponse = Json.decodeFromJsonElement(GptResponse.serializer(), jsonElement)
                 AiClient.GptResult.Success(gptResponse.toAiResponse())
             }
         } catch (e: SerializationException) {
