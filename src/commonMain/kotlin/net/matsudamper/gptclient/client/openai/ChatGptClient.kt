@@ -5,8 +5,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -104,21 +102,11 @@ class ChatGptClient(
         val responseJson = response.bodyAsText()
         Log.d("Response", responseJson)
         return try {
-            val jsonElement = Json.parseToJsonElement(responseJson)
-            if (jsonElement is JsonObject && "error" in jsonElement) {
-                val errorResponse = Json.decodeFromJsonElement(GptErrorResponse.serializer(), jsonElement)
-                AiClient.GptResult.Error(
-                    AiClient.GptResult.ErrorReason.Unknown(
-                        errorResponse.error.message ?: "OpenAI API Error: ${errorResponse.error.type}",
-                    ),
-                )
-            } else {
-                val gptResponse = Json.decodeFromJsonElement(GptResponse.serializer(), jsonElement)
-                AiClient.GptResult.Success(gptResponse.toAiResponse())
-            }
+            val gptResponse = Json.decodeFromString(GptResponse.serializer(), responseJson)
+            AiClient.GptResult.Success(gptResponse.toAiResponse())
         } catch (e: SerializationException) {
             e.printStackTrace()
-            AiClient.GptResult.Error(AiClient.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"))
+            AiClient.GptResult.Error(AiClient.GptResult.ErrorReason.Unknown(responseJson))
         }
     }
 
