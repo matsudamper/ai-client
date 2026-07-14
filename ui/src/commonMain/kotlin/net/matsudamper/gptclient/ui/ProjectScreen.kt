@@ -51,10 +51,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
+import java.time.Instant
 import net.matsudamper.gptclient.ui.component.ChatFooter
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 import net.matsudamper.gptclient.ui.component.ModelSelectorBar
 import net.matsudamper.gptclient.ui.component.ModelSelectorUiState
+import net.matsudamper.gptclient.ui.util.formatRelativeTime
 
 sealed interface ProjectScreenTestTag {
     object Root : ProjectScreenTestTag
@@ -94,6 +96,7 @@ data class ProjectUiState(
 
     data class History(
         val text: String,
+        val updatedAt: Instant,
         val listener: Listener,
     ) {
         @Immutable
@@ -305,6 +308,7 @@ fun ProjectScreen(
                                         horizontal = itemHorizontalPadding,
                                         vertical = 12.dp,
                                     ),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Icon(
                                     imageVector = FeatherIcons.MessageSquare,
@@ -312,8 +316,15 @@ fun ProjectScreen(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    history.text,
+                                    modifier = Modifier.weight(1f),
+                                    text = history.text,
                                     maxLines = 1,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = formatRelativeTime(history.updatedAt),
+                                    maxLines = 1,
+                                    style = MaterialTheme.typography.labelSmall,
                                 )
                             }
                         }
