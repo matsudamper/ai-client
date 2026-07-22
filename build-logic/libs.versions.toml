@@ -47,7 +47,7 @@ androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.19.0
 androidxLifecycleViewModelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidxLifecycleViewModelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidxLifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
-googleMaterial = { module = "com.google.android.material:material", version.require = "1.13.0" }
+googleMaterial = { module = "com.google.android.material:material", version.require = "1.14.0" }
 navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "nav3Ui" }
 lifecycleViewmodelNavigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
 ktlint = { module = "com.pinterest:ktlint", version.ref = "ktlint" }
