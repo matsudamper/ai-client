@@ -29,8 +29,8 @@ data class GeminiRequest(
 
     @Serializable
     data class GenerationConfig(
-        @SerialName("temperature") val temperature: Double,
-        @SerialName("topP") val topP: Double,
+        @SerialName("temperature") val temperature: Double? = null,
+        @SerialName("topP") val topP: Double? = null,
         @SerialName("maxOutputTokens") val maxOutputTokens: Int,
         @SerialName("responseMimeType") val responseMimeType: String,
         @SerialName("thinkingConfig") val thinkingConfig: ThinkingConfig? = null,

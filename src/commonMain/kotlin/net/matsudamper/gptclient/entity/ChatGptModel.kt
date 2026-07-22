@@ -65,6 +65,8 @@ interface ChatGptModel {
         sealed interface Gemini : Remote {
             val thinkingLevel: String?
             val requireBillingKey: Boolean
+            val supportsSamplingParams: Boolean
+                get() = true
 
             @Serializable
             data object GeminiFlashLiteLatest : Gemini {
@@ -195,6 +197,7 @@ interface ChatGptModel {
                 override val thinkingLevel: String? = null
                 override val requireBillingKey: Boolean = false
                 override val thinkingToggleEnabled: Boolean = true
+                override val supportsSamplingParams: Boolean = false
 
                 override fun withThinking(enabled: Boolean): ChatGptModel {
                     return if (enabled) Gemini35FlashLiteThinking else this
@@ -214,6 +217,7 @@ interface ChatGptModel {
                 override val requireBillingKey: Boolean = false
                 override val thinkingToggleEnabled: Boolean = true
                 override val thinkingEnabled: Boolean = true
+                override val supportsSamplingParams: Boolean = false
 
                 override fun withThinking(enabled: Boolean): ChatGptModel {
                     return if (enabled) this else Gemini35FlashLite
@@ -230,6 +234,7 @@ interface ChatGptModel {
                 override val thinkingLevel: String? = null
                 override val requireBillingKey: Boolean = false
                 override val thinkingToggleEnabled: Boolean = true
+                override val supportsSamplingParams: Boolean = false
 
                 override fun withThinking(enabled: Boolean): ChatGptModel {
                     return if (enabled) Gemini36FlashThinking else this
@@ -249,6 +254,7 @@ interface ChatGptModel {
                 override val requireBillingKey: Boolean = false
                 override val thinkingToggleEnabled: Boolean = true
                 override val thinkingEnabled: Boolean = true
+                override val supportsSamplingParams: Boolean = false
 
                 override fun withThinking(enabled: Boolean): ChatGptModel {
                     return if (enabled) this else Gemini36Flash
