@@ -1,28 +1,28 @@
 [versions]
-kotlin = "2.3.20"
+kotlin = "2.4.10"
 agp = "9.1.1"
 androidCompileSdk = "37"
 androidMinSdk = "34"
 androidTargetSdk = "37"
-compose = "1.11.0"
+compose = "1.11.1"
 androidxComposeUiToolingPreview = "1.11.4"
-jetbrainsComposeUiToolingPreview = "1.11.0"
+jetbrainsComposeUiToolingPreview = "1.11.1"
 composeIcons = "1.7.3"
 activity = "1.13.0"
 lifecycle = "2.11.0"
-lifecycleViewmodelNav3 = "2.10.0"
+lifecycleViewmodelNav3 = "2.11.0"
 room = "2.8.4"
-ksp = "2.3.6"
+ksp = "2.3.10"
 coroutine = "1.11.0"
 koin = "4.2.2"
 kotlinSerialization = "1.11.0"
 coil = "3.5.0"
-zoomable = "2.12.0"
+zoomable = "2.13.0"
 icu4j = "78.3"
 ktlintGradle = "14.2.0"
 ktlint = "1.6.0"
 workManager = "2.11.2"
-litertlm = "0.10.0"
+litertlm = "0.14.0"
 androidxTestRules = "1.7.0"
 nav3Ui = "1.1.1"
 paparazzi = "2.0.0-alpha04"
@@ -48,7 +48,7 @@ androidxCoreKtx = { module = "androidx.core:core-ktx", version.require = "1.19.0
 androidxLifecycleViewModelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidxLifecycleViewModelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidxLifecycleRuntimeCompose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
-googleMaterial = { module = "com.google.android.material:material", version.require = "1.13.0" }
+googleMaterial = { module = "com.google.android.material:material", version.require = "1.14.0" }
 navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "nav3Ui" }
 lifecycleViewmodelNavigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
 ktlint = { module = "com.pinterest:ktlint", version.ref = "ktlint" }
@@ -57,7 +57,7 @@ ktlint = { module = "com.pinterest:ktlint", version.ref = "ktlint" }
 androidxWorkRuntime = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
 
 # ktor
-ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.5.0" }
+ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.5.1" }
 ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "3.5.0" }
 ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "3.5.0" }
 
@@ -77,7 +77,7 @@ androidxDatastoreCoreOkio = { module = "androidx.datastore:datastore-core-okio",
 # Room
 androidxRoomRuntime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidxRoomCompiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-androidxSqliteBundled = { module = "androidx.sqlite:sqlite-bundled", version.require = "2.6.2" }
+androidxSqliteBundled = { module = "androidx.sqlite:sqlite-bundled", version.require = "2.7.0" }
 
 # Koin
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
@@ -85,7 +85,7 @@ koinAndroid = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 
 # LiteRT-LM
 litertlmAndroid = { module = "com.google.ai.edge.litertlm:litertlm-android", version.ref = "litertlm" }
-mlkitGenai = { module = "com.google.mlkit:genai-prompt", version.require = "1.0.0-beta2" }
+mlkitGenai = { module = "com.google.mlkit:genai-prompt", version.require = "1.0.0-beta3" }
 
 # UI
 composeIcons = { module = "br.com.devsrsouza.compose.icons:feather", version.require = "1.1.1" }
