@@ -185,6 +185,76 @@ interface ChatGptModel {
                 }
             }
 
+            @Serializable
+            data object Gemini35FlashLite : Gemini {
+                override val modelKey: String = "gemini-3.5-flash-lite"
+                override val displayName: String = "Gemini 3.5 Flash Lite"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val thinkingLevel: String? = null
+                override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini35FlashLiteThinking else this
+                }
+            }
+
+            @Serializable
+            data object Gemini35FlashLiteThinking : Gemini {
+                override val modelKey: String = "gemini-3.5-flash-lite-thinking"
+                override val displayName: String = "Gemini 3.5 Flash Lite"
+                override val apiModelName: String = "gemini-3.5-flash-lite"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini35FlashLite.modelKey
+                override val thinkingLevel: String = "low"
+                override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) this else Gemini35FlashLite
+                }
+            }
+
+            @Serializable
+            data object Gemini36Flash : Gemini {
+                override val modelKey: String = "gemini-3.6-flash"
+                override val displayName: String = "Gemini 3.6 Flash"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val thinkingLevel: String? = null
+                override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) Gemini36FlashThinking else this
+                }
+            }
+
+            @Serializable
+            data object Gemini36FlashThinking : Gemini {
+                override val modelKey: String = "gemini-3.6-flash-thinking"
+                override val displayName: String = "Gemini 3.6 Flash"
+                override val apiModelName: String = "gemini-3.6-flash"
+                override val enableImage: Boolean = true
+                override val defaultToken = 5000
+                override val requireTemperature = 1.0
+                override val selectionKey: String = Gemini36Flash.modelKey
+                override val thinkingLevel: String = "high"
+                override val requireBillingKey: Boolean = false
+                override val thinkingToggleEnabled: Boolean = true
+                override val thinkingEnabled: Boolean = true
+
+                override fun withThinking(enabled: Boolean): ChatGptModel {
+                    return if (enabled) this else Gemini36Flash
+                }
+            }
+
             companion object {
                 val entries: List<Gemini> by lazy {
                     listOf(
@@ -192,6 +262,8 @@ interface ChatGptModel {
                         Gemini3FlashLite,
                         Gemini3Pro,
                         Gemini3Flash,
+                        Gemini35FlashLite,
+                        Gemini36Flash,
                     )
                 }
 
@@ -200,6 +272,8 @@ interface ChatGptModel {
                         Gemini3FlashLiteThinking,
                         Gemini3ProThinking,
                         Gemini3FlashThinking,
+                        Gemini35FlashLiteThinking,
+                        Gemini36FlashThinking,
                     )
                 }
             }
