@@ -89,8 +89,8 @@ class GeminiClient(
             contents = contents,
             systemInstruction = systemInstruction,
             generationConfig = GeminiRequest.GenerationConfig(
-                temperature = model.requireTemperature ?: 0.3,
-                topP = 1.0,
+                temperature = if (model.supportsSamplingParams) model.requireTemperature ?: 0.3 else null,
+                topP = if (model.supportsSamplingParams) 1.0 else null,
                 maxOutputTokens = model.defaultToken,
                 responseMimeType = when (format) {
                     AiClient.Format.Text -> "text/plain"

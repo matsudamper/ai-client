@@ -70,7 +70,7 @@ class GetBuiltinProjectInfoUseCase {
                         val parsed = CalendarResponseParser().parse(response)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
                     },
-                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteThinking,
+                    model = ChatGptModel.Remote.Gemini.Gemini35FlashLiteThinking,
                 )
             }
 
@@ -110,7 +110,7 @@ class GetBuiltinProjectInfoUseCase {
                             node = MoneyResponseParser().toUiNode(it),
                         )
                     },
-                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteThinking,
+                    model = ChatGptModel.Remote.Gemini.Gemini35FlashLiteThinking,
                     summaryProvider = { _, _, response ->
                         val parsed = MoneyResponseParser().parse(response)
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
@@ -136,7 +136,7 @@ class GetBuiltinProjectInfoUseCase {
                             onChipClick = onCopyEmoji,
                         )
                     },
-                    model = ChatGptModel.Remote.Gemini.Gemini3FlashLiteThinking,
+                    model = ChatGptModel.Remote.Gemini.Gemini35FlashLiteThinking,
                     summaryProvider = { _, lastInstruction, response ->
                         val emoji = runCatching {
                             Json.decodeFromString<EmojiGptResponse>(response).results.firstOrNull()
