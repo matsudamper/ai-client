@@ -37,10 +37,5 @@ kotlin {
                 implementation(libs.jetbrainsComposeUiToolingPreview)
             }
         }
-        val jvmMain by getting {
-            dependencies {
-                implementation(libs.icu4j)
-            }
-        }
     }
 }
