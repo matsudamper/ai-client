@@ -303,6 +303,7 @@ class ProjectViewModel(
                                 histories = chatRooms.map { room ->
                                     ProjectUiState.History(
                                         text = room.chatRoom.summary ?: room.textMessage?.replace("\n", "") ?: "空白",
+                                        updatedAt = room.chatRoom.createDateAt,
                                         listener = ChatRoomListener(
                                             chatRoomId = room.chatRoom.id,
                                         ),

@@ -71,6 +71,7 @@ class MainScreenViewModel(
                                     MainScreenUiState.HistoryItem(
                                         listener = HistoryItemListenerImpl(room.chatRoom.id),
                                         projectName = room.projectName ?: room.chatRoom.builtInProjectId?.getName(),
+                                        updatedAt = room.chatRoom.createDateAt,
                                         text = room.chatRoom.summary
                                             ?: room.textMessage?.replace("\n", "")?.takeIf { it.isNotBlank() }
                                             ?: "(空白)",

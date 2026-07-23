@@ -53,12 +53,14 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
+import java.time.Instant
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
 import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.SettingsScreen
 import net.matsudamper.gptclient.ui.platform.BackHandler
+import net.matsudamper.gptclient.ui.util.formatRelativeTime
 
 object MainScreenTestTag {
     val navigationMenu = "navigation_menu"
@@ -74,7 +76,12 @@ data class MainScreenUiState(val history: History, val listener: Listener) {
         data class Loaded(val items: List<HistoryItem>) : History
     }
 
-    data class HistoryItem(val text: String, val projectName: String?, val listener: HistoryItemListener)
+    data class HistoryItem(
+        val text: String,
+        val projectName: String?,
+        val updatedAt: Instant,
+        val listener: HistoryItemListener,
+    )
 
     @Immutable
     interface HistoryItemListener {
@@ -322,6 +329,12 @@ private fun SidePanel(
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = formatRelativeTime(item.updatedAt),
+                                maxLines = 1,
+                                style = MaterialTheme.typography.labelSmall,
+                            )
                         }
                     }
                 }
