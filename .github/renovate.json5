@@ -7,6 +7,10 @@
     {
       "matchPackagePatterns": ["^org\\.jetbrains\\.compose", "^androidx\\.compose"],
       "allowedVersions": "!/ok-check-kotlin/"
+    },
+    {
+      "matchPackagePatterns": ["^io\\.ktor"],
+      "groupName": "ktor"
     }
   ],
 }
