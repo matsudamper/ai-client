@@ -51,15 +51,16 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import java.time.Instant
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
-import java.time.Instant
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
 import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.SettingsScreen
 import net.matsudamper.gptclient.ui.platform.BackHandler
+import net.matsudamper.gptclient.ui.platform.PredictiveBackHandler
 import net.matsudamper.gptclient.ui.util.formatRelativeTime
 
 object MainScreenTestTag {
@@ -105,6 +106,7 @@ public fun MainScreen(
     val rootUiState = uiStateProvider.provideMainScreenUiState()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
+    var backGestureProgress by remember { mutableStateOf<Float?>(null) }
     LaunchedEffect(backStack) {
         snapshotFlow { backStack.lastOrNull() }
             .collect {
@@ -118,9 +120,25 @@ public fun MainScreen(
             val maxWidth = this.maxWidth
             Box {
                 val panelWidth = 320.dp
-                val offset by animateDpAsState(
+                val animatedOffset by animateDpAsState(
                     targetValue = if (isVisibleSidePanel) panelWidth else 0.dp,
                     animationSpec = tween(durationMillis = 250),
+                )
+                val offset = backGestureProgress?.let { progress ->
+                    panelWidth * (1f - progress)
+                } ?: animatedOffset
+                PredictiveBackHandler(
+                    enabled = isVisibleSidePanel,
+                    onProgress = { progress ->
+                        backGestureProgress = progress
+                    },
+                    onBackInvoked = {
+                        backGestureProgress = null
+                        isVisibleSidePanel = false
+                    },
+                    onBackCancelled = {
+                        backGestureProgress = null
+                    },
                 )
                 SidePanel(
                     modifier = Modifier.fillMaxHeight()
@@ -165,7 +183,10 @@ public fun MainScreen(
                             requestBack = { isVisibleSidePanel = false },
                         )
                     }
-                    val alpha by animateFloatAsState(if (isVisibleSidePanel) 0.4f else 0f, tween(250))
+                    val animatedAlpha by animateFloatAsState(if (isVisibleSidePanel) 0.4f else 0f, tween(250))
+                    val alpha = backGestureProgress?.let { progress ->
+                        0.4f * (1f - progress)
+                    } ?: animatedAlpha
                     if (isVisibleSidePanel) {
                         Box(
                             modifier = Modifier.fillMaxSize()
