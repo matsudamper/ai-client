@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient
 
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -107,11 +108,17 @@ public fun MainScreen(
     val rootUiState = uiStateProvider.provideMainScreenUiState()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
+    var snapCloseSidePanel by remember { mutableStateOf(false) }
     val sidePanelNavigationState = rememberNavigationEventState(
         currentInfo = NavigationEventInfo.None,
         backInfo = if (isVisibleSidePanel) listOf(NavigationEventInfo.None) else listOf(),
     )
     val sidePanelTransitionState = sidePanelNavigationState.transitionState
+    LaunchedEffect(isVisibleSidePanel) {
+        if (isVisibleSidePanel) {
+            snapCloseSidePanel = false
+        }
+    }
     LaunchedEffect(backStack) {
         snapshotFlow { backStack.lastOrNull() }
             .collect {
@@ -125,16 +132,17 @@ public fun MainScreen(
             val maxWidth = this.maxWidth
             Box {
                 val panelWidth = 320.dp
-                val animatedOffset by animateDpAsState(
-                    targetValue = if (isVisibleSidePanel) panelWidth else 0.dp,
-                    animationSpec = tween(durationMillis = 250),
+                val panelFraction by animateFloatAsState(
+                    targetValue = if (isVisibleSidePanel) 1f else 0f,
+                    animationSpec = if (snapCloseSidePanel) snap() else tween(durationMillis = 250),
                 )
-                val offset = when (sidePanelTransitionState) {
+                val fraction = when (sidePanelTransitionState) {
                     is NavigationEventTransitionState.InProgress -> {
-                        panelWidth * (1f - sidePanelTransitionState.latestEvent.progress)
+                        1f - sidePanelTransitionState.latestEvent.progress
                     }
-                    else -> animatedOffset
+                    else -> panelFraction
                 }
+                val offset = panelWidth * fraction
                 SidePanel(
                     modifier = Modifier.fillMaxHeight()
                         .layout { measurable, constraints ->
@@ -179,7 +187,10 @@ public fun MainScreen(
                     NavigationBackHandler(
                         state = sidePanelNavigationState,
                         isBackEnabled = isVisibleSidePanel,
-                        onBackCompleted = { isVisibleSidePanel = false },
+                        onBackCompleted = {
+                            snapCloseSidePanel = true
+                            isVisibleSidePanel = false
+                        },
                     )
                     if (offset > 0.dp) {
                         val alpha = 0.4f * (offset / panelWidth).coerceIn(0f, 1f)
