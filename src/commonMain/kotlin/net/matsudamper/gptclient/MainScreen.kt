@@ -39,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -56,6 +57,7 @@ import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import java.time.Instant
+import kotlinx.coroutines.launch
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
 import net.matsudamper.gptclient.navigation.Navigator
@@ -106,9 +108,11 @@ public fun MainScreen(
     modifier: Modifier = Modifier,
 ) {
     val rootUiState = uiStateProvider.provideMainScreenUiState()
+    val coroutineScope = rememberCoroutineScope()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
     var snapCloseSidePanel by remember { mutableStateOf(false) }
+    var isAnimatingBackCancel by remember { mutableStateOf(false) }
     val panelOpenFraction = remember { Animatable(0f) }
     val sidePanelNavigationState = rememberNavigationEventState(
         currentInfo = NavigationEventInfo.None,
@@ -118,7 +122,9 @@ public fun MainScreen(
     LaunchedEffect(isVisibleSidePanel, sidePanelTransitionState, snapCloseSidePanel) {
         when (val state = sidePanelTransitionState) {
             is NavigationEventTransitionState.InProgress -> {
-                panelOpenFraction.snapTo(1f - state.latestEvent.progress)
+                if (!isAnimatingBackCancel) {
+                    panelOpenFraction.snapTo(1f - state.latestEvent.progress)
+                }
             }
             is NavigationEventTransitionState.Idle -> {
                 when {
@@ -126,15 +132,10 @@ public fun MainScreen(
                         panelOpenFraction.snapTo(0f)
                         snapCloseSidePanel = false
                     }
-                    isVisibleSidePanel -> {
-                        val animationSpec = if (panelOpenFraction.value > 0f && panelOpenFraction.value < 1f) {
-                            tween<Float>(durationMillis = 350, easing = FastOutSlowInEasing)
-                        } else {
-                            tween<Float>(durationMillis = 250)
-                        }
-                        panelOpenFraction.animateTo(1f, animationSpec)
+                    isVisibleSidePanel && !isAnimatingBackCancel && panelOpenFraction.value <= 0f -> {
+                        panelOpenFraction.animateTo(1f, tween<Float>(durationMillis = 250))
                     }
-                    else -> {
+                    !isVisibleSidePanel -> {
                         panelOpenFraction.animateTo(0f, tween<Float>(durationMillis = 250))
                     }
                 }
@@ -202,6 +203,19 @@ public fun MainScreen(
                     NavigationBackHandler(
                         state = sidePanelNavigationState,
                         isBackEnabled = isVisibleSidePanel,
+                        onBackCancelled = {
+                            coroutineScope.launch {
+                                isAnimatingBackCancel = true
+                                panelOpenFraction.animateTo(
+                                    targetValue = 1f,
+                                    animationSpec = tween<Float>(
+                                        durationMillis = 500,
+                                        easing = FastOutSlowInEasing,
+                                    ),
+                                )
+                                isAnimatingBackCancel = false
+                            }
+                        },
                         onBackCompleted = {
                             snapCloseSidePanel = true
                             isVisibleSidePanel = false
