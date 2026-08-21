@@ -1,7 +1,7 @@
 package net.matsudamper.gptclient
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -109,14 +109,36 @@ public fun MainScreen(
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
     var snapCloseSidePanel by remember { mutableStateOf(false) }
+    val panelOpenFraction = remember { Animatable(0f) }
     val sidePanelNavigationState = rememberNavigationEventState(
         currentInfo = NavigationEventInfo.None,
         backInfo = if (isVisibleSidePanel) listOf(NavigationEventInfo.None) else listOf(),
     )
     val sidePanelTransitionState = sidePanelNavigationState.transitionState
-    LaunchedEffect(isVisibleSidePanel) {
-        if (isVisibleSidePanel) {
-            snapCloseSidePanel = false
+    LaunchedEffect(isVisibleSidePanel, sidePanelTransitionState, snapCloseSidePanel) {
+        when (val state = sidePanelTransitionState) {
+            is NavigationEventTransitionState.InProgress -> {
+                panelOpenFraction.snapTo(1f - state.latestEvent.progress)
+            }
+            is NavigationEventTransitionState.Idle -> {
+                when {
+                    snapCloseSidePanel -> {
+                        panelOpenFraction.snapTo(0f)
+                        snapCloseSidePanel = false
+                    }
+                    isVisibleSidePanel -> {
+                        val animationSpec = if (panelOpenFraction.value > 0f && panelOpenFraction.value < 1f) {
+                            tween<Float>(durationMillis = 350, easing = FastOutSlowInEasing)
+                        } else {
+                            tween<Float>(durationMillis = 250)
+                        }
+                        panelOpenFraction.animateTo(1f, animationSpec)
+                    }
+                    else -> {
+                        panelOpenFraction.animateTo(0f, tween<Float>(durationMillis = 250))
+                    }
+                }
+            }
         }
     }
     LaunchedEffect(backStack) {
@@ -132,17 +154,7 @@ public fun MainScreen(
             val maxWidth = this.maxWidth
             Box {
                 val panelWidth = 320.dp
-                val panelFraction by animateFloatAsState(
-                    targetValue = if (isVisibleSidePanel) 1f else 0f,
-                    animationSpec = if (snapCloseSidePanel) snap() else tween(durationMillis = 250),
-                )
-                val fraction = when (sidePanelTransitionState) {
-                    is NavigationEventTransitionState.InProgress -> {
-                        1f - sidePanelTransitionState.latestEvent.progress
-                    }
-                    else -> panelFraction
-                }
-                val offset = panelWidth * fraction
+                val offset = panelWidth * panelOpenFraction.value
                 SidePanel(
                     modifier = Modifier.fillMaxHeight()
                         .layout { measurable, constraints ->
@@ -181,7 +193,10 @@ public fun MainScreen(
                         Navigation(
                             backStack = backStack,
                             uiStateProvider = uiStateProvider,
-                            onClickMenu = { isVisibleSidePanel = true },
+                            onClickMenu = {
+                                snapCloseSidePanel = false
+                                isVisibleSidePanel = true
+                            },
                         )
                     }
                     NavigationBackHandler(
