@@ -1,7 +1,6 @@
 package net.matsudamper.gptclient
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,6 +50,10 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.NavigationEventTransitionState
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import java.time.Instant
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
@@ -59,8 +62,6 @@ import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
 import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.SettingsScreen
-import net.matsudamper.gptclient.ui.platform.BackHandler
-import net.matsudamper.gptclient.ui.platform.PredictiveBackHandler
 import net.matsudamper.gptclient.ui.util.formatRelativeTime
 
 object MainScreenTestTag {
@@ -106,7 +107,11 @@ public fun MainScreen(
     val rootUiState = uiStateProvider.provideMainScreenUiState()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
-    var backGestureProgress by remember { mutableStateOf<Float?>(null) }
+    val sidePanelNavigationState = rememberNavigationEventState(
+        currentInfo = NavigationEventInfo.None,
+        backInfo = if (isVisibleSidePanel) listOf(NavigationEventInfo.None) else listOf(),
+    )
+    val sidePanelTransitionState = sidePanelNavigationState.transitionState
     LaunchedEffect(backStack) {
         snapshotFlow { backStack.lastOrNull() }
             .collect {
@@ -124,22 +129,12 @@ public fun MainScreen(
                     targetValue = if (isVisibleSidePanel) panelWidth else 0.dp,
                     animationSpec = tween(durationMillis = 250),
                 )
-                val offset = backGestureProgress?.let { progress ->
-                    panelWidth * (1f - progress)
-                } ?: animatedOffset
-                PredictiveBackHandler(
-                    enabled = isVisibleSidePanel,
-                    onProgress = { progress ->
-                        backGestureProgress = progress
-                    },
-                    onBackInvoked = {
-                        backGestureProgress = null
-                        isVisibleSidePanel = false
-                    },
-                    onBackCancelled = {
-                        backGestureProgress = null
-                    },
-                )
+                val offset = when (sidePanelTransitionState) {
+                    is NavigationEventTransitionState.InProgress -> {
+                        panelWidth * (1f - sidePanelTransitionState.latestEvent.progress)
+                    }
+                    else -> animatedOffset
+                }
                 SidePanel(
                     modifier = Modifier.fillMaxHeight()
                         .layout { measurable, constraints ->
@@ -176,18 +171,18 @@ public fun MainScreen(
                         modifier = Modifier.fillMaxHeight(),
                     ) {
                         Navigation(
-                            enableNavigationBack = isVisibleSidePanel.not(),
                             backStack = backStack,
                             uiStateProvider = uiStateProvider,
                             onClickMenu = { isVisibleSidePanel = true },
-                            requestBack = { isVisibleSidePanel = false },
                         )
                     }
-                    val animatedAlpha by animateFloatAsState(if (isVisibleSidePanel) 0.4f else 0f, tween(250))
-                    val alpha = backGestureProgress?.let { progress ->
-                        0.4f * (1f - progress)
-                    } ?: animatedAlpha
-                    if (isVisibleSidePanel) {
+                    NavigationBackHandler(
+                        state = sidePanelNavigationState,
+                        isBackEnabled = isVisibleSidePanel,
+                        onBackCompleted = { isVisibleSidePanel = false },
+                    )
+                    if (offset > 0.dp) {
+                        val alpha = 0.4f * (offset / panelWidth).coerceIn(0f, 1f)
                         Box(
                             modifier = Modifier.fillMaxSize()
                                 .background(Color.Black.copy(alpha = alpha))
@@ -208,8 +203,6 @@ private fun Navigation(
     backStack: SnapshotStateList<Navigator>,
     uiStateProvider: UiStateProvider,
     onClickMenu: () -> Unit,
-    enableNavigationBack: Boolean,
-    requestBack: () -> Unit,
 ) {
     NavDisplay(
         backStack = backStack,
@@ -255,7 +248,6 @@ private fun Navigation(
             }
         },
     )
-    BackHandler(enableNavigationBack.not()) { requestBack() }
 }
 
 @Composable
