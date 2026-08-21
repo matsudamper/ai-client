@@ -129,6 +129,7 @@ public fun MainScreen(
             is NavigationEventTransitionState.Idle -> {
                 when {
                     snapCloseSidePanel -> {
+                        isAnimatingBackCancel = false
                         panelOpenFraction.snapTo(0f)
                         snapCloseSidePanel = false
                     }
@@ -206,14 +207,17 @@ public fun MainScreen(
                         onBackCancelled = {
                             coroutineScope.launch {
                                 isAnimatingBackCancel = true
-                                panelOpenFraction.animateTo(
-                                    targetValue = 1f,
-                                    animationSpec = tween<Float>(
-                                        durationMillis = 500,
-                                        easing = FastOutSlowInEasing,
-                                    ),
-                                )
-                                isAnimatingBackCancel = false
+                                try {
+                                    panelOpenFraction.animateTo(
+                                        targetValue = 1f,
+                                        animationSpec = tween<Float>(
+                                            durationMillis = 500,
+                                            easing = FastOutSlowInEasing,
+                                        ),
+                                    )
+                                } finally {
+                                    isAnimatingBackCancel = false
+                                }
                             }
                         },
                         onBackCompleted = {
