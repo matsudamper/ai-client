@@ -1,7 +1,7 @@
 package net.matsudamper.gptclient
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -51,15 +52,19 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.NavigationEventTransitionState
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import java.time.Instant
+import kotlinx.coroutines.launch
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
-import java.time.Instant
 import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
 import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.SettingsScreen
-import net.matsudamper.gptclient.ui.platform.BackHandler
 import net.matsudamper.gptclient.ui.util.formatRelativeTime
 
 object MainScreenTestTag {
@@ -103,8 +108,36 @@ public fun MainScreen(
     modifier: Modifier = Modifier,
 ) {
     val rootUiState = uiStateProvider.provideMainScreenUiState()
+    val coroutineScope = rememberCoroutineScope()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
+    var isAnimatingBackCancel by remember { mutableStateOf(false) }
+    val panelOpenFraction = remember { Animatable(0f) }
+    val sidePanelNavigationState = rememberNavigationEventState(
+        currentInfo = NavigationEventInfo.None,
+        backInfo = if (isVisibleSidePanel) listOf(NavigationEventInfo.None) else listOf(),
+    )
+    val sidePanelTransitionState = sidePanelNavigationState.transitionState
+    LaunchedEffect(isVisibleSidePanel, sidePanelTransitionState) {
+        when {
+            isVisibleSidePanel && sidePanelTransitionState !is NavigationEventTransitionState.InProgress -> {
+                panelOpenFraction.animateTo(1f, tween<Float>(durationMillis = 250))
+            }
+            !isVisibleSidePanel && sidePanelTransitionState !is NavigationEventTransitionState.InProgress -> {
+                panelOpenFraction.animateTo(0f, tween<Float>(durationMillis = 300))
+            }
+        }
+    }
+    LaunchedEffect(sidePanelTransitionState, isAnimatingBackCancel) {
+        if (
+            !isAnimatingBackCancel &&
+            sidePanelTransitionState is NavigationEventTransitionState.InProgress &&
+            isVisibleSidePanel
+        ) {
+            val progress = sidePanelTransitionState.latestEvent.progress
+            panelOpenFraction.snapTo(1f - progress)
+        }
+    }
     LaunchedEffect(backStack) {
         snapshotFlow { backStack.lastOrNull() }
             .collect {
@@ -118,10 +151,7 @@ public fun MainScreen(
             val maxWidth = this.maxWidth
             Box {
                 val panelWidth = 320.dp
-                val offset by animateDpAsState(
-                    targetValue = if (isVisibleSidePanel) panelWidth else 0.dp,
-                    animationSpec = tween(durationMillis = 250),
-                )
+                val offset = panelWidth * panelOpenFraction.value
                 SidePanel(
                     modifier = Modifier.fillMaxHeight()
                         .layout { measurable, constraints ->
@@ -158,15 +188,13 @@ public fun MainScreen(
                         modifier = Modifier.fillMaxHeight(),
                     ) {
                         Navigation(
-                            enableNavigationBack = isVisibleSidePanel.not(),
                             backStack = backStack,
                             uiStateProvider = uiStateProvider,
                             onClickMenu = { isVisibleSidePanel = true },
-                            requestBack = { isVisibleSidePanel = false },
                         )
                     }
-                    val alpha by animateFloatAsState(if (isVisibleSidePanel) 0.4f else 0f, tween(250))
-                    if (isVisibleSidePanel) {
+                    if (offset > 0.dp) {
+                        val alpha = 0.4f * (offset / panelWidth).coerceIn(0f, 1f)
                         Box(
                             modifier = Modifier.fillMaxSize()
                                 .background(Color.Black.copy(alpha = alpha))
@@ -176,6 +204,29 @@ public fun MainScreen(
                                 ) { isVisibleSidePanel = false },
                         )
                     }
+                    NavigationBackHandler(
+                        state = sidePanelNavigationState,
+                        isBackEnabled = isVisibleSidePanel,
+                        onBackCancelled = {
+                            coroutineScope.launch {
+                                isAnimatingBackCancel = true
+                                try {
+                                    panelOpenFraction.animateTo(
+                                        targetValue = 1f,
+                                        animationSpec = tween<Float>(
+                                            durationMillis = 500,
+                                            easing = FastOutSlowInEasing,
+                                        ),
+                                    )
+                                } finally {
+                                    isAnimatingBackCancel = false
+                                }
+                            }
+                        },
+                        onBackCompleted = {
+                            isVisibleSidePanel = false
+                        },
+                    )
                 }
             }
         }
@@ -187,8 +238,6 @@ private fun Navigation(
     backStack: SnapshotStateList<Navigator>,
     uiStateProvider: UiStateProvider,
     onClickMenu: () -> Unit,
-    enableNavigationBack: Boolean,
-    requestBack: () -> Unit,
 ) {
     NavDisplay(
         backStack = backStack,
@@ -234,7 +283,6 @@ private fun Navigation(
             }
         },
     )
-    BackHandler(enableNavigationBack.not()) { requestBack() }
 }
 
 @Composable
