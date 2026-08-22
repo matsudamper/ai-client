@@ -65,7 +65,6 @@ import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
 import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.SettingsScreen
-import net.matsudamper.gptclient.ui.platform.BackHandler
 import net.matsudamper.gptclient.ui.util.formatRelativeTime
 
 object MainScreenTestTag {
@@ -119,11 +118,14 @@ public fun MainScreen(
         backInfo = if (isVisibleSidePanel) listOf(NavigationEventInfo.None) else listOf(),
     )
     val sidePanelTransitionState = sidePanelNavigationState.transitionState
-    LaunchedEffect(isVisibleSidePanel) {
-        if (isVisibleSidePanel) {
-            panelOpenFraction.animateTo(1f, tween<Float>(durationMillis = 250))
-        } else {
-            panelOpenFraction.animateTo(0f, tween<Float>(durationMillis = 300))
+    LaunchedEffect(isVisibleSidePanel, sidePanelTransitionState) {
+        when {
+            isVisibleSidePanel && sidePanelTransitionState !is NavigationEventTransitionState.InProgress -> {
+                panelOpenFraction.animateTo(1f, tween<Float>(durationMillis = 250))
+            }
+            !isVisibleSidePanel && sidePanelTransitionState !is NavigationEventTransitionState.InProgress -> {
+                panelOpenFraction.animateTo(0f, tween<Float>(durationMillis = 300))
+            }
         }
     }
     LaunchedEffect(sidePanelTransitionState, isAnimatingBackCancel) {
@@ -142,29 +144,6 @@ public fun MainScreen(
                 isVisibleSidePanel = false
             }
     }
-    NavigationBackHandler(
-        state = sidePanelNavigationState,
-        isBackEnabled = isVisibleSidePanel,
-        onBackCancelled = {
-            coroutineScope.launch {
-                isAnimatingBackCancel = true
-                try {
-                    panelOpenFraction.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween<Float>(
-                            durationMillis = 500,
-                            easing = FastOutSlowInEasing,
-                        ),
-                    )
-                } finally {
-                    isAnimatingBackCancel = false
-                }
-            }
-        },
-        onBackCompleted = {
-            isVisibleSidePanel = false
-        },
-    )
     Surface(
         modifier = modifier,
     ) {
@@ -209,11 +188,9 @@ public fun MainScreen(
                         modifier = Modifier.fillMaxHeight(),
                     ) {
                         Navigation(
-                            enableNavigationBack = isVisibleSidePanel.not(),
                             backStack = backStack,
                             uiStateProvider = uiStateProvider,
                             onClickMenu = { isVisibleSidePanel = true },
-                            requestBack = { isVisibleSidePanel = false },
                         )
                     }
                     if (offset > 0.dp) {
@@ -227,6 +204,29 @@ public fun MainScreen(
                                 ) { isVisibleSidePanel = false },
                         )
                     }
+                    NavigationBackHandler(
+                        state = sidePanelNavigationState,
+                        isBackEnabled = isVisibleSidePanel,
+                        onBackCancelled = {
+                            coroutineScope.launch {
+                                isAnimatingBackCancel = true
+                                try {
+                                    panelOpenFraction.animateTo(
+                                        targetValue = 1f,
+                                        animationSpec = tween<Float>(
+                                            durationMillis = 500,
+                                            easing = FastOutSlowInEasing,
+                                        ),
+                                    )
+                                } finally {
+                                    isAnimatingBackCancel = false
+                                }
+                            }
+                        },
+                        onBackCompleted = {
+                            isVisibleSidePanel = false
+                        },
+                    )
                 }
             }
         }
@@ -238,8 +238,6 @@ private fun Navigation(
     backStack: SnapshotStateList<Navigator>,
     uiStateProvider: UiStateProvider,
     onClickMenu: () -> Unit,
-    enableNavigationBack: Boolean,
-    requestBack: () -> Unit,
 ) {
     NavDisplay(
         backStack = backStack,
@@ -285,7 +283,6 @@ private fun Navigation(
             }
         },
     )
-    BackHandler(enableNavigationBack.not()) { requestBack() }
 }
 
 @Composable
