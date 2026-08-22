@@ -65,6 +65,7 @@ import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
 import net.matsudamper.gptclient.ui.ProjectScreen
 import net.matsudamper.gptclient.ui.SettingsScreen
+import net.matsudamper.gptclient.ui.platform.BackHandler
 import net.matsudamper.gptclient.ui.util.formatRelativeTime
 
 object MainScreenTestTag {
@@ -111,7 +112,6 @@ public fun MainScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var isVisibleSidePanel by remember { mutableStateOf(false) }
-    var snapCloseSidePanel by remember { mutableStateOf(false) }
     var isAnimatingBackCancel by remember { mutableStateOf(false) }
     val panelOpenFraction = remember { Animatable(0f) }
     val sidePanelNavigationState = rememberNavigationEventState(
@@ -119,28 +119,21 @@ public fun MainScreen(
         backInfo = if (isVisibleSidePanel) listOf(NavigationEventInfo.None) else listOf(),
     )
     val sidePanelTransitionState = sidePanelNavigationState.transitionState
-    LaunchedEffect(isVisibleSidePanel, sidePanelTransitionState, snapCloseSidePanel) {
-        when (val state = sidePanelTransitionState) {
-            is NavigationEventTransitionState.InProgress -> {
-                if (!isAnimatingBackCancel) {
-                    panelOpenFraction.snapTo(1f - state.latestEvent.progress)
-                }
-            }
-            is NavigationEventTransitionState.Idle -> {
-                when {
-                    snapCloseSidePanel -> {
-                        isAnimatingBackCancel = false
-                        panelOpenFraction.snapTo(0f)
-                        snapCloseSidePanel = false
-                    }
-                    isVisibleSidePanel && !isAnimatingBackCancel && panelOpenFraction.value <= 0f -> {
-                        panelOpenFraction.animateTo(1f, tween<Float>(durationMillis = 250))
-                    }
-                    !isVisibleSidePanel -> {
-                        panelOpenFraction.animateTo(0f, tween<Float>(durationMillis = 250))
-                    }
-                }
-            }
+    LaunchedEffect(isVisibleSidePanel) {
+        if (isVisibleSidePanel) {
+            panelOpenFraction.animateTo(1f, tween<Float>(durationMillis = 250))
+        } else {
+            panelOpenFraction.animateTo(0f, tween<Float>(durationMillis = 300))
+        }
+    }
+    LaunchedEffect(sidePanelTransitionState, isAnimatingBackCancel) {
+        if (
+            !isAnimatingBackCancel &&
+            sidePanelTransitionState is NavigationEventTransitionState.InProgress &&
+            isVisibleSidePanel
+        ) {
+            val progress = sidePanelTransitionState.latestEvent.progress
+            panelOpenFraction.snapTo(1f - progress)
         }
     }
     LaunchedEffect(backStack) {
@@ -149,6 +142,29 @@ public fun MainScreen(
                 isVisibleSidePanel = false
             }
     }
+    NavigationBackHandler(
+        state = sidePanelNavigationState,
+        isBackEnabled = isVisibleSidePanel,
+        onBackCancelled = {
+            coroutineScope.launch {
+                isAnimatingBackCancel = true
+                try {
+                    panelOpenFraction.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween<Float>(
+                            durationMillis = 500,
+                            easing = FastOutSlowInEasing,
+                        ),
+                    )
+                } finally {
+                    isAnimatingBackCancel = false
+                }
+            }
+        },
+        onBackCompleted = {
+            isVisibleSidePanel = false
+        },
+    )
     Surface(
         modifier = modifier,
     ) {
@@ -193,38 +209,13 @@ public fun MainScreen(
                         modifier = Modifier.fillMaxHeight(),
                     ) {
                         Navigation(
+                            enableNavigationBack = isVisibleSidePanel.not(),
                             backStack = backStack,
                             uiStateProvider = uiStateProvider,
-                            onClickMenu = {
-                                snapCloseSidePanel = false
-                                isVisibleSidePanel = true
-                            },
+                            onClickMenu = { isVisibleSidePanel = true },
+                            requestBack = { isVisibleSidePanel = false },
                         )
                     }
-                    NavigationBackHandler(
-                        state = sidePanelNavigationState,
-                        isBackEnabled = isVisibleSidePanel,
-                        onBackCancelled = {
-                            coroutineScope.launch {
-                                isAnimatingBackCancel = true
-                                try {
-                                    panelOpenFraction.animateTo(
-                                        targetValue = 1f,
-                                        animationSpec = tween<Float>(
-                                            durationMillis = 500,
-                                            easing = FastOutSlowInEasing,
-                                        ),
-                                    )
-                                } finally {
-                                    isAnimatingBackCancel = false
-                                }
-                            }
-                        },
-                        onBackCompleted = {
-                            snapCloseSidePanel = true
-                            isVisibleSidePanel = false
-                        },
-                    )
                     if (offset > 0.dp) {
                         val alpha = 0.4f * (offset / panelWidth).coerceIn(0f, 1f)
                         Box(
@@ -247,6 +238,8 @@ private fun Navigation(
     backStack: SnapshotStateList<Navigator>,
     uiStateProvider: UiStateProvider,
     onClickMenu: () -> Unit,
+    enableNavigationBack: Boolean,
+    requestBack: () -> Unit,
 ) {
     NavDisplay(
         backStack = backStack,
@@ -292,6 +285,7 @@ private fun Navigation(
             }
         },
     )
+    BackHandler(enableNavigationBack.not()) { requestBack() }
 }
 
 @Composable
