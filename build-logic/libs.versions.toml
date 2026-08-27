@@ -84,7 +84,8 @@ koinAndroid = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 
 # LiteRT-LM
 litertlmAndroid = { module = "com.google.ai.edge.litertlm:litertlm-android", version.ref = "litertlm" }
-mlkitGenai = { module = "com.google.mlkit:genai-prompt", version.require = "1.0.0-beta3" }
+mlkitGenai = { module = "com.google.mlkit:genai-prompt", version.require = "1.0.0-beta4" }
+mlkitGenaiSchemaCompiler = { module = "com.google.mlkit:genai-schema-compiler", version.require = "1.0.0-alpha1" }
 
 # UI
 composeIcons = { module = "br.com.devsrsouza.compose.icons:feather", version.require = "1.1.1" }

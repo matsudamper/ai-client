@@ -1,6 +1,11 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
+    alias(libs.plugins.ksp)
+}
+
+dependencies {
+    add("kspAndroid", libs.mlkitGenaiSchemaCompiler)
 }
 
 kotlin {

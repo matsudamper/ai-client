@@ -94,7 +94,9 @@ class GeminiClient(
                 maxOutputTokens = model.defaultToken,
                 responseMimeType = when (format) {
                     AiClient.Format.Text -> "text/plain"
-                    AiClient.Format.Json -> "application/json"
+                    AiClient.Format.Json,
+                    is AiClient.Format.StructuredJson,
+                    -> "application/json"
                 },
                 thinkingConfig = thinkingConfig,
             ),

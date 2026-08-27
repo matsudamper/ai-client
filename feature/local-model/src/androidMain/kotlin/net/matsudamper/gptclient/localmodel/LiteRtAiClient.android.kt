@@ -26,7 +26,7 @@ internal class LiteRtAiClient(
     ): AiClient.GptResult {
         return runCatching {
             val engine = LiteRtLmEngineStore.getOrCreate(context, modelDefinition, modelFile)
-            val resolvedMessages = if (format == AiClient.Format.Json) {
+            val resolvedMessages = if (format != AiClient.Format.Text) {
                 addJsonFormatInstruction(messages)
             } else {
                 messages
@@ -95,8 +95,11 @@ internal class LiteRtAiClient(
             when (content) {
                 is AiClient.GptMessage.Content.Text -> Content.Text(content.text)
                 is AiClient.GptMessage.Content.Base64Image ->
-                    if (includeImages) content.toLiteRtImageBytes()?.let(Content::ImageBytes)
-                    else null
+                    if (includeImages) {
+                        content.toLiteRtImageBytes()?.let(Content::ImageBytes)
+                    } else {
+                        null
+                    }
 
                 is AiClient.GptMessage.Content.ImageUrl -> null
             }

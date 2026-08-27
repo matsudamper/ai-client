@@ -4,10 +4,12 @@ import android.graphics.BitmapFactory
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import com.google.mlkit.genai.prompt.GenerateContentRequest
+import com.google.mlkit.genai.prompt.GenerateTypedContentResponse
 import com.google.mlkit.genai.prompt.Generation
 import com.google.mlkit.genai.prompt.GenerationConfig
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
+import com.google.mlkit.genai.prompt.generateTypedContentRequest
 import net.matsudamper.gptclient.client.AiClient
 
 internal class MlKitAiClient : AiClient {
@@ -63,8 +65,13 @@ internal class MlKitAiClient : AiClient {
                 GenerateContentRequest.Builder(textPart)
             }.build()
 
-            val response = client.generateContent(request)
-            val text = response.candidates.firstOrNull()?.text.orEmpty()
+            val text = when (format) {
+                AiClient.Format.Text,
+                AiClient.Format.Json,
+                -> client.generateContent(request).candidates.firstOrNull()?.text.orEmpty()
+
+                is AiClient.Format.StructuredJson -> client.generateStructuredJson(request, format.schema)
+            }
             AiClient.GptResult.Success(
                 AiClient.AiResponse(
                     choices = listOf(
@@ -87,4 +94,16 @@ internal class MlKitAiClient : AiClient {
             client.close()
         }
     }
+
+    private suspend fun com.google.mlkit.genai.prompt.GenerativeModel.generateStructuredJson(
+        request: GenerateContentRequest,
+        schema: AiClient.JsonSchema,
+    ): String = when (schema) {
+        AiClient.JsonSchema.Calendar -> generateContent(generateTypedContentRequest(request, CalendarOutput::class)).json()
+        AiClient.JsonSchema.Money -> generateContent(generateTypedContentRequest(request, MoneyOutput::class)).json()
+        AiClient.JsonSchema.Emoji -> generateContent(generateTypedContentRequest(request, EmojiOutput::class)).json()
+    }
+
+    private fun <T : JsonOutput> GenerateTypedContentResponse<T>.json(): String =
+        requireNotNull(candidates.firstOrNull()?.response) { "構造化出力を生成できませんでした" }.toJson()
 }
