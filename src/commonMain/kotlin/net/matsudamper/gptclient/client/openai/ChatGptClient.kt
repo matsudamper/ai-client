@@ -72,7 +72,9 @@ class ChatGptClient(
             responseFormat = GptRequest.ResponseFormat(
                 type = when (format) {
                     AiClient.Format.Text -> "text"
-                    AiClient.Format.Json -> "json_object"
+                    AiClient.Format.Json,
+                    is AiClient.Format.StructuredJson,
+                    -> "json_object"
                 },
             ),
             topP = 1.0,

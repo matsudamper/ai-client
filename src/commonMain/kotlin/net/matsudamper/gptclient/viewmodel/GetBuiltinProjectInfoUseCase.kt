@@ -60,7 +60,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = AiClient.Format.Json,
+                    format = AiClient.Format.StructuredJson(AiClient.JsonSchema.Calendar),
                     responseTransformer = {
                         JsonUiMessageComposableInterface(
                             node = CalendarResponseParser().toUiNode(it),
@@ -104,7 +104,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = AiClient.Format.Json,
+                    format = AiClient.Format.StructuredJson(AiClient.JsonSchema.Money),
                     responseTransformer = {
                         JsonUiMessageComposableInterface(
                             node = MoneyResponseParser().toUiNode(it),
@@ -129,7 +129,7 @@ class GetBuiltinProjectInfoUseCase {
                         }
                         ```
                     """.trimIndent(),
-                    format = AiClient.Format.Json,
+                    format = AiClient.Format.StructuredJson(AiClient.JsonSchema.Emoji),
                     responseTransformer = {
                         JsonUiMessageComposableInterface(
                             node = EmojiResponseParser().toUiNode(it),

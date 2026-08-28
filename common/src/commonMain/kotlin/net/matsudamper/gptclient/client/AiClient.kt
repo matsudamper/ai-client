@@ -33,9 +33,16 @@ interface AiClient {
         }
     }
 
-    enum class Format {
-        Text,
-        Json,
+    sealed interface Format {
+        data object Text : Format
+        data object Json : Format
+        data class StructuredJson(val schema: JsonSchema) : Format
+    }
+
+    enum class JsonSchema {
+        Calendar,
+        Money,
+        Emoji,
     }
 
     data class AiResponse(
