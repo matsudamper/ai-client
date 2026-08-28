@@ -67,6 +67,14 @@ class SettingViewModel(
             }
         }
 
+        override fun onClickLatestRelease() {
+            launchWithPlatformRequest {
+                openLink(
+                    url = "https://github.com/matsudamper/ai-client/releases",
+                )
+            }
+        }
+
         override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) {
             viewModelScope.launch {
                 settingDataStore.setThemeMode(themeOption.toData())

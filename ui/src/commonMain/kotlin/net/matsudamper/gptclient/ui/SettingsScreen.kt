@@ -58,6 +58,7 @@ sealed interface SettingsScreenUiState {
             fun updateGeminiBillingKey(text: String)
             fun onClickOpenAiUsage()
             fun onClickGeminiUsage()
+            fun onClickLatestRelease()
             fun onClickThemeOption(themeOption: ThemeOption)
         }
     }
@@ -234,6 +235,14 @@ private fun Loaded(
                 modifier = Modifier.fillMaxWidth(),
                 models = uiState.localModels,
             )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(
+            modifier = Modifier.align(Alignment.End)
+                .padding(horizontal = HorizontalPadding),
+            onClick = { uiState.listener.onClickLatestRelease() },
+        ) {
+            Text("最新リリースを確認")
         }
     }
 }
