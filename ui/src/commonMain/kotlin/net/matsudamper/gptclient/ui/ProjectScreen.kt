@@ -72,6 +72,7 @@ data class ProjectUiState(
     val systemMessage: SystemMessage,
     val visibleMediaLoading: Boolean,
     val enableSend: Boolean,
+    val imageAttachmentBlocked: Boolean,
     val chatRoomsState: ChatRoomsState,
     val modelState: ModelSelectorUiState,
     val listener: Listener,
@@ -358,6 +359,7 @@ fun ProjectScreen(
                     selectedMedia = uiState.selectedMedia,
                     visibleMediaLoading = uiState.visibleMediaLoading,
                     enableSend = uiState.enableSend,
+                    imageAttachmentBlocked = uiState.imageAttachmentBlocked,
                     onClickRetry = null,
                     onClickSend = {
                         uiState.listener.send(state.text.toString())

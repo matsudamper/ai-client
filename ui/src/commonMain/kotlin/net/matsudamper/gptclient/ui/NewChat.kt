@@ -74,6 +74,7 @@ public data class NewChatUiState(
     val selectedMedia: List<ChatFooterImage>,
     val visibleMediaLoading: Boolean,
     val enableSend: Boolean,
+    val imageAttachmentBlocked: Boolean,
     val modelState: ModelSelectorUiState,
     val projectNameDialog: ProjectNameDialog?,
     val isLoading: Boolean,
@@ -303,6 +304,7 @@ public fun NewChat(
                         visibleMediaLoading = uiState.visibleMediaLoading,
                         onClickRetry = null,
                         enableSend = uiState.enableSend && state.text.isNotBlank(),
+                        imageAttachmentBlocked = uiState.imageAttachmentBlocked,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -365,6 +367,7 @@ internal fun NewChatPreviewContent() {
                     selectedMedia = emptyList(),
                     visibleMediaLoading = false,
                     enableSend = false,
+                    imageAttachmentBlocked = false,
                     modelState = ModelSelectorUiState(
                         selectedModelName = "GPT-5.4 Nano",
                         items = listOf(

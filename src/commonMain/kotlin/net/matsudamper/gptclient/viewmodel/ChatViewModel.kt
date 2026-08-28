@@ -25,10 +25,10 @@ import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.ImageAttachmentValidation
 import net.matsudamper.gptclient.entity.errorMessage
 import net.matsudamper.gptclient.entity.getDisplayNameForChat
+import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.entity.isImageAttachmentAllowed
 import net.matsudamper.gptclient.entity.selectableImages
 import net.matsudamper.gptclient.entity.validateImageAttachment
-import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
@@ -182,6 +182,7 @@ class ChatViewModel(
             title = "",
             modelInfo = null,
             enableSend = false,
+            imageAttachmentBlocked = false,
         ),
     ).also { uiState ->
         viewModelScope.launch {
@@ -248,11 +249,11 @@ class ChatViewModel(
                         visibleMediaLoading = viewModelState.isMediaLoading,
                         enableSend = !viewModelState.isChatLoading &&
                             !viewModelState.isWorkInProgress &&
-                            !viewModelState.isMediaLoading &&
-                            isImageAttachmentAllowed(
-                                model = viewModelState.roomInfo?.room?.modelKey?.let(::findModel),
-                                imageCount = viewModelState.selectedMedia.size,
-                            ),
+                            !viewModelState.isMediaLoading,
+                        imageAttachmentBlocked = !isImageAttachmentAllowed(
+                            model = viewModelState.roomInfo?.room?.modelKey?.let(::findModel),
+                            imageCount = viewModelState.selectedMedia.size,
+                        ),
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isWorkInProgress,

@@ -237,6 +237,7 @@ class ProjectViewModel(
             ),
             modelState = createModelState(null),
             enableSend = false,
+            imageAttachmentBlocked = false,
             listener = listener,
         ),
     ).also { uiStateFlow ->
@@ -319,11 +320,11 @@ class ProjectViewModel(
                         selectedMedia = viewModelState.uriList,
                         visibleMediaLoading = viewModelState.mediaLoading,
                         enableSend = !viewModelState.mediaLoading &&
-                            selectedModel != null &&
-                            isImageAttachmentAllowed(
-                                model = selectedModel,
-                                imageCount = viewModelState.uriList.size,
-                            ),
+                            selectedModel != null,
+                        imageAttachmentBlocked = !isImageAttachmentAllowed(
+                            model = selectedModel,
+                            imageCount = viewModelState.uriList.size,
+                        ),
                         chatRoomsState = run rooms@{
                             val chatRooms = viewModelState.chatRooms
                                 ?: return@rooms ProjectUiState.ChatRoomsState.Loading

@@ -45,6 +45,7 @@ data class ChatListUiState(
     val visibleMediaLoading: Boolean,
     val errorDialogMessage: String?,
     val enableSend: Boolean,
+    val imageAttachmentBlocked: Boolean,
     val listener: Listener,
 ) {
     data class ModelInfo(val modelName: String, val description: String?)
@@ -160,6 +161,7 @@ public fun ChatList(
                         state.clearText()
                     },
                     enableSend = uiState.enableSend && state.text.isNotEmpty(),
+                    imageAttachmentBlocked = uiState.imageAttachmentBlocked,
                     onClickRetry = { uiState.listener.onClickRetry() },
                 )
             }

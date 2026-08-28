@@ -12,16 +12,16 @@ import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
 import net.matsudamper.gptclient.datastore.SettingDataStore
+import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.Emoji
 import net.matsudamper.gptclient.entity.ImageAttachmentValidation
+import net.matsudamper.gptclient.entity.Money
 import net.matsudamper.gptclient.entity.errorMessage
+import net.matsudamper.gptclient.entity.getProjectTitle
 import net.matsudamper.gptclient.entity.isImageAttachmentAllowed
 import net.matsudamper.gptclient.entity.selectableImages
 import net.matsudamper.gptclient.entity.validateImageAttachment
-import net.matsudamper.gptclient.entity.Calendar
-import net.matsudamper.gptclient.entity.Emoji
-import net.matsudamper.gptclient.entity.Money
-import net.matsudamper.gptclient.entity.getProjectTitle
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
@@ -109,6 +109,7 @@ class NewChatViewModel(
             projectNameDialog = null,
             isLoading = false,
             enableSend = false,
+            imageAttachmentBlocked = false,
             listener = object : NewChatUiState.Listener {
                 override fun send(text: String) {
                     viewModelScope.launch {
@@ -270,11 +271,11 @@ class NewChatViewModel(
                         modelState = createModelState(viewModelState.selectedModel),
                         projectNameDialog = viewModelState.projectNameDialog,
                         isLoading = viewModelState.isLoading,
-                        enableSend = !viewModelState.mediaLoading &&
-                            isImageAttachmentAllowed(
-                                model = viewModelState.selectedModel,
-                                imageCount = viewModelState.mediaList.size,
-                            ),
+                        enableSend = !viewModelState.mediaLoading,
+                        imageAttachmentBlocked = !isImageAttachmentAllowed(
+                            model = viewModelState.selectedModel,
+                            imageCount = viewModelState.mediaList.size,
+                        ),
                         projects = builtinProjects.plus(
                             viewModelState.projects.orEmpty().map { project ->
                                 NewChatUiState.Project(
