@@ -32,12 +32,15 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
@@ -409,6 +412,9 @@ private fun ApiKeySettingItem(
             BasicTextField(
                 modifier = Modifier.fillMaxWidth(),
                 state = state,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
                 decorator = {
                     Box(
                         modifier = Modifier
@@ -440,5 +446,59 @@ private fun SettingItem(
         title()
         Spacer(modifier = Modifier.height(4.dp))
         content()
+    }
+}
+
+@Composable
+internal fun SettingsScreenPreviewContent(
+    isDark: Boolean,
+) {
+    val lightColors = lightColorScheme(
+        primary = Color(0xFF5A46C8),
+        surfaceVariant = Color(0xFFF1F0F8),
+        secondaryContainer = Color(0xFFE8E4F8),
+    )
+    val darkColors = darkColorScheme(
+        primary = Color(0xFFC5B7FF),
+        onPrimary = Color(0xFF2A176F),
+        surface = Color(0xFF111018),
+        onSurface = Color(0xFFF2F0FA),
+        surfaceVariant = Color(0xFF2A2835),
+        onSurfaceVariant = Color(0xFFE7E1F7),
+        secondaryContainer = Color(0xFF47435A),
+        onSecondaryContainer = Color(0xFFF2EEFF),
+    )
+
+    MaterialTheme(
+        colorScheme = if (isDark) darkColors else lightColors,
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            SettingsScreen(
+                uiState = SettingsScreenUiState.Loaded(
+                    initialSecretKey = "sk-test-openai-key",
+                    initialGeminiSecretKey = "AIza-test-gemini-key",
+                    initialGeminiBillingKey = "billing-test-key",
+                    themeOption = SettingsScreenUiState.ThemeOption.DARK,
+                    localModels = listOf(),
+                    deleteDialog = null,
+                    listener = object : SettingsScreenUiState.Loaded.Listener {
+                        override fun updateSecretKey(text: String) = Unit
+
+                        override fun updateGeminiSecretKey(text: String) = Unit
+
+                        override fun updateGeminiBillingKey(text: String) = Unit
+
+                        override fun onClickOpenAiUsage() = Unit
+
+                        override fun onClickGeminiUsage() = Unit
+
+                        override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) = Unit
+                    },
+                ),
+                onClickMenu = {},
+            )
+        }
     }
 }
