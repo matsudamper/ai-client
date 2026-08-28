@@ -69,6 +69,7 @@ internal object LiteRtLmEngineStore {
                     backend = mainBackend,
                     visionBackend = visionBackend,
                     maxNumTokens = modelDefinition.defaultToken,
+                    maxNumImages = if (enableImage) 1 else null,
                     cacheDir = cacheDir,
                 ),
             )

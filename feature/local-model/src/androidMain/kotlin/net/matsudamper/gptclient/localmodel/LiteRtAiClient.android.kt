@@ -33,8 +33,9 @@ internal class LiteRtAiClient(
             }
             require(resolvedMessages.isNotEmpty()) { "送信するメッセージがありません" }
 
-            val historyMessages = resolvedMessages.dropLast(1).mapNotNull { it.toLiteRtMessage(includeImages = false) }
-            val lastMessage = resolvedMessages.last().toLiteRtMessage(includeImages = true)
+            val (historySourceMessages, lastUserMessage) = resolvedMessages.prepareForLiteRt()
+            val historyMessages = historySourceMessages.mapNotNull { it.toLiteRtMessage(includeImages = false) }
+            val lastMessage = lastUserMessage.toLiteRtMessage(includeImages = true)
                 ?: error("最後のメッセージが空です")
 
             engine.createConversation(
@@ -87,6 +88,48 @@ internal class LiteRtAiClient(
             )
             addAll(messages)
         }
+    }
+
+    private fun List<AiClient.GptMessage>.prepareForLiteRt(): Pair<List<AiClient.GptMessage>, AiClient.GptMessage> {
+        val trailingUserMessageCount = asReversed()
+            .takeWhile { it.role == AiClient.GptMessage.Role.User }
+            .count()
+        require(trailingUserMessageCount > 0) { "ユーザーメッセージがありません" }
+
+        val historySourceMessages = dropLast(trailingUserMessageCount)
+        val trailingUserMessages = takeLast(trailingUserMessageCount)
+        val mergedLastUserMessage = mergeUserMessages(trailingUserMessages)
+            .limitImages(maxImages = MAX_IMAGES_PER_TURN)
+
+        return historySourceMessages to mergedLastUserMessage
+    }
+
+    private fun mergeUserMessages(messages: List<AiClient.GptMessage>): AiClient.GptMessage {
+        return AiClient.GptMessage(
+            role = AiClient.GptMessage.Role.User,
+            contents = messages.flatMap { it.contents },
+        )
+    }
+
+    private fun AiClient.GptMessage.limitImages(maxImages: Int): AiClient.GptMessage {
+        var imageCount = 0
+        val limitedContents = contents.filter { content ->
+            when (content) {
+                is AiClient.GptMessage.Content.Base64Image -> {
+                    if (imageCount < maxImages) {
+                        imageCount++
+                        true
+                    } else {
+                        false
+                    }
+                }
+
+                is AiClient.GptMessage.Content.ImageUrl,
+                is AiClient.GptMessage.Content.Text,
+                -> true
+            }
+        }
+        return copy(contents = limitedContents)
     }
 
     @OptIn(ExperimentalEncodingApi::class)
@@ -165,5 +208,6 @@ internal class LiteRtAiClient(
     private companion object {
         private const val PNG_QUALITY = 100
         private const val PNG_MIME_TYPE = "image/png"
+        private const val MAX_IMAGES_PER_TURN = 1
     }
 }
