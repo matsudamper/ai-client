@@ -13,6 +13,13 @@ kotlin {
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         namespace = "net.matsudamper.gptclient.feature.localmodel"
         minSdk = libs.versions.androidMinSdk.get().toInt()
+
+        optimization {
+            consumerKeepRules.apply {
+                publish = true
+                file("proguard-rules.pro")
+            }
+        }
     }
 
     jvm()
