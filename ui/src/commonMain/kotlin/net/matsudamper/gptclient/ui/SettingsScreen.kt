@@ -494,6 +494,8 @@ internal fun SettingsScreenPreviewContent(
 
                         override fun onClickGeminiUsage() = Unit
 
+                        override fun onClickLatestRelease() = Unit
+
                         override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) = Unit
                     },
                 ),
