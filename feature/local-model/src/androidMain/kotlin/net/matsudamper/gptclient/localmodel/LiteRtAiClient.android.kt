@@ -34,8 +34,10 @@ internal class LiteRtAiClient(
             require(resolvedMessages.isNotEmpty()) { "送信するメッセージがありません" }
 
             val (historySourceMessages, lastUserMessage) = resolvedMessages.prepareForLiteRt()
-            val historyMessages = historySourceMessages.mapNotNull { it.toLiteRtMessage(includeImages = false) }
-            val lastMessage = lastUserMessage.toLiteRtMessage(includeImages = true)
+            val historyMessages = historySourceMessages.mapNotNull {
+                it.toLiteRtMessage(includeImages = false)
+            }
+            val lastMessage = lastUserMessage.toLiteRtMessage(includeImages = modelDefinition.enableImage)
                 ?: error("最後のメッセージが空です")
 
             engine.createConversation(
@@ -98,8 +100,9 @@ internal class LiteRtAiClient(
 
         val historySourceMessages = dropLast(trailingUserMessageCount)
         val trailingUserMessages = takeLast(trailingUserMessageCount)
+        val maxImages = if (modelDefinition.enableImage) MAX_IMAGES_PER_TURN else 0
         val mergedLastUserMessage = mergeUserMessages(trailingUserMessages)
-            .limitImages(maxImages = MAX_IMAGES_PER_TURN)
+            .limitImages(maxImages = maxImages)
 
         return historySourceMessages to mergedLastUserMessage
     }

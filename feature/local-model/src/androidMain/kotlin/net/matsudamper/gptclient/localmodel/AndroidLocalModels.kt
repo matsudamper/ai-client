@@ -97,12 +97,12 @@ internal object AndroidLocalModels {
             modelId = LocalModelId("litertlm-qwen3.5-0.8b"),
             providerId = LocalModelProviderId.LiteRtLm,
             displayName = "Qwen3.5 0.8B",
-            description = "LiteRT-LM",
-            fileName = "qwen35_mm_q8_ekv2048.litertlm",
-            downloadUrl = "https://huggingface.co/GabrieleConte/Qwen3.5-0.8B-LiteRT/resolve/main/qwen35_mm_q8_ekv2048.litertlm?download=true",
-            enableImage = true,
-            supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
-            defaultToken = 2000,
+            description = "LiteRT-LM (テキストのみ)",
+            fileName = "Qwen3.5-0.8B_int8.litertlm",
+            downloadUrl = "https://huggingface.co/litert-community/Qwen3.5-0.8B/resolve/main/Qwen3.5-0.8B_int8.litertlm?download=true",
+            enableImage = false,
+            supportedImageMimeTypes = listOf(),
+            defaultToken = 4096,
             supportsThinking = false,
         )
 
