@@ -10,10 +10,13 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
+import com.google.ai.edge.litertlm.ExperimentalApi
+import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SamplerConfig
 import net.matsudamper.gptclient.client.AiClient
 
+@OptIn(ExperimentalApi::class)
 internal class LiteRtAiClient(
     private val context: Context,
     private val modelDefinition: AndroidLocalModel,
@@ -40,23 +43,29 @@ internal class LiteRtAiClient(
             val lastMessage = lastUserMessage.toLiteRtMessage(includeImages = modelDefinition.enableImage)
                 ?: error("最後のメッセージが空です")
 
-            engine.createConversation(
-                ConversationConfig(
-                    initialMessages = historyMessages,
-                    samplerConfig = SamplerConfig(
-                        topK = 5,
-                        topP = 0.95,
-                        temperature = 0.0,
+            val previousPromptTemplate = ExperimentalFlags.overwritePromptTemplate
+            ExperimentalFlags.overwritePromptTemplate = modelDefinition.overwritePromptTemplate
+            try {
+                engine.createConversation(
+                    ConversationConfig(
+                        initialMessages = historyMessages,
+                        samplerConfig = SamplerConfig(
+                            topK = 5,
+                            topP = 0.95,
+                            temperature = 0.0,
+                        ),
                     ),
-                ),
-            ).use { conversation ->
-                val responseMessage = conversation.sendMessage(
-                    message = lastMessage,
-                    extraContext = mapOf(
-                        "enable_thinking" to enableThinking,
-                    ),
-                )
-                responseMessage.extractText().stripMarkdownFence().toSuccessResult()
+                ).use { conversation ->
+                    val responseMessage = conversation.sendMessage(
+                        message = lastMessage,
+                        extraContext = mapOf(
+                            "enable_thinking" to enableThinking,
+                        ),
+                    )
+                    responseMessage.extractText().stripMarkdownFence().toSuccessResult()
+                }
+            } finally {
+                ExperimentalFlags.overwritePromptTemplate = previousPromptTemplate
             }
         }.getOrElse { throwable ->
             AiClient.GptResult.Error(
