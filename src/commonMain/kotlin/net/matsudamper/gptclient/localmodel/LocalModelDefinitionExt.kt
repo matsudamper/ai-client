@@ -14,6 +14,7 @@ fun LocalModelDefinition.toChatGptModel(
         displayName = displayName,
         enableImage = enableImage,
         supportedImageMimeTypes = supportedImageMimeTypes,
+        maxImageCount = maxImageCount,
         defaultToken = defaultToken,
         supportsThinking = supportsThinking,
     )

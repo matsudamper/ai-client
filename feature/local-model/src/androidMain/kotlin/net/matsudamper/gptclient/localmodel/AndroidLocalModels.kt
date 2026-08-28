@@ -20,6 +20,9 @@ internal data class AndroidLocalModel(
     val canDelete: Boolean
         get() = providerId == LocalModelProviderId.LiteRtLm && fileName != null
 
+    val maxImageCount: Int
+        get() = if (enableImage) 1 else 0
+
     fun toDefinition(): LocalModelDefinition =
         LocalModelDefinition(
             modelId = modelId,
@@ -27,6 +30,7 @@ internal data class AndroidLocalModel(
             description = description,
             enableImage = enableImage,
             supportedImageMimeTypes = supportedImageMimeTypes,
+            maxImageCount = maxImageCount,
             defaultToken = defaultToken,
             supportsThinking = supportsThinking,
             canDelete = canDelete,

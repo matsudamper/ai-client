@@ -2,7 +2,6 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
-import kotlinx.serialization.json.Json
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,12 +16,18 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.ImageFormat
 import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.ImageAttachmentValidation
+import net.matsudamper.gptclient.entity.errorMessage
 import net.matsudamper.gptclient.entity.getDisplayNameForChat
+import net.matsudamper.gptclient.entity.isImageAttachmentAllowed
+import net.matsudamper.gptclient.entity.selectableImages
+import net.matsudamper.gptclient.entity.validateImageAttachment
 import net.matsudamper.gptclient.entity.getName
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
@@ -40,8 +45,8 @@ import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.chat.ChatErrorMessageRetryComposableInterface
 import net.matsudamper.gptclient.ui.chat.JsonUiMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
-import net.matsudamper.gptclient.ui.jsonui.UiNode
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
+import net.matsudamper.gptclient.ui.jsonui.UiNode
 import net.matsudamper.gptclient.util.EventSender
 
 class ChatViewModel(
@@ -77,12 +82,31 @@ class ChatViewModel(
                     viewModelStateFlow.update {
                         it.copy(isMediaLoading = true)
                     }
+                    val model = viewModelStateFlow.value.roomInfo
+                        ?.room
+                        ?.modelKey
+                        ?.let(::findModel)
+                    if (model == null) {
+                        return@launch
+                    }
                     val images = withMediaRequest {
                         getMediaList()
                     }
+                    val (acceptedImages, validation) = model.selectableImages(
+                        currentCount = 0,
+                        newSelections = images,
+                    )
+                    validation.errorMessage()?.let { message ->
+                        withPlatformRequest {
+                            showToast(message)
+                        }
+                    }
+                    if (acceptedImages.isEmpty()) {
+                        return@launch
+                    }
                     viewModelStateFlow.update { viewModelState ->
                         viewModelState.copy(
-                            selectedMedia = images.map { image ->
+                            selectedMedia = acceptedImages.map { image ->
                                 ChatFooterImage(
                                     imageUri = image,
                                     rect = null,
@@ -104,15 +128,24 @@ class ChatViewModel(
 
         override fun onClickSend(text: String) {
             viewModelScope.launch {
-                val imageFormat = viewModelStateFlow.value.roomInfo
+                val model = viewModelStateFlow.value.roomInfo
                     ?.room
                     ?.modelKey
                     ?.let(::findModel)
-                    ?.preferredImageFormat
-                    ?: ImageFormat.Jpeg
+                val selectedMedia = viewModelStateFlow.value.selectedMedia
+                if (model != null) {
+                    val validation = model.validateImageAttachment(selectedMedia.size)
+                    if (validation !is ImageAttachmentValidation.Valid) {
+                        withPlatformRequest {
+                            showToast(validation.errorMessage().orEmpty())
+                        }
+                        return@launch
+                    }
+                }
+                val imageFormat = model?.preferredImageFormat ?: ImageFormat.Jpeg
                 addRequest(
                     message = text,
-                    uris = viewModelStateFlow.value.selectedMedia.mapNotNull map@{
+                    uris = selectedMedia.mapNotNull map@{
                         withPlatformRequest {
                             prepareImage(
                                 uri = it.imageUri,
@@ -213,7 +246,13 @@ class ChatViewModel(
                         },
                         selectedImage = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
-                        enableSend = !viewModelState.isChatLoading && !viewModelState.isWorkInProgress && !viewModelState.isMediaLoading,
+                        enableSend = !viewModelState.isChatLoading &&
+                            !viewModelState.isWorkInProgress &&
+                            !viewModelState.isMediaLoading &&
+                            isImageAttachmentAllowed(
+                                model = viewModelState.roomInfo?.room?.modelKey?.let(::findModel),
+                                imageCount = viewModelState.selectedMedia.size,
+                            ),
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isWorkInProgress,
