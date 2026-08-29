@@ -16,7 +16,6 @@ internal data class AndroidLocalModel(
     val supportedImageMimeTypes: List<String>,
     val defaultToken: Int,
     val supportsThinking: Boolean,
-    val overwritePromptTemplate: String? = null,
 ) {
     val canDelete: Boolean
         get() = providerId == LocalModelProviderId.LiteRtLm && fileName != null
@@ -93,28 +92,12 @@ internal object AndroidLocalModels {
             supportsThinking = false,
         )
 
-    private val qwen3508b =
-        AndroidLocalModel(
-            modelId = LocalModelId("litertlm-qwen3.5-0.8b"),
-            providerId = LocalModelProviderId.LiteRtLm,
-            displayName = "Qwen3.5 0.8B",
-            description = "LiteRT-LM",
-            fileName = "qwen35_mm_q8_ekv2048.litertlm",
-            downloadUrl = "https://huggingface.co/GabrieleConte/Qwen3.5-0.8B-LiteRT/resolve/main/qwen35_mm_q8_ekv2048.litertlm?download=true",
-            enableImage = true,
-            supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
-            defaultToken = 2000,
-            supportsThinking = false,
-            overwritePromptTemplate = Qwen3508bPromptTemplate.overwritePromptTemplate,
-        )
-
     val entries: List<AndroidLocalModel> =
         listOf(
             geminiNano,
             gemma4E4B,
             gemma4E2B,
             qwen352bVl,
-            qwen3508b,
         )
 
     fun find(modelId: LocalModelId): AndroidLocalModel? = entries.firstOrNull { it.modelId == modelId }
