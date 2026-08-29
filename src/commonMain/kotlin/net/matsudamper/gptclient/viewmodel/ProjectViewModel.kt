@@ -2,7 +2,6 @@ package net.matsudamper.gptclient.viewmodel
 
 import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
-import kotlinx.serialization.json.Json
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +11,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import net.matsudamper.gptclient.ImageFormat
 import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
@@ -19,7 +19,12 @@ import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
+import net.matsudamper.gptclient.entity.ImageAttachmentValidation
+import net.matsudamper.gptclient.entity.errorMessage
+import net.matsudamper.gptclient.entity.isImageAttachmentAllowed
 import net.matsudamper.gptclient.entity.projectUsageKey
+import net.matsudamper.gptclient.entity.selectableImages
+import net.matsudamper.gptclient.entity.validateImageAttachment
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
@@ -34,9 +39,9 @@ import net.matsudamper.gptclient.ui.ProjectUiState
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.JsonUiMessageComposableInterface
 import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
-import net.matsudamper.gptclient.ui.jsonui.UiNode
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 import net.matsudamper.gptclient.ui.component.ModelSelectorUiState
+import net.matsudamper.gptclient.ui.jsonui.UiNode
 import net.matsudamper.gptclient.util.EventSender
 
 class ProjectViewModel(
@@ -116,12 +121,26 @@ class ProjectViewModel(
                     viewModelStateFlow.update {
                         it.copy(mediaLoading = true)
                     }
+                    val selectedModel = resolveSelectedModel(viewModelStateFlow.value) ?: return@launch
                     val uriList = withMediaRequest {
                         getMediaList()
                     }
+                    val (acceptedUris, validation) = selectedModel.selectableImages(
+                        currentCount = 0,
+                        newSelections = uriList,
+                    )
+                    val message = validation.errorMessage()
+                    if (message != null) {
+                        withPlatformRequest {
+                            showToast(message)
+                        }
+                    }
+                    if (acceptedUris.isEmpty()) {
+                        return@launch
+                    }
                     viewModelStateFlow.update {
                         it.copy(
-                            uriList = uriList.map { imageUrl ->
+                            uriList = acceptedUris.map { imageUrl ->
                                 ChatFooterImage(
                                     imageUri = imageUrl,
                                     rect = null,
@@ -138,10 +157,21 @@ class ProjectViewModel(
             }
         }
 
-        override fun send(text: String) {
+        override fun send(text: String): Boolean {
             val currentState = viewModelStateFlow.value
-            currentState.systemInfo ?: return
-            val selectedModel = resolveSelectedModel(currentState) ?: return
+            if (currentState.systemInfo == null) {
+                return false
+            }
+            val selectedModel = resolveSelectedModel(currentState) ?: return false
+            val validation = selectedModel.validateImageAttachment(currentState.uriList.size)
+            if (validation !is ImageAttachmentValidation.Valid) {
+                viewModelScope.launch {
+                    withPlatformRequest {
+                        showToast(validation.errorMessage().orEmpty())
+                    }
+                }
+                return false
+            }
             val chatType = when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
                     Navigator.Chat.ChatType.BuiltinProject(
@@ -195,6 +225,7 @@ class ProjectViewModel(
                     )
                 }
             }
+            return true
         }
     }
     val uiStateFlow: StateFlow<ProjectUiState> = MutableStateFlow(
@@ -210,6 +241,7 @@ class ProjectViewModel(
             ),
             modelState = createModelState(null),
             enableSend = false,
+            imageAttachmentBlocked = false,
             listener = listener,
         ),
     ).also { uiStateFlow ->
@@ -291,7 +323,12 @@ class ProjectViewModel(
                         ),
                         selectedMedia = viewModelState.uriList,
                         visibleMediaLoading = viewModelState.mediaLoading,
-                        enableSend = !viewModelState.mediaLoading && selectedModel != null,
+                        enableSend = !viewModelState.mediaLoading &&
+                            selectedModel != null,
+                        imageAttachmentBlocked = !isImageAttachmentAllowed(
+                            model = selectedModel,
+                            imageCount = viewModelState.uriList.size,
+                        ),
                         chatRoomsState = run rooms@{
                             val chatRooms = viewModelState.chatRooms
                                 ?: return@rooms ProjectUiState.ChatRoomsState.Loading

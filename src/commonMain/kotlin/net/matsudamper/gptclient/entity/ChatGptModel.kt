@@ -9,6 +9,8 @@ interface ChatGptModel {
     val apiModelName: String get() = modelKey
     val enableImage: Boolean
     val supportedImageMimeTypes: List<String>
+    val maxImageCount: Int
+        get() = if (enableImage) DEFAULT_REMOTE_MAX_IMAGE_COUNT else 0
     val defaultToken: Int
     val requireTemperature: Double?
     val selectionKey: String
@@ -297,6 +299,7 @@ interface ChatGptModel {
         override val displayName: String,
         override val enableImage: Boolean = false,
         override val supportedImageMimeTypes: List<String> = listOf(),
+        override val maxImageCount: Int = 0,
         override val defaultToken: Int = 1024,
         override val requireTemperature: Double? = null,
         val supportsThinking: Boolean = false,
@@ -331,6 +334,8 @@ interface ChatGptModel {
     }
 
     companion object {
+        const val DEFAULT_REMOTE_MAX_IMAGE_COUNT = 10
+
         val entries: List<ChatGptModel> by lazy { Remote.entries }
         val allEntries: List<ChatGptModel> by lazy { Remote.allEntries }
 

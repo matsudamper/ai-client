@@ -81,6 +81,7 @@ internal fun ChatFooter(
     selectedMedia: List<ChatFooterImage>,
     visibleMediaLoading: Boolean,
     enableSend: Boolean,
+    imageAttachmentBlocked: Boolean,
     onClickAddImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
@@ -205,6 +206,7 @@ internal fun ChatFooter(
             onClickSend = onClickSend,
             onClickRetry = onClickRetry,
             enableSend = enableSend,
+            imageAttachmentBlocked = imageAttachmentBlocked,
         )
     }
 }
@@ -213,6 +215,7 @@ internal fun ChatFooter(
 private fun FooterTextSection(
     textFieldState: TextFieldState,
     enableSend: Boolean,
+    imageAttachmentBlocked: Boolean,
     onClickSelectImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
@@ -280,7 +283,11 @@ private fun FooterTextSection(
             Icon(
                 imageVector = FeatherIcons.ArrowUp,
                 contentDescription = "send",
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                tint = if (imageAttachmentBlocked) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                },
             )
         }
     }

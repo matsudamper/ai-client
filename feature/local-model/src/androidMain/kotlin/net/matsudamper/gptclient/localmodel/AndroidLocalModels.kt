@@ -20,6 +20,9 @@ internal data class AndroidLocalModel(
     val canDelete: Boolean
         get() = providerId == LocalModelProviderId.LiteRtLm && fileName != null
 
+    val maxImageCount: Int
+        get() = if (enableImage) 1 else 0
+
     fun toDefinition(): LocalModelDefinition =
         LocalModelDefinition(
             modelId = modelId,
@@ -27,6 +30,7 @@ internal data class AndroidLocalModel(
             description = description,
             enableImage = enableImage,
             supportedImageMimeTypes = supportedImageMimeTypes,
+            maxImageCount = maxImageCount,
             defaultToken = defaultToken,
             supportsThinking = supportsThinking,
             canDelete = canDelete,
@@ -74,11 +78,26 @@ internal object AndroidLocalModels {
             supportsThinking = true,
         )
 
+    private val qwen352bVl =
+        AndroidLocalModel(
+            modelId = LocalModelId("litertlm-qwen3.5-2b-vl"),
+            providerId = LocalModelProviderId.LiteRtLm,
+            displayName = "Qwen3.5 2B VL",
+            description = "LiteRT-LM",
+            fileName = "Qwen3.5-2B-VL_int8.litertlm",
+            downloadUrl = "https://huggingface.co/litert-community/Qwen3.5-2B/resolve/main/Qwen3.5-2B-VL_int8.litertlm?download=true",
+            enableImage = true,
+            supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
+            defaultToken = 2000,
+            supportsThinking = false,
+        )
+
     val entries: List<AndroidLocalModel> =
         listOf(
             geminiNano,
             gemma4E4B,
             gemma4E2B,
+            qwen352bVl,
         )
 
     fun find(modelId: LocalModelId): AndroidLocalModel? = entries.firstOrNull { it.modelId == modelId }

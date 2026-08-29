@@ -15,8 +15,13 @@ import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.Calendar
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.Emoji
+import net.matsudamper.gptclient.entity.ImageAttachmentValidation
 import net.matsudamper.gptclient.entity.Money
+import net.matsudamper.gptclient.entity.errorMessage
 import net.matsudamper.gptclient.entity.getProjectTitle
+import net.matsudamper.gptclient.entity.isImageAttachmentAllowed
+import net.matsudamper.gptclient.entity.selectableImages
+import net.matsudamper.gptclient.entity.validateImageAttachment
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
@@ -104,10 +109,21 @@ class NewChatViewModel(
             projectNameDialog = null,
             isLoading = false,
             enableSend = false,
+            imageAttachmentBlocked = false,
             listener = object : NewChatUiState.Listener {
-                override fun send(text: String) {
+                override fun send(text: String): Boolean {
+                    val selectedModel = viewModelStateFlow.value.selectedModel
+                    val mediaList = viewModelStateFlow.value.mediaList
+                    val validation = selectedModel.validateImageAttachment(mediaList.size)
+                    if (validation !is ImageAttachmentValidation.Valid) {
+                        viewModelScope.launch {
+                            eventSender.send {
+                                it.providePlatformRequest().showToast(validation.errorMessage().orEmpty())
+                            }
+                        }
+                        return false
+                    }
                     viewModelScope.launch {
-                        val selectedModel = viewModelStateFlow.value.selectedModel
                         val imageFormat = selectedModel.preferredImageFormat ?: ImageFormat.Jpeg
                         viewModelStateFlow.update {
                             it.copy(
@@ -118,7 +134,7 @@ class NewChatViewModel(
                             Navigator.Chat(
                                 Navigator.Chat.ChatOpenContext.NewMessage(
                                     initialMessage = text,
-                                    uriList = viewModelStateFlow.value.mediaList.mapNotNull map@{
+                                    uriList = mediaList.mapNotNull map@{
                                         eventSender.send { event ->
                                             event.providePlatformRequest().prepareImage(
                                                 uri = it.imageUri,
@@ -145,6 +161,7 @@ class NewChatViewModel(
                             )
                         }
                     }
+                    return true
                 }
 
                 override fun onClickSelectMedia() {
@@ -153,10 +170,24 @@ class NewChatViewModel(
                             viewModelStateFlow.update {
                                 it.copy(mediaLoading = true)
                             }
+                            val selectedModel = viewModelStateFlow.value.selectedModel
                             val imageUrlList = eventSender.send { it.provideMediaRequest().getMediaList() }
+                            val (acceptedImageUrls, validation) = selectedModel.selectableImages(
+                                currentCount = 0,
+                                newSelections = imageUrlList,
+                            )
+                            val message = validation.errorMessage()
+                            if (message != null) {
+                                eventSender.send {
+                                    it.providePlatformRequest().showToast(message)
+                                }
+                            }
+                            if (acceptedImageUrls.isEmpty()) {
+                                return@launch
+                            }
                             viewModelStateFlow.update {
                                 it.copy(
-                                    mediaList = imageUrlList.map { imageUrl ->
+                                    mediaList = acceptedImageUrls.map { imageUrl ->
                                         ChatFooterImage(
                                             imageUri = imageUrl,
                                             rect = null,
@@ -245,6 +276,10 @@ class NewChatViewModel(
                         projectNameDialog = viewModelState.projectNameDialog,
                         isLoading = viewModelState.isLoading,
                         enableSend = !viewModelState.mediaLoading,
+                        imageAttachmentBlocked = !isImageAttachmentAllowed(
+                            model = viewModelState.selectedModel,
+                            imageCount = viewModelState.mediaList.size,
+                        ),
                         projects = builtinProjects.plus(
                             viewModelState.projects.orEmpty().map { project ->
                                 NewChatUiState.Project(

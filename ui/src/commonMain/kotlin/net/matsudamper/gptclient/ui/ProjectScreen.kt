@@ -72,6 +72,7 @@ data class ProjectUiState(
     val systemMessage: SystemMessage,
     val visibleMediaLoading: Boolean,
     val enableSend: Boolean,
+    val imageAttachmentBlocked: Boolean,
     val chatRoomsState: ChatRoomsState,
     val modelState: ModelSelectorUiState,
     val listener: Listener,
@@ -107,7 +108,7 @@ data class ProjectUiState(
 
     @Immutable
     interface Listener {
-        fun send(text: String)
+        fun send(text: String): Boolean
         fun selectMedia()
         fun recordVoice()
         fun changeName(text: String)
@@ -358,10 +359,12 @@ fun ProjectScreen(
                     selectedMedia = uiState.selectedMedia,
                     visibleMediaLoading = uiState.visibleMediaLoading,
                     enableSend = uiState.enableSend,
+                    imageAttachmentBlocked = uiState.imageAttachmentBlocked,
                     onClickRetry = null,
                     onClickSend = {
-                        uiState.listener.send(state.text.toString())
-                        state.clearText()
+                        if (uiState.listener.send(state.text.toString())) {
+                            state.clearText()
+                        }
                     },
                 )
             }

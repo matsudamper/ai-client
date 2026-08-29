@@ -74,6 +74,7 @@ public data class NewChatUiState(
     val selectedMedia: List<ChatFooterImage>,
     val visibleMediaLoading: Boolean,
     val enableSend: Boolean,
+    val imageAttachmentBlocked: Boolean,
     val modelState: ModelSelectorUiState,
     val projectNameDialog: ProjectNameDialog?,
     val isLoading: Boolean,
@@ -108,7 +109,7 @@ public data class NewChatUiState(
 
     @Immutable
     interface Listener {
-        fun send(text: String)
+        fun send(text: String): Boolean
         fun onClickSelectMedia()
         fun onClickVoice()
         fun addProject()
@@ -296,13 +297,15 @@ public fun NewChat(
                         onClickAddImage = { uiState.listener.onClickSelectMedia() },
                         onClickVoice = { uiState.listener.onClickVoice() },
                         onClickSend = {
-                            uiState.listener.send(state.text.toString())
-                            state.clearText()
+                            if (uiState.listener.send(state.text.toString())) {
+                                state.clearText()
+                            }
                         },
                         selectedMedia = uiState.selectedMedia,
                         visibleMediaLoading = uiState.visibleMediaLoading,
                         onClickRetry = null,
                         enableSend = uiState.enableSend && state.text.isNotBlank(),
+                        imageAttachmentBlocked = uiState.imageAttachmentBlocked,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -365,6 +368,7 @@ internal fun NewChatPreviewContent() {
                     selectedMedia = emptyList(),
                     visibleMediaLoading = false,
                     enableSend = false,
+                    imageAttachmentBlocked = false,
                     modelState = ModelSelectorUiState(
                         selectedModelName = "GPT-5.4 Nano",
                         items = listOf(
@@ -386,7 +390,7 @@ internal fun NewChatPreviewContent() {
                     projectNameDialog = null,
                     isLoading = false,
                     listener = object : NewChatUiState.Listener {
-                        override fun send(text: String) = Unit
+                        override fun send(text: String): Boolean = false
                         override fun onClickSelectMedia() = Unit
                         override fun onClickVoice() = Unit
                         override fun addProject() = Unit
