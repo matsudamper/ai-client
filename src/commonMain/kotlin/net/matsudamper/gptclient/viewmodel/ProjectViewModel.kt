@@ -129,7 +129,8 @@ class ProjectViewModel(
                         currentCount = 0,
                         newSelections = uriList,
                     )
-                    validation.errorMessage()?.let { message ->
+                    val message = validation.errorMessage()
+                    if (message != null) {
                         withPlatformRequest {
                             showToast(message)
                         }

@@ -39,11 +39,11 @@ fun <T> ChatGptModel.selectableImages(
         return newSelections to ImageAttachmentValidation.Valid
     }
     if (!enableImage) {
-        return emptyList<T>() to ImageAttachmentValidation.ImageNotSupported
+        return listOf<T>() to ImageAttachmentValidation.ImageNotSupported
     }
     val remainingCount = maxImageCount - currentCount
     if (remainingCount <= 0) {
-        return emptyList<T>() to ImageAttachmentValidation.TooManyImages(maxImageCount)
+        return listOf<T>() to ImageAttachmentValidation.TooManyImages(maxImageCount)
     }
     val acceptedSelections = newSelections.take(remainingCount)
     val validation = if (newSelections.size > acceptedSelections.size) {

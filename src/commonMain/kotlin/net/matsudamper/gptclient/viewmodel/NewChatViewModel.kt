@@ -176,7 +176,8 @@ class NewChatViewModel(
                                 currentCount = 0,
                                 newSelections = imageUrlList,
                             )
-                            validation.errorMessage()?.let { message ->
+                            val message = validation.errorMessage()
+                            if (message != null) {
                                 eventSender.send {
                                     it.providePlatformRequest().showToast(message)
                                 }
