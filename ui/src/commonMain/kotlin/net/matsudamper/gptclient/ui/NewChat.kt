@@ -109,7 +109,7 @@ public data class NewChatUiState(
 
     @Immutable
     interface Listener {
-        fun send(text: String)
+        fun send(text: String): Boolean
         fun onClickSelectMedia()
         fun onClickVoice()
         fun addProject()
@@ -297,8 +297,9 @@ public fun NewChat(
                         onClickAddImage = { uiState.listener.onClickSelectMedia() },
                         onClickVoice = { uiState.listener.onClickVoice() },
                         onClickSend = {
-                            uiState.listener.send(state.text.toString())
-                            state.clearText()
+                            if (uiState.listener.send(state.text.toString())) {
+                                state.clearText()
+                            }
                         },
                         selectedMedia = uiState.selectedMedia,
                         visibleMediaLoading = uiState.visibleMediaLoading,
@@ -389,7 +390,7 @@ internal fun NewChatPreviewContent() {
                     projectNameDialog = null,
                     isLoading = false,
                     listener = object : NewChatUiState.Listener {
-                        override fun send(text: String) = Unit
+                        override fun send(text: String): Boolean = false
                         override fun onClickSelectMedia() = Unit
                         override fun onClickVoice() = Unit
                         override fun addProject() = Unit

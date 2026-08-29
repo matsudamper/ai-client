@@ -108,7 +108,7 @@ data class ProjectUiState(
 
     @Immutable
     interface Listener {
-        fun send(text: String)
+        fun send(text: String): Boolean
         fun selectMedia()
         fun recordVoice()
         fun changeName(text: String)
@@ -362,8 +362,9 @@ fun ProjectScreen(
                     imageAttachmentBlocked = uiState.imageAttachmentBlocked,
                     onClickRetry = null,
                     onClickSend = {
-                        uiState.listener.send(state.text.toString())
-                        state.clearText()
+                        if (uiState.listener.send(state.text.toString())) {
+                            state.clearText()
+                        }
                     },
                 )
             }

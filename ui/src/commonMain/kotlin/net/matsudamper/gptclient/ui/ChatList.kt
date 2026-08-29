@@ -60,7 +60,7 @@ data class ChatListUiState(
     interface Listener {
         fun onClickImage()
         fun onClickVoice()
-        fun onClickSend(text: String)
+        fun onClickSend(text: String): Boolean
         fun onClickRetry()
     }
 }
@@ -157,8 +157,9 @@ public fun ChatList(
                     selectedMedia = uiState.selectedImage,
                     visibleMediaLoading = uiState.visibleMediaLoading,
                     onClickSend = {
-                        uiState.listener.onClickSend(state.text.toString())
-                        state.clearText()
+                        if (uiState.listener.onClickSend(state.text.toString())) {
+                            state.clearText()
+                        }
                     },
                     enableSend = uiState.enableSend && state.text.isNotEmpty(),
                     imageAttachmentBlocked = uiState.imageAttachmentBlocked,

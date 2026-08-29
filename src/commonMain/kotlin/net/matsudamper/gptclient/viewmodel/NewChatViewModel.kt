@@ -111,17 +111,19 @@ class NewChatViewModel(
             enableSend = false,
             imageAttachmentBlocked = false,
             listener = object : NewChatUiState.Listener {
-                override fun send(text: String) {
-                    viewModelScope.launch {
-                        val selectedModel = viewModelStateFlow.value.selectedModel
-                        val mediaList = viewModelStateFlow.value.mediaList
-                        val validation = selectedModel.validateImageAttachment(mediaList.size)
-                        if (validation !is ImageAttachmentValidation.Valid) {
+                override fun send(text: String): Boolean {
+                    val selectedModel = viewModelStateFlow.value.selectedModel
+                    val mediaList = viewModelStateFlow.value.mediaList
+                    val validation = selectedModel.validateImageAttachment(mediaList.size)
+                    if (validation !is ImageAttachmentValidation.Valid) {
+                        viewModelScope.launch {
                             eventSender.send {
                                 it.providePlatformRequest().showToast(validation.errorMessage().orEmpty())
                             }
-                            return@launch
                         }
+                        return false
+                    }
+                    viewModelScope.launch {
                         val imageFormat = selectedModel.preferredImageFormat ?: ImageFormat.Jpeg
                         viewModelStateFlow.update {
                             it.copy(
@@ -159,6 +161,7 @@ class NewChatViewModel(
                             )
                         }
                     }
+                    return true
                 }
 
                 override fun onClickSelectMedia() {

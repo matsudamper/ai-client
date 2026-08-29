@@ -126,22 +126,24 @@ class ChatViewModel(
         override fun onClickVoice() {
         }
 
-        override fun onClickSend(text: String) {
-            viewModelScope.launch {
-                val model = viewModelStateFlow.value.roomInfo
-                    ?.room
-                    ?.modelKey
-                    ?.let(::findModel)
-                val selectedMedia = viewModelStateFlow.value.selectedMedia
-                if (model != null) {
-                    val validation = model.validateImageAttachment(selectedMedia.size)
-                    if (validation !is ImageAttachmentValidation.Valid) {
+        override fun onClickSend(text: String): Boolean {
+            val model = viewModelStateFlow.value.roomInfo
+                ?.room
+                ?.modelKey
+                ?.let(::findModel)
+            val selectedMedia = viewModelStateFlow.value.selectedMedia
+            if (model != null) {
+                val validation = model.validateImageAttachment(selectedMedia.size)
+                if (validation !is ImageAttachmentValidation.Valid) {
+                    viewModelScope.launch {
                         withPlatformRequest {
                             showToast(validation.errorMessage().orEmpty())
                         }
-                        return@launch
                     }
+                    return false
                 }
+            }
+            viewModelScope.launch {
                 val imageFormat = model?.preferredImageFormat ?: ImageFormat.Jpeg
                 addRequest(
                     message = text,
@@ -162,10 +164,11 @@ class ChatViewModel(
                         }
                     },
                 )
+                viewModelStateFlow.update {
+                    it.copy(selectedMedia = listOf())
+                }
             }
-            viewModelStateFlow.update {
-                it.copy(selectedMedia = listOf())
-            }
+            return true
         }
 
         override fun onClickRetry() {

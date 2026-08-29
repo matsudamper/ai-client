@@ -156,10 +156,12 @@ class ProjectViewModel(
             }
         }
 
-        override fun send(text: String) {
+        override fun send(text: String): Boolean {
             val currentState = viewModelStateFlow.value
-            currentState.systemInfo ?: return
-            val selectedModel = resolveSelectedModel(currentState) ?: return
+            if (currentState.systemInfo == null) {
+                return false
+            }
+            val selectedModel = resolveSelectedModel(currentState) ?: return false
             val validation = selectedModel.validateImageAttachment(currentState.uriList.size)
             if (validation !is ImageAttachmentValidation.Valid) {
                 viewModelScope.launch {
@@ -167,7 +169,7 @@ class ProjectViewModel(
                         showToast(validation.errorMessage().orEmpty())
                     }
                 }
-                return
+                return false
             }
             val chatType = when (navigator.type) {
                 is Navigator.Project.ProjectType.Builtin -> {
@@ -222,6 +224,7 @@ class ProjectViewModel(
                     )
                 }
             }
+            return true
         }
     }
     val uiStateFlow: StateFlow<ProjectUiState> = MutableStateFlow(
