@@ -1,11 +1,11 @@
 [versions]
 kotlin = "2.4.10"
-agp = "9.1.1"
+agp = "9.3.2"
 androidCompileSdk = "37"
 androidMinSdk = "34"
 androidTargetSdk = "37"
 compose = "1.11.1"
-androidxComposeUiToolingPreview = "1.11.4"
+androidxComposeUiToolingPreview = "1.12.0"
 jetbrainsComposeUiToolingPreview = "1.11.1"
 composeIcons = "1.7.3"
 activity = "1.13.0"
@@ -16,7 +16,7 @@ ksp = "2.3.10"
 coroutine = "1.11.0"
 koin = "4.2.2"
 kotlinSerialization = "1.11.0"
-coil = "3.5.0"
+coil = "3.6.0"
 zoomable = "2.13.0"
 ktlintGradle = "14.2.0"
 ktlint = "1.6.0"
@@ -25,7 +25,7 @@ litertlm = "0.16.0"
 androidxTestRules = "1.7.0"
 nav3Ui = "1.1.1"
 paparazzi = "2.0.0-alpha04"
-composablePreviewScanner = "0.8.2"
+composablePreviewScanner = "0.9.3"
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -56,9 +56,9 @@ ktlint = { module = "com.pinterest:ktlint", version.ref = "ktlint" }
 androidxWorkRuntime = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
 
 # ktor
-ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.5.1" }
-ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "3.5.0" }
-ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "3.5.0" }
+ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.5.2" }
+ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "3.5.2" }
+ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "3.5.2" }
 
 # Coil
 coil3Compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
