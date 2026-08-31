@@ -1,17 +1,25 @@
 package net.matsudamper.gptclient.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -37,6 +46,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -117,8 +127,9 @@ fun SettingsScreen(
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = modifier) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        modifier = modifier.imePadding(),
+        topBar = {
             TopAppBar(
                 title = {
                     Text("設定")
@@ -129,21 +140,22 @@ fun SettingsScreen(
                     }
                 },
             )
-            when (uiState) {
-                is SettingsScreenUiState.Loading -> {
-                    Loading(
-                        modifier = Modifier.fillMaxWidth()
-                            .weight(1f),
-                    )
-                }
+        },
+    ) { innerPadding ->
+        when (uiState) {
+            is SettingsScreenUiState.Loading -> {
+                Loading(
+                    modifier = Modifier.fillMaxSize()
+                        .padding(innerPadding),
+                )
+            }
 
-                is SettingsScreenUiState.Loaded -> {
-                    Loaded(
-                        uiState = uiState,
-                        modifier = Modifier.fillMaxWidth()
-                            .weight(1f),
-                    )
-                }
+            is SettingsScreenUiState.Loaded -> {
+                Loaded(
+                    uiState = uiState,
+                    modifier = Modifier.fillMaxSize()
+                        .padding(innerPadding),
+                )
             }
         }
     }
@@ -188,9 +200,16 @@ private fun Loaded(
         )
     }
 
+    val scrollState = rememberSaveable(saver = ScrollState.Saver) {
+        ScrollState(initial = 0)
+    }
+
     Column(
         modifier = modifier
-            .verticalScroll(rememberScrollState()),
+            .padding(
+                WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal).asPaddingValues(),
+            )
+            .verticalScroll(scrollState),
     ) {
         ThemeSettingItem(
             modifier = Modifier.fillMaxWidth(),
@@ -247,6 +266,8 @@ private fun Loaded(
         ) {
             Text("最新リリースを確認")
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
     }
 }
 
@@ -369,8 +390,9 @@ private fun ThemeSettingItem(
             Text("テーマ")
         },
         content = {
-            Row(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 SettingsScreenUiState.ThemeOption.entries.forEach { option ->
                     FilterChip(
