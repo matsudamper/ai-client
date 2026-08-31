@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -117,8 +120,11 @@ fun SettingsScreen(
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = modifier) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        modifier = modifier
+            .navigationBarsPadding()
+            .imePadding(),
+        topBar = {
             TopAppBar(
                 title = {
                     Text("設定")
@@ -129,21 +135,22 @@ fun SettingsScreen(
                     }
                 },
             )
-            when (uiState) {
-                is SettingsScreenUiState.Loading -> {
-                    Loading(
-                        modifier = Modifier.fillMaxWidth()
-                            .weight(1f),
-                    )
-                }
+        },
+    ) { innerPadding ->
+        when (uiState) {
+            is SettingsScreenUiState.Loading -> {
+                Loading(
+                    modifier = Modifier.fillMaxSize()
+                        .padding(innerPadding),
+                )
+            }
 
-                is SettingsScreenUiState.Loaded -> {
-                    Loaded(
-                        uiState = uiState,
-                        modifier = Modifier.fillMaxWidth()
-                            .weight(1f),
-                    )
-                }
+            is SettingsScreenUiState.Loaded -> {
+                Loaded(
+                    uiState = uiState,
+                    modifier = Modifier.fillMaxSize()
+                        .padding(innerPadding),
+                )
             }
         }
     }
@@ -247,6 +254,7 @@ private fun Loaded(
         ) {
             Text("最新リリースを確認")
         }
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
