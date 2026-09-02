@@ -63,15 +63,56 @@ jobs:
           path: ${{ steps.rename_apk.outputs.apk_path }}
           retention-days: 30
 
+      - id: upload_s3
+        name: Upload APK to S3
+        uses: matsudamper/actions/upload-matsudamper-s3@a1ecf81b1a0ce320824a49711e456f396e4e8fea
+        continue-on-error: true
+        with:
+          file_path: ${{ steps.rename_apk.outputs.apk_path }}
+
       - name: Summary
+        env:
+          ARTIFACT_URL: ${{ steps.upload_apk.outputs.artifact-url }}
+          S3_URL: ${{ steps.upload_s3.outputs.url }}
+          APK_NAME: ${{ steps.rename_apk.outputs.apk_name }}
+          REF_NAME: ${{ inputs.ref }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          {
-            echo "## Release APK"
-            echo ""
-            echo "| Item | Value |"
-            echo "| --- | --- |"
-            echo "| Artifact | \`${{ steps.rename_apk.outputs.apk_name }}\` |"
-            echo "| Ref | \`${{ inputs.ref }}\` |"
-            echo "| Commit | \`${{ github.sha }}\` |"
-            echo "| Download | [GitHub Artifacts](${{ steps.upload_apk.outputs.artifact-url }}) |"
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$S3_URL" ]; then
+            export DOWNLOAD_URL="$S3_URL"
+            export DOWNLOAD_LABEL="S3"
+          else
+            export DOWNLOAD_URL="$ARTIFACT_URL"
+            export DOWNLOAD_LABEL="GitHub Artifacts"
+          fi
+
+          pip install "qrcode[pil]" --quiet
+          python3 <<'PY'
+          import base64
+          import io
+          import os
+
+          import qrcode
+
+          download_url = os.environ["DOWNLOAD_URL"]
+          download_label = os.environ["DOWNLOAD_LABEL"]
+          apk_name = os.environ["APK_NAME"]
+          ref_name = os.environ["REF_NAME"]
+          commit_sha = os.environ["COMMIT_SHA"]
+
+          img = qrcode.make(download_url)
+          buffer = io.BytesIO()
+          img.save(buffer, format="PNG")
+          qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Release APK\n\n")
+              summary.write("| Item | Value |\n")
+              summary.write("| --- | --- |\n")
+              summary.write(f"| Artifact | `{apk_name}` |\n")
+              summary.write(f"| Ref | `{ref_name}` |\n")
+              summary.write(f"| Commit | `{commit_sha}` |\n")
+              summary.write(f"| Download | [{download_label}]({download_url}) |\n\n")
+              summary.write("### Download QR\n\n")
+              summary.write(f'<img src="data:image/png;base64,{qr_base64}" width="200" />\n')
+          PY
