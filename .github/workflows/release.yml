@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: '未記入ならapkのみ生成'
+        required: false
+        type: string
   workflow_call:
     inputs:
       tag:
@@ -19,6 +25,7 @@ jobs:
 
     env:
       DEBUG_KEYSTORE_FILE: debug.keystore
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -38,12 +45,94 @@ jobs:
         run: |
           echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > debug.keystore
 
-      - run: ./gradlew :app-android:assembleRelease
+      - name: Build release APK
+        run: ./gradlew :app-android:assembleRelease
+
+      - id: rename_apk
+        name: Rename APK
+        if: github.event_name == 'workflow_dispatch' && inputs.release_version == ''
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          SAFE_REF="${REF_NAME//\//-}"
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          APK_NAME="app-ai-client-release-${SAFE_REF}-${SHORT_SHA}.apk"
+
+          APK_PATH=$(find app-android/build/outputs/apk/release -name "*.apk" | head -1)
+          mv "$APK_PATH" "app-android/build/outputs/apk/release/$APK_NAME"
+
+          echo "apk_name=${APK_NAME}" >> "$GITHUB_OUTPUT"
+          echo "apk_path=app-android/build/outputs/apk/release/$APK_NAME" >> "$GITHUB_OUTPUT"
+
+      - id: upload_apk
+        if: github.event_name == 'workflow_dispatch' && inputs.release_version == ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.rename_apk.outputs.apk_name }}
+          path: ${{ steps.rename_apk.outputs.apk_path }}
+          retention-days: 30
+
+      - id: upload_s3
+        name: Upload APK to S3
+        if: github.event_name == 'workflow_dispatch' && inputs.release_version == ''
+        uses: matsudamper/actions/upload-matsudamper-s3@a1ecf81b1a0ce320824a49711e456f396e4e8fea
+        continue-on-error: true
+        with:
+          file_path: ${{ steps.rename_apk.outputs.apk_path }}
+
+      - name: Summary
+        if: github.event_name == 'workflow_dispatch' && inputs.release_version == ''
+        env:
+          ARTIFACT_URL: ${{ steps.upload_apk.outputs.artifact-url }}
+          S3_URL: ${{ steps.upload_s3.outputs.url }}
+          APK_NAME: ${{ steps.rename_apk.outputs.apk_name }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          if [ -n "$S3_URL" ]; then
+            export DOWNLOAD_URL="$S3_URL"
+            export DOWNLOAD_LABEL="S3"
+          else
+            export DOWNLOAD_URL="$ARTIFACT_URL"
+            export DOWNLOAD_LABEL="GitHub Artifacts"
+          fi
+
+          pip install "qrcode[pil]" --quiet
+          python3 <<'PY'
+          import base64
+          import io
+          import os
+
+          import qrcode
+
+          download_url = os.environ["DOWNLOAD_URL"]
+          download_label = os.environ["DOWNLOAD_LABEL"]
+          apk_name = os.environ["APK_NAME"]
+          ref_name = os.environ["REF_NAME"]
+          commit_sha = os.environ["COMMIT_SHA"]
+
+          img = qrcode.make(download_url)
+          buffer = io.BytesIO()
+          img.save(buffer, format="PNG")
+          qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Release APK\n\n")
+              summary.write("| Item | Value |\n")
+              summary.write("| --- | --- |\n")
+              summary.write(f"| Artifact | `{apk_name}` |\n")
+              summary.write(f"| Ref | `{ref_name}` |\n")
+              summary.write(f"| Commit | `{commit_sha}` |\n")
+              summary.write(f"| Download | [{download_label}]({download_url}) |\n\n")
+              summary.write("### Download QR\n\n")
+              summary.write(f'<img src="data:image/png;base64,{qr_base64}" width="200" />\n')
+          PY
 
       - name: Upload Release APK
+        if: github.event_name != 'workflow_dispatch' || inputs.release_version != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: ${{ inputs.tag || inputs.release_version || github.ref_name }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" app-android/build/outputs/apk/**/*.apk --clobber
