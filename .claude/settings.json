@@ -5,9 +5,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/setup.sh\"",
+            "timeout": 900
+          },
+          {
+            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
           }
-        ]
+        ],
+        "matcher": "startup|resume"
       }
     ]
   }
