@@ -289,12 +289,12 @@ private fun SettingsTopContent(
         TextButton(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(horizontal = HorizontalPadding)
-                .windowInsetsBottomHeight(WindowInsets.navigationBars),
+                .padding(horizontal = HorizontalPadding),
             onClick = { uiState.listener.onClickLatestRelease() },
         ) {
             Text("GitHub リリース")
         }
+        Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
     }
 }
 
