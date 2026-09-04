@@ -14,3 +14,15 @@ private fun SettingsScreenLightPreview() {
 private fun SettingsScreenDarkPreview() {
     SettingsScreenPreviewContent(isDark = true)
 }
+
+@Preview(name = "Settings ApiKey Light")
+@Composable
+private fun SettingsApiKeyScreenLightPreview() {
+    SettingsApiKeyScreenPreviewContent(isDark = false)
+}
+
+@Preview(name = "Settings ApiKey Dark")
+@Composable
+private fun SettingsApiKeyScreenDarkPreview() {
+    SettingsApiKeyScreenPreviewContent(isDark = true)
+}
