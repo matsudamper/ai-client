@@ -318,5 +318,44 @@ else:
         print("WARNING: JDK 24 could not be installed. Build may fail.")
         write_gradle_properties()
 
+# ── Android SDK セットアップ ──────────────────────────────────────────────────
+# sdkmanager のセットアップのみ（パッケージはビルド時に AGP が自動ダウンロード）
+
+project_dir = os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd())
+android_home = os.path.expanduser('~/android-sdk')
+local_props = os.path.join(project_dir, 'local.properties')
+
+os.makedirs(android_home, exist_ok=True)
+
+# cmdline-tools のダウンロード（sdkmanager 本体の取得）
+cmdline_tools_dir = os.path.join(android_home, 'cmdline-tools', 'latest')
+sdkmanager_bin = os.path.join(cmdline_tools_dir, 'bin', 'sdkmanager')
+if not os.path.exists(sdkmanager_bin):
+    cmdline_url = 'https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip'
+    cmdline_zip = os.path.join(android_home, 'commandlinetools.zip')
+    download(cmdline_url, cmdline_zip, opener)
+    with zipfile.ZipFile(cmdline_zip, 'r') as zf:
+        zf.extractall(android_home)
+    os.unlink(cmdline_zip)
+    # zip は cmdline-tools/ に展開される → cmdline-tools/latest/ に移動
+    extracted = os.path.join(android_home, 'cmdline-tools')
+    temp_dir = os.path.join(android_home, '_cmdline-tools-temp')
+    os.rename(extracted, temp_dir)
+    os.makedirs(extracted, exist_ok=True)
+    shutil.move(temp_dir, cmdline_tools_dir)
+    os.chmod(sdkmanager_bin, 0o755)
+    print(f"cmdline-tools installed: {cmdline_tools_dir}")
+
+# ライセンス承認
+licenses_dir = os.path.join(android_home, 'licenses')
+os.makedirs(licenses_dir, exist_ok=True)
+with open(os.path.join(licenses_dir, 'android-sdk-license'), 'w') as f:
+    f.write('\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n')
+
+# local.properties に sdk.dir を書き込む
+with open(local_props, 'w') as f:
+    f.write(f"sdk.dir={android_home}\n")
+print(f"local.properties written: sdk.dir={android_home}")
+
 print("Session start hook completed.")
 PYEOF
