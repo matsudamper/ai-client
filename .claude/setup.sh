@@ -23,7 +23,7 @@ if [ -z "${compile_sdk}" ]; then
   exit 1
 fi
 
-# SessionStart フックからも呼ぶので、揃っているときは sdkmanager を起動しない。
+# 既に揃っているときは sdkmanager を起動しない。
 # sdkmanager は何もすることが無くてもリモートのリポジトリを引きに行って数秒かかる
 if [ ! -f "${ANDROID_SDK_ROOT}/platforms/android-${compile_sdk}.0/android.jar" ] ||
   [ ! -d "${ANDROID_SDK_ROOT}/build-tools/${BUILD_TOOLS_VERSION}" ] ||
