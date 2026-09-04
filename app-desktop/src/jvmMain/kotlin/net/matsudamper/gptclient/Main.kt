@@ -54,7 +54,10 @@ fun main(@Suppress("UNUSED_PARAMETER") args: Array<String>) {
         )
     }
     application {
-        Window(onCloseRequest = { exitProcess(0) }) {
+        Window(
+            onCloseRequest = { exitProcess(0) },
+            title = "AI Client",
+        ) {
             App(
                 providePlatformRequest = remember {
                     { desktopPlatformRequest }
