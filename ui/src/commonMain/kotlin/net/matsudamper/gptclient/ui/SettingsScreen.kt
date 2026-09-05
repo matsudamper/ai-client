@@ -265,27 +265,22 @@ private fun SettingsTopContent(
         modifier = modifier
             .padding(
                 WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal).asPaddingValues(),
-            ),
+            )
+            .verticalScroll(scrollState),
     ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(scrollState),
-        ) {
-            ThemeSettingItem(
-                modifier = Modifier.fillMaxWidth(),
-                currentThemeOption = uiState.themeOption,
-                onClickThemeOption = { uiState.listener.onClickThemeOption(it) },
-            )
-            SettingsNavigationItem(
-                title = "APIキー",
-                onClick = onClickApiKey,
-            )
-            SettingsNavigationItem(
-                title = "モデル",
-                onClick = onClickModel,
-            )
-        }
+        ThemeSettingItem(
+            modifier = Modifier.fillMaxWidth(),
+            currentThemeOption = uiState.themeOption,
+            onClickThemeOption = { uiState.listener.onClickThemeOption(it) },
+        )
+        SettingsNavigationItem(
+            title = "APIキー",
+            onClick = onClickApiKey,
+        )
+        SettingsNavigationItem(
+            title = "モデル",
+            onClick = onClickModel,
+        )
         TextButton(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
