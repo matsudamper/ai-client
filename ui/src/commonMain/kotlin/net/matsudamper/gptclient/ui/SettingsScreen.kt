@@ -201,11 +201,13 @@ fun SettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsTopBar(
+    modifier: Modifier = Modifier,
     route: SettingsRoute,
     onClickMenu: () -> Unit,
     onClickBack: () -> Unit,
 ) {
     TopAppBar(
+        modifier = modifier,
         title = {
             Text(
                 when (route) {
@@ -353,16 +355,17 @@ private fun SettingsModelContent(
     uiState: SettingsScreenUiState.Loaded,
     modifier: Modifier = Modifier,
 ) {
-    uiState.deleteDialog?.let { dialog ->
+    val deleteDialog = uiState.deleteDialog
+    if (deleteDialog != null) {
         AlertDialog(
-            onDismissRequest = { dialog.listener.onDismiss() },
+            onDismissRequest = { deleteDialog.listener.onDismiss() },
             confirmButton = {
-                TextButton(onClick = { dialog.listener.onConfirm() }) {
+                TextButton(onClick = { deleteDialog.listener.onConfirm() }) {
                     Text("削除")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { dialog.listener.onDismiss() }) {
+                TextButton(onClick = { deleteDialog.listener.onDismiss() }) {
                     Text("キャンセル")
                 }
             },
@@ -370,7 +373,7 @@ private fun SettingsModelContent(
                 Text("モデルを削除しますか？")
             },
             text = {
-                Text("${dialog.modelName} を削除します。")
+                Text("${deleteDialog.modelName} を削除します。")
             },
         )
     }
