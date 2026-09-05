@@ -37,17 +37,23 @@ class SettingViewModel(
     private val modelsFlow = MutableStateFlow<List<LocalModelDefinition>>(emptyList())
     private val modelStateMap = MutableStateFlow<Map<LocalModelId, LocalModelState>>(emptyMap())
     private val pendingDeleteModelId = MutableStateFlow<LocalModelId?>(null)
+    private val secretKeyState = MutableStateFlow("")
+    private val geminiSecretKeyState = MutableStateFlow("")
+    private val geminiBillingKeyState = MutableStateFlow("")
 
     private val loadedListener = object : SettingsScreenUiState.Loaded.Listener {
         override fun updateSecretKey(text: String) {
+            secretKeyState.value = text
             saveSecretKey(text)
         }
 
         override fun updateGeminiSecretKey(text: String) {
+            geminiSecretKeyState.value = text
             saveGeminiSecretKey(text)
         }
 
         override fun updateGeminiBillingKey(text: String) {
+            geminiBillingKeyState.value = text
             saveGeminiBillingKey(text)
         }
 
@@ -92,31 +98,55 @@ class SettingViewModel(
             }
         }
         viewModelScope.launch {
-            val secretKey = settingDataStore.getSecretKey()
-            val geminiSecretKey = settingDataStore.getGeminiSecretKey()
-            val geminiBillingKey = settingDataStore.getGeminiBillingKey()
-
+            secretKeyState.value = settingDataStore.getSecretKey()
+            geminiSecretKeyState.value = settingDataStore.getGeminiSecretKey()
+            geminiBillingKeyState.value = settingDataStore.getGeminiBillingKey()
+        }
+        viewModelScope.launch {
             combine(
-                settingDataStore.getThemeModeFlow(),
-                settingDataStore.getActiveLocalModelKeysFlow(),
-                modelsFlow,
-                modelStateMap,
-                pendingDeleteModelId,
-            ) { themeMode, activeKeys, models, statuses, deleteModelId ->
+                combine(
+                    secretKeyState,
+                    geminiSecretKeyState,
+                    geminiBillingKeyState,
+                    settingDataStore.getThemeModeFlow(),
+                    settingDataStore.getActiveLocalModelKeysFlow(),
+                ) { secretKey, geminiSecretKey, geminiBillingKey, themeMode, activeKeys ->
+                    KeyViewState(
+                        secretKey = secretKey,
+                        geminiSecretKey = geminiSecretKey,
+                        geminiBillingKey = geminiBillingKey,
+                        themeMode = themeMode,
+                        activeKeys = activeKeys,
+                    )
+                },
+                combine(
+                    modelsFlow,
+                    modelStateMap,
+                    pendingDeleteModelId,
+                ) { models, statuses, deleteModelId ->
+                    ModelViewState(
+                        models = models,
+                        statuses = statuses,
+                        deleteModelId = deleteModelId,
+                    )
+                },
+            ) { keyState, modelState ->
                 ViewState(
-                    themeMode = themeMode,
-                    activeKeys = activeKeys,
-                    models = models,
-                    statuses = statuses,
-                    deleteModelId = deleteModelId,
+                    secretKey = keyState.secretKey,
+                    geminiSecretKey = keyState.geminiSecretKey,
+                    geminiBillingKey = keyState.geminiBillingKey,
+                    themeMode = keyState.themeMode,
+                    activeKeys = keyState.activeKeys,
+                    models = modelState.models,
+                    statuses = modelState.statuses,
+                    deleteModelId = modelState.deleteModelId,
                 )
             }.collect { state ->
-                val current = _uiStateFlow.value as? SettingsScreenUiState.Loaded
                 _uiStateFlow.value =
                     SettingsScreenUiState.Loaded(
-                        initialSecretKey = current?.initialSecretKey ?: secretKey,
-                        initialGeminiSecretKey = current?.initialGeminiSecretKey ?: geminiSecretKey,
-                        initialGeminiBillingKey = current?.initialGeminiBillingKey ?: geminiBillingKey,
+                        initialSecretKey = state.secretKey,
+                        initialGeminiSecretKey = state.geminiSecretKey,
+                        initialGeminiBillingKey = state.geminiBillingKey,
                         themeOption = state.themeMode.toUiState(),
                         localModels = state.models.map { model ->
                             model.toUiItem(
@@ -227,7 +257,24 @@ class SettingViewModel(
         }
     }
 
+    private data class KeyViewState(
+        val secretKey: String,
+        val geminiSecretKey: String,
+        val geminiBillingKey: String,
+        val themeMode: ThemeMode,
+        val activeKeys: Set<LocalModelId>,
+    )
+
+    private data class ModelViewState(
+        val models: List<LocalModelDefinition>,
+        val statuses: Map<LocalModelId, LocalModelState>,
+        val deleteModelId: LocalModelId?,
+    )
+
     private data class ViewState(
+        val secretKey: String,
+        val geminiSecretKey: String,
+        val geminiBillingKey: String,
         val themeMode: ThemeMode,
         val activeKeys: Set<LocalModelId>,
         val models: List<LocalModelDefinition>,

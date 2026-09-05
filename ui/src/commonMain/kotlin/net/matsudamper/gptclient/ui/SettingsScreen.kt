@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.ui
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
@@ -46,12 +48,25 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.ChevronRight
+import net.matsudamper.gptclient.ui.platform.BackHandler
+
+private enum class SettingsRoute {
+    TOP,
+    API_KEY,
+    MODEL,
+}
+
 sealed interface SettingsScreenUiState {
     data object Loading : SettingsScreenUiState
 
@@ -127,18 +142,18 @@ fun SettingsScreen(
     onClickMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var route by rememberSaveable { mutableStateOf(SettingsRoute.TOP) }
+    BackHandler(enabled = route != SettingsRoute.TOP) {
+        route = SettingsRoute.TOP
+    }
+
     Scaffold(
         modifier = modifier.imePadding(),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text("設定")
-                },
-                navigationIcon = {
-                    IconButton(onClick = { onClickMenu() }) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
-                    }
-                },
+            SettingsTopBar(
+                route = route,
+                onClickMenu = onClickMenu,
+                onClickBack = { route = SettingsRoute.TOP },
             )
         },
     ) { innerPadding ->
@@ -151,14 +166,78 @@ fun SettingsScreen(
             }
 
             is SettingsScreenUiState.Loaded -> {
-                Loaded(
-                    uiState = uiState,
-                    modifier = Modifier.fillMaxSize()
-                        .padding(innerPadding),
-                )
+                when (route) {
+                    SettingsRoute.TOP -> {
+                        SettingsTopContent(
+                            uiState = uiState,
+                            onClickApiKey = { route = SettingsRoute.API_KEY },
+                            onClickModel = { route = SettingsRoute.MODEL },
+                            modifier = Modifier.fillMaxSize()
+                                .padding(innerPadding),
+                        )
+                    }
+
+                    SettingsRoute.API_KEY -> {
+                        SettingsApiKeyContent(
+                            uiState = uiState,
+                            modifier = Modifier.fillMaxSize()
+                                .padding(innerPadding),
+                        )
+                    }
+
+                    SettingsRoute.MODEL -> {
+                        SettingsModelContent(
+                            uiState = uiState,
+                            modifier = Modifier.fillMaxSize()
+                                .padding(innerPadding),
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsTopBar(
+    modifier: Modifier = Modifier,
+    route: SettingsRoute,
+    onClickMenu: () -> Unit,
+    onClickBack: () -> Unit,
+) {
+    TopAppBar(
+        modifier = modifier,
+        title = {
+            Text(
+                when (route) {
+                    SettingsRoute.TOP -> "設定"
+                    SettingsRoute.API_KEY -> "APIキー"
+                    SettingsRoute.MODEL -> "モデル"
+                },
+            )
+        },
+        navigationIcon = {
+            when (route) {
+                SettingsRoute.TOP -> {
+                    IconButton(onClick = onClickMenu) {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                }
+
+                SettingsRoute.API_KEY,
+                SettingsRoute.MODEL,
+                -> {
+                    IconButton(onClick = onClickBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -174,32 +253,12 @@ private fun Loading(
 }
 
 @Composable
-private fun Loaded(
+private fun SettingsTopContent(
     uiState: SettingsScreenUiState.Loaded,
+    onClickApiKey: () -> Unit,
+    onClickModel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    uiState.deleteDialog?.let { dialog ->
-        AlertDialog(
-            onDismissRequest = { dialog.listener.onDismiss() },
-            confirmButton = {
-                TextButton(onClick = { dialog.listener.onConfirm() }) {
-                    Text("削除")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { dialog.listener.onDismiss() }) {
-                    Text("キャンセル")
-                }
-            },
-            title = {
-                Text("モデルを削除しますか？")
-            },
-            text = {
-                Text("${dialog.modelName} を削除します。")
-            },
-        )
-    }
-
     val scrollState = rememberSaveable(saver = ScrollState.Saver) {
         ScrollState(initial = 0)
     }
@@ -216,7 +275,42 @@ private fun Loaded(
             currentThemeOption = uiState.themeOption,
             onClickThemeOption = { uiState.listener.onClickThemeOption(it) },
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        SettingsNavigationItem(
+            title = "APIキー",
+            onClick = onClickApiKey,
+        )
+        SettingsNavigationItem(
+            title = "モデル",
+            onClick = onClickModel,
+        )
+        TextButton(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(horizontal = HorizontalPadding),
+            onClick = { uiState.listener.onClickLatestRelease() },
+        ) {
+            Text("GitHub リリース")
+        }
+        Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+    }
+}
+
+@Composable
+private fun SettingsApiKeyContent(
+    uiState: SettingsScreenUiState.Loaded,
+    modifier: Modifier = Modifier,
+) {
+    val scrollState = rememberSaveable(saver = ScrollState.Saver) {
+        ScrollState(initial = 0)
+    }
+
+    Column(
+        modifier = modifier
+            .padding(
+                WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal).asPaddingValues(),
+            )
+            .verticalScroll(scrollState),
+    ) {
         ApiKeySettingItem(
             modifier = Modifier.fillMaxWidth(),
             title = "OpenAI Secret Key",
@@ -251,23 +345,96 @@ private fun Loaded(
             initialValue = uiState.initialGeminiBillingKey,
             onValueChange = { uiState.listener.updateGeminiBillingKey(it) },
         )
-        if (uiState.localModels.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+    }
+}
+
+@Composable
+private fun SettingsModelContent(
+    uiState: SettingsScreenUiState.Loaded,
+    modifier: Modifier = Modifier,
+) {
+    val deleteDialog = uiState.deleteDialog
+    if (deleteDialog != null) {
+        AlertDialog(
+            onDismissRequest = { deleteDialog.listener.onDismiss() },
+            confirmButton = {
+                TextButton(onClick = { deleteDialog.listener.onConfirm() }) {
+                    Text("削除")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteDialog.listener.onDismiss() }) {
+                    Text("キャンセル")
+                }
+            },
+            title = {
+                Text("モデルを削除しますか？")
+            },
+            text = {
+                Text("${deleteDialog.modelName} を削除します。")
+            },
+        )
+    }
+
+    val scrollState = rememberSaveable(saver = ScrollState.Saver) {
+        ScrollState(initial = 0)
+    }
+
+    Column(
+        modifier = modifier
+            .padding(
+                WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal).asPaddingValues(),
+            )
+            .verticalScroll(scrollState),
+    ) {
+        if (uiState.localModels.isEmpty()) {
+            Text(
+                modifier = Modifier.padding(
+                    horizontal = HorizontalPadding,
+                    vertical = 16.dp,
+                ),
+                text = "利用可能なローカルモデルがありません",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
             LocalModelSettingSection(
                 modifier = Modifier.fillMaxWidth(),
                 models = uiState.localModels,
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedButton(
-            modifier = Modifier.align(Alignment.End)
-                .padding(horizontal = HorizontalPadding),
-            onClick = { uiState.listener.onClickLatestRelease() },
-        ) {
-            Text("最新リリースを確認")
-        }
-        Spacer(modifier = Modifier.height(12.dp))
         Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+    }
+}
+
+@Composable
+private fun SettingsNavigationItem(
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(
+                horizontal = HorizontalPadding,
+                vertical = 16.dp,
+            ),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Icon(
+            imageVector = FeatherIcons.ChevronRight,
+            contentDescription = null,
+        )
     }
 }
 
@@ -522,6 +689,61 @@ internal fun SettingsScreenPreviewContent(
                     },
                 ),
                 onClickMenu = {},
+            )
+        }
+    }
+}
+
+@Composable
+internal fun SettingsApiKeyScreenPreviewContent(
+    isDark: Boolean,
+) {
+    val lightColors = lightColorScheme(
+        primary = Color(0xFF5A46C8),
+        surfaceVariant = Color(0xFFF1F0F8),
+        secondaryContainer = Color(0xFFE8E4F8),
+    )
+    val darkColors = darkColorScheme(
+        primary = Color(0xFFC5B7FF),
+        onPrimary = Color(0xFF2A176F),
+        surface = Color(0xFF111018),
+        onSurface = Color(0xFFF2F0FA),
+        surfaceVariant = Color(0xFF2A2835),
+        onSurfaceVariant = Color(0xFFE7E1F7),
+        secondaryContainer = Color(0xFF47435A),
+        onSecondaryContainer = Color(0xFFF2EEFF),
+    )
+
+    MaterialTheme(
+        colorScheme = if (isDark) darkColors else lightColors,
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            SettingsApiKeyContent(
+                uiState = SettingsScreenUiState.Loaded(
+                    initialSecretKey = "sk-test-openai-key",
+                    initialGeminiSecretKey = "AIza-test-gemini-key",
+                    initialGeminiBillingKey = "billing-test-key",
+                    themeOption = SettingsScreenUiState.ThemeOption.DARK,
+                    localModels = listOf(),
+                    deleteDialog = null,
+                    listener = object : SettingsScreenUiState.Loaded.Listener {
+                        override fun updateSecretKey(text: String) = Unit
+
+                        override fun updateGeminiSecretKey(text: String) = Unit
+
+                        override fun updateGeminiBillingKey(text: String) = Unit
+
+                        override fun onClickOpenAiUsage() = Unit
+
+                        override fun onClickGeminiUsage() = Unit
+
+                        override fun onClickLatestRelease() = Unit
+
+                        override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) = Unit
+                    },
+                ),
             )
         }
     }

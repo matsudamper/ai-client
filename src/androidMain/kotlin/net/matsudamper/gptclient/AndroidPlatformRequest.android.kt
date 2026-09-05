@@ -110,8 +110,8 @@ class AndroidPlatformRequest(private val context: Context) : PlatformRequest {
     }
 
     override fun createNotificationChannel(channelId: String) {
-        val name = "GPT Client"
-        val descriptionText = "GPT Client notifications"
+        val name = "AI Client"
+        val descriptionText = "AI Client notifications"
         val importance = NotificationManager.IMPORTANCE_DEFAULT
         val channel = NotificationChannel(channelId, name, importance).apply {
             description = descriptionText
