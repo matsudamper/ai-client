@@ -21,9 +21,14 @@ class AddRequestUseCase(
         if (message.isEmpty() && uris.isEmpty()) return Result.IsLastUserChat
 
         withContext(Dispatchers.IO) {
-            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-            if (room.workerId != null) {
-                return@withContext Result.WorkInProgress
+            var room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+            val workerId = room.workerId
+            if (workerId != null) {
+                if (workManagerScheduler.hasWork(workerId)) {
+                    return@withContext Result.WorkInProgress
+                }
+                room = room.copy(workerId = null)
+                appDatabase.chatRoomDao().update(room)
             }
 
             val chatDao = appDatabase.chatDao()
@@ -98,13 +103,21 @@ class AddRequestUseCase(
         withContext(Dispatchers.IO) {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val workerId = room.workerId ?: return@withContext
+            if (!workManagerScheduler.hasWork(workerId)) {
+                appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
+                return@withContext
+            }
             workManagerScheduler.cancelWork(workerId)
         }
     }
 
     suspend fun isWorkInProgress(chatRoomId: ChatRoomId): Boolean {
         val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-        return room.workerId != null
+        val workerId = room.workerId ?: return false
+        if (workManagerScheduler.hasWork(workerId)) return true
+
+        appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
+        return false
     }
 
     interface WorkManagerScheduler {
@@ -114,7 +127,7 @@ class AddRequestUseCase(
 
         fun cancelWork(workId: String)
 
-        fun isWorkRunning(workId: String): Boolean
+        fun hasWork(workId: String): Boolean
     }
 
     sealed interface Result {

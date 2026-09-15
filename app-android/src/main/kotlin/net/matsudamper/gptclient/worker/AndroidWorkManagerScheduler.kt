@@ -2,7 +2,6 @@ package net.matsudamper.gptclient.worker
 
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import java.util.UUID
 import net.matsudamper.gptclient.room.entity.ChatRoomId
@@ -37,10 +36,9 @@ class AndroidWorkManagerScheduler(
         workManager.cancelWorkById(UUID.fromString(workId))
     }
 
-    override fun isWorkRunning(workId: String): Boolean {
+    override fun hasWork(workId: String): Boolean {
         return runCatching {
-            val workInfo = workManager.getWorkInfoById(UUID.fromString(workId)).get()
-            workInfo?.state == WorkInfo.State.RUNNING || workInfo?.state == WorkInfo.State.ENQUEUED
+            workManager.getWorkInfoById(UUID.fromString(workId)).get() != null
         }.getOrDefault(false)
     }
 
