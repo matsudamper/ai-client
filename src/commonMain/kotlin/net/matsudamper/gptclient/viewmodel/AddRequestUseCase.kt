@@ -108,6 +108,14 @@ class AddRequestUseCase(
                 return@withContext
             }
             workManagerScheduler.cancelWork(workerId)
+            if (!workManagerScheduler.hasWork(workerId)) {
+                val latestRoom = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+                if (latestRoom.workerId == workerId) {
+                    appDatabase.chatRoomDao().update(
+                        latestRoom.copy(workerId = null, latestErrorMessage = null),
+                    )
+                }
+            }
         }
     }
 
