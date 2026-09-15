@@ -38,7 +38,7 @@ class AndroidWorkManagerScheduler(
 
     override fun hasWork(workId: String): Boolean {
         return runCatching {
-            workManager.getWorkInfoById(UUID.fromString(workId)).get() != null
+            workManager.getWorkInfoById(UUID.fromString(workId)).get()?.state?.isFinished == false
         }.getOrDefault(false)
     }
 
