@@ -3,10 +3,8 @@ package net.matsudamper.gptclient.worker
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.client.gemini.GeminiClient
@@ -32,10 +30,7 @@ class ChatRequestRunner(
     private val localModelRepository: LocalModelRepository,
     private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) {
-    suspend fun run(
-        chatRoomId: ChatRoomId,
-        workId: String,
-    ): Result {
+    suspend fun run(chatRoomId: ChatRoomId): Result {
         return try {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val requestInfo = createRequestInfo(room)
@@ -82,11 +77,9 @@ class ChatRequestRunner(
             clearWorkerState(chatRoomId = chatRoomId)
 
             Result.Success
-        } catch (e: CancellationException) {
-            withContext(NonCancellable) {
-                clearWorkerStateIfMatches(chatRoomId = chatRoomId, workId = workId)
-            }
-            throw e
+        } catch (cancellation: CancellationException) {
+            // キャンセルはエラーではないため、workerIdの解放はWorkの状態監視側に任せる
+            throw cancellation
         } catch (throwable: Throwable) {
             throwable.printStackTrace()
             fail(
@@ -304,22 +297,6 @@ class ChatRequestRunner(
                 workerId = null,
                 latestErrorMessage = null,
             )
-        }
-    }
-
-    private suspend fun clearWorkerStateIfMatches(
-        chatRoomId: ChatRoomId,
-        workId: String,
-    ) {
-        appDatabase.chatRoomDao().update(id = chatRoomId) { room ->
-            if (room.workerId == workId) {
-                room.copy(
-                    workerId = null,
-                    latestErrorMessage = null,
-                )
-            } else {
-                room
-            }
         }
     }
 

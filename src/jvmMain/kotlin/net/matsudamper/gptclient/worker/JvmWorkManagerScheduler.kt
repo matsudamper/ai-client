@@ -1,11 +1,15 @@
 package net.matsudamper.gptclient.worker
 
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
@@ -23,7 +27,7 @@ class JvmWorkManagerScheduler(
     private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) : AddRequestUseCase.WorkManagerScheduler {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val jobs = ConcurrentHashMap<String, Job>()
+    private val runningJobs = MutableStateFlow<Map<String, Job>>(mapOf())
 
     override fun scheduleWork(
         chatRoomId: ChatRoomId,
@@ -36,23 +40,26 @@ class JvmWorkManagerScheduler(
                 settingDataStore = settingDataStore,
                 localModelRepository = localModelRepository,
                 localModelAiClientFactory = localModelAiClientFactory,
-            ).run(
-                chatRoomId = chatRoomId,
-                workId = workId,
-            )
+            ).run(chatRoomId = chatRoomId)
         }
-        jobs[workId] = job
+        runningJobs.update { it.plus(workId to job) }
         job.invokeOnCompletion {
-            jobs.remove(workId)
+            runningJobs.update { it.minus(workId) }
         }
         return workId
     }
 
     override fun cancelWork(workId: String) {
-        jobs[workId]?.cancel()
+        runningJobs.value[workId]?.cancel()
     }
 
     override fun hasWork(workId: String): Boolean {
-        return jobs.containsKey(workId)
+        return runningJobs.value.containsKey(workId)
+    }
+
+    override fun observeWorkInProgress(workId: String): Flow<Boolean> {
+        return runningJobs
+            .map { it.containsKey(workId) }
+            .distinctUntilChanged()
     }
 }

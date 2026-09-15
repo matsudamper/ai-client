@@ -1,8 +1,15 @@
 package net.matsudamper.gptclient.viewmodel
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.room.AppDatabase
@@ -20,15 +27,11 @@ class AddRequestUseCase(
     ): Result {
         if (message.isEmpty() && uris.isEmpty()) return Result.IsLastUserChat
 
-        withContext(Dispatchers.IO) {
-            var room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+        return withContext(Dispatchers.IO) {
+            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val workerId = room.workerId
-            if (workerId != null) {
-                if (workManagerScheduler.hasWork(workerId)) {
-                    return@withContext Result.WorkInProgress
-                }
-                room = room.copy(workerId = null)
-                appDatabase.chatRoomDao().update(room)
+            if (workerId != null && workManagerScheduler.hasWork(workerId)) {
+                return@withContext Result.WorkInProgress
             }
 
             val chatDao = appDatabase.chatDao()
@@ -69,16 +72,14 @@ class AddRequestUseCase(
                     latestErrorMessage = null,
                 ),
             )
-        }
 
-        return Result.Success
+            Result.Success
+        }
     }
 
     suspend fun retryRequest(chatRoomId: ChatRoomId): Result {
         return withContext(Dispatchers.IO) {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-            appDatabase.chatRoomDao().update(room.copy(workerId = null))
-
             val chats = appDatabase.chatDao().get(chatRoomId = chatRoomId.value).first()
 
             if (chats.none { it.role == Chat.Role.User }) {
@@ -101,31 +102,41 @@ class AddRequestUseCase(
 
     suspend fun cancelRequest(chatRoomId: ChatRoomId) {
         withContext(Dispatchers.IO) {
-            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-            val workerId = room.workerId ?: return@withContext
-            if (!workManagerScheduler.hasWork(workerId)) {
-                appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
-                return@withContext
-            }
+            val workerId = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first().workerId
+                ?: return@withContext
             workManagerScheduler.cancelWork(workerId)
-            if (!workManagerScheduler.hasWork(workerId)) {
-                val latestRoom = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-                if (latestRoom.workerId == workerId) {
-                    appDatabase.chatRoomDao().update(
-                        latestRoom.copy(workerId = null, latestErrorMessage = null),
-                    )
-                }
-            }
         }
     }
 
-    suspend fun isWorkInProgress(chatRoomId: ChatRoomId): Boolean {
-        val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-        val workerId = room.workerId ?: return false
-        if (workManagerScheduler.hasWork(workerId)) return true
+    /**
+     * 通知からのキャンセルなどアプリ外で Work が終了した場合も検知するため、DB の workerId ではなく Work の状態を監視する。
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeWorkInProgress(chatRoomId: ChatRoomId): Flow<Boolean> {
+        return appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value)
+            .map { it.workerId }
+            .distinctUntilChanged()
+            .flatMapLatest { workerId ->
+                if (workerId == null) {
+                    flowOf(false)
+                } else {
+                    workManagerScheduler.observeWorkInProgress(workerId)
+                        .onEach { inProgress ->
+                            if (!inProgress) {
+                                clearWorkerStateIfMatches(chatRoomId = chatRoomId, workerId = workerId)
+                            }
+                        }
+                }
+            }
+            .distinctUntilChanged()
+    }
 
-        appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
-        return false
+    private suspend fun clearWorkerStateIfMatches(chatRoomId: ChatRoomId, workerId: String) {
+        withContext(Dispatchers.IO) {
+            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+            if (room.workerId != workerId) return@withContext
+            appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
+        }
     }
 
     interface WorkManagerScheduler {
@@ -136,6 +147,8 @@ class AddRequestUseCase(
         fun cancelWork(workId: String)
 
         fun hasWork(workId: String): Boolean
+
+        fun observeWorkInProgress(workId: String): Flow<Boolean>
     }
 
     sealed interface Result {
