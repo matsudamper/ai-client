@@ -29,6 +29,10 @@ class SettingViewModel(
         fun providePlatformRequest(): PlatformRequest
     }
 
+    interface LifecycleListener {
+        fun onStart()
+    }
+
     private val _uiStateFlow = MutableStateFlow<SettingsScreenUiState>(
         SettingsScreenUiState.Loading,
     )
@@ -41,7 +45,13 @@ class SettingViewModel(
     private val geminiSecretKeyState = MutableStateFlow("")
     private val geminiBillingKeyState = MutableStateFlow("")
 
-    private val loadedListener = object : SettingsScreenUiState.Loaded.Listener {
+    private val loadedListener = object : SettingsScreenUiState.Loaded.Listener, LifecycleListener {
+        override fun onStart() {
+            viewModelScope.launch {
+                localModelRepository.refreshStatuses()
+            }
+        }
+
         override fun updateSecretKey(text: String) {
             secretKeyState.value = text
             saveSecretKey(text)

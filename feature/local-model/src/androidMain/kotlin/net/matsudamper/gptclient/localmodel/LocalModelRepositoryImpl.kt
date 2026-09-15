@@ -82,6 +82,10 @@ internal class LocalModelRepositoryImpl(
         }
     }
 
+    override suspend fun refreshStatuses() {
+        refreshMlKitStatuses()
+    }
+
     override suspend fun enqueueDownload(modelId: LocalModelId) {
         val model = AndroidLocalModels.find(modelId) ?: return
         when (model.providerId) {

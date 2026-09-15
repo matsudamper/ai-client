@@ -21,6 +21,8 @@ internal class JvmLocalModelRepository : LocalModelRepository {
 
     override fun observeStatuses(): Flow<Map<LocalModelId, LocalModelState>> = flowOf(emptyMap())
 
+    override suspend fun refreshStatuses() {}
+
     override suspend fun enqueueDownload(modelId: LocalModelId) {}
 
     override suspend fun delete(modelId: LocalModelId) {}
