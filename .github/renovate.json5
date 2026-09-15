@@ -11,6 +11,14 @@
     {
       "matchPackagePatterns": ["^io\\.ktor"],
       "groupName": "ktor"
+    },
+    {
+      "matchPackageNames": [
+        "org.jetbrains.kotlin.**",
+        "com.google.devtools.ksp",
+        "actions/**"
+      ],
+      "automerge": true
     }
   ],
 }
