@@ -114,7 +114,7 @@ interface ChatGptModel {
                 override val enableImage: Boolean = true
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
-                override val thinkingLevel: String? = null
+                override val thinkingLevel: String = "low"
                 override val requireBillingKey: Boolean = true
                 override val thinkingToggleEnabled: Boolean = true
 
@@ -132,7 +132,7 @@ interface ChatGptModel {
                 override val defaultToken = 5000
                 override val requireTemperature = 1.0
                 override val selectionKey: String = GeminiProLatest.modelKey
-                override val thinkingLevel: String = "low"
+                override val thinkingLevel: String = "high"
                 override val requireBillingKey: Boolean = true
                 override val thinkingToggleEnabled: Boolean = true
                 override val thinkingEnabled: Boolean = true
