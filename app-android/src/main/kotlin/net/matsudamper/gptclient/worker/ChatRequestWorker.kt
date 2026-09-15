@@ -40,6 +40,11 @@ class ChatRequestWorker(
 
     override suspend fun doWork(): Result {
         val chatRoomId = ChatRoomId(inputData.getLong(KEY_CHAT_ROOM_ID, 0))
+        if (runAttemptCount > 0) {
+            clearWorkerStateIfMatches(chatRoomId = chatRoomId)
+            return Result.failure()
+        }
+
         return try {
             val chatRoom = appDatabase.chatRoomDao()
             val firstChatRoom = chatRoom.get(chatRoomId = chatRoomId.value).first()
