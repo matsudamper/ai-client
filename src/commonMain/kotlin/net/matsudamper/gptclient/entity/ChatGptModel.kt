@@ -82,42 +82,6 @@ interface ChatGptModel {
             }
 
             @Serializable
-            data object Gemini3FlashLite : Gemini {
-                override val modelKey: String = "gemini-3.1-flash-lite-preview"
-                override val displayName: String = "Gemini 3.1 Flash Lite"
-                override val apiModelName: String = "gemini-3.1-flash-lite"
-                override val enableImage: Boolean = true
-                override val defaultToken = 5000
-                override val requireTemperature = 1.0
-                override val thinkingLevel: String? = null
-                override val requireBillingKey: Boolean = false
-                override val thinkingToggleEnabled: Boolean = true
-
-                override fun withThinking(enabled: Boolean): ChatGptModel {
-                    return if (enabled) Gemini3FlashLiteThinking else this
-                }
-            }
-
-            @Serializable
-            data object Gemini3FlashLiteThinking : Gemini {
-                override val modelKey: String = "gemini-3.1-flash-lite-preview-thinking"
-                override val displayName: String = "Gemini 3.1 Flash Lite"
-                override val apiModelName: String = "gemini-3.1-flash-lite"
-                override val enableImage: Boolean = true
-                override val defaultToken = 5000
-                override val requireTemperature = 1.0
-                override val selectionKey: String = Gemini3FlashLite.modelKey
-                override val thinkingLevel: String = "low"
-                override val requireBillingKey: Boolean = false
-                override val thinkingToggleEnabled: Boolean = true
-                override val thinkingEnabled: Boolean = true
-
-                override fun withThinking(enabled: Boolean): ChatGptModel {
-                    return if (enabled) this else Gemini3FlashLite
-                }
-            }
-
-            @Serializable
             data object Gemini3Pro : Gemini {
                 override val modelKey: String = "gemini-3.1-pro-preview"
                 override val displayName: String = "Gemini 3.1 Pro★"
@@ -150,42 +114,6 @@ interface ChatGptModel {
 
                 override fun withThinking(enabled: Boolean): ChatGptModel {
                     return if (enabled) this else Gemini3Pro
-                }
-            }
-
-            @Serializable
-            data object Gemini3Flash : Gemini {
-                override val modelKey: String = "gemini-3-flash-preview"
-                override val displayName: String = "Gemini 3 Flash"
-                override val apiModelName: String = "gemini-3-flash-preview"
-                override val enableImage: Boolean = true
-                override val defaultToken = 5000
-                override val requireTemperature = 1.0
-                override val thinkingLevel: String? = null
-                override val requireBillingKey: Boolean = false
-                override val thinkingToggleEnabled: Boolean = true
-
-                override fun withThinking(enabled: Boolean): ChatGptModel {
-                    return if (enabled) Gemini3FlashThinking else this
-                }
-            }
-
-            @Serializable
-            data object Gemini3FlashThinking : Gemini {
-                override val modelKey: String = "gemini-3-flash-preview-thinking"
-                override val displayName: String = "Gemini 3 Flash"
-                override val apiModelName: String = "gemini-3-flash-preview"
-                override val enableImage: Boolean = true
-                override val defaultToken = 5000
-                override val requireTemperature = 1.0
-                override val selectionKey: String = Gemini3Flash.modelKey
-                override val thinkingLevel: String = "high"
-                override val requireBillingKey: Boolean = false
-                override val thinkingToggleEnabled: Boolean = true
-                override val thinkingEnabled: Boolean = true
-
-                override fun withThinking(enabled: Boolean): ChatGptModel {
-                    return if (enabled) this else Gemini3Flash
                 }
             }
 
@@ -267,9 +195,7 @@ interface ChatGptModel {
                 val entries: List<Gemini> by lazy {
                     listOf(
                         GeminiFlashLiteLatest,
-                        Gemini3FlashLite,
                         Gemini3Pro,
-                        Gemini3Flash,
                         Gemini35FlashLite,
                         Gemini36Flash,
                     )
@@ -277,9 +203,7 @@ interface ChatGptModel {
 
                 val allEntries: List<Gemini> by lazy {
                     entries + listOf(
-                        Gemini3FlashLiteThinking,
                         Gemini3ProThinking,
-                        Gemini3FlashThinking,
                         Gemini35FlashLiteThinking,
                         Gemini36FlashThinking,
                     )
