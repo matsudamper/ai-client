@@ -103,16 +103,6 @@ class AddRequestUseCase(
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val workerId = room.workerId ?: return@withContext
             workManagerScheduler.cancelWork(workerId)
-            appDatabase.chatRoomDao().update(id = chatRoomId) { currentRoom ->
-                if (currentRoom.workerId == workerId) {
-                    currentRoom.copy(
-                        workerId = null,
-                        latestErrorMessage = null,
-                    )
-                } else {
-                    currentRoom
-                }
-            }
         }
     }
 
