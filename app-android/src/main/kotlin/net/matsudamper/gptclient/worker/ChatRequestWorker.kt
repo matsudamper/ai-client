@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlin.random.Random
 import kotlinx.coroutines.flow.first
@@ -44,6 +45,7 @@ class ChatRequestWorker(
         val roomTitle = firstChatRoom.summary ?: "チャット"
 
         val pendingIntent = createPendingIntent(chatRoomId = chatRoomId.value.toString())
+        val cancelPendingIntent = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)
         setForeground(
             ForegroundInfo(
                 Random.nextInt(),
@@ -54,7 +56,13 @@ class ChatRequestWorker(
                     pendingIntent = pendingIntent,
                 )
                     .setOngoing(true)
-                    .setProgress(1, 1, true).build(),
+                    .setProgress(1, 1, true)
+                    .addAction(
+                        android.R.drawable.ic_menu_close_clear_cancel,
+                        "キャンセル",
+                        cancelPendingIntent,
+                    )
+                    .build(),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             ),
         )
@@ -68,6 +76,7 @@ class ChatRequestWorker(
                 localModelAiClientFactory = localModelAiClientFactory,
             ).run(
                 chatRoomId = chatRoomId,
+                workId = id.toString(),
             )
         ) {
             is ChatRequestRunner.Result.Error -> {

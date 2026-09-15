@@ -38,6 +38,7 @@ class JvmWorkManagerScheduler(
                 localModelAiClientFactory = localModelAiClientFactory,
             ).run(
                 chatRoomId = chatRoomId,
+                workId = workId,
             )
         }
         jobs[workId] = job
@@ -45,6 +46,10 @@ class JvmWorkManagerScheduler(
             jobs.remove(workId)
         }
         return workId
+    }
+
+    override fun cancelWork(workId: String) {
+        jobs[workId]?.cancel()
     }
 
     override fun isWorkRunning(workId: String): Boolean {

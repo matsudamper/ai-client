@@ -12,6 +12,8 @@ import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SamplerConfig
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collect
 import net.matsudamper.gptclient.client.AiClient
 
 internal class LiteRtAiClient(
@@ -24,7 +26,7 @@ internal class LiteRtAiClient(
         messages: List<AiClient.GptMessage>,
         format: AiClient.Format,
     ): AiClient.GptResult {
-        return runCatching {
+        return try {
             val engine = LiteRtLmEngineStore.getOrCreate(context, modelDefinition, modelFile)
             val resolvedMessages = if (format != AiClient.Format.Text) {
                 addJsonFormatInstruction(messages)
@@ -50,15 +52,25 @@ internal class LiteRtAiClient(
                     ),
                 ),
             ).use { conversation ->
-                val responseMessage = conversation.sendMessage(
-                    message = lastMessage,
-                    extraContext = mapOf(
-                        "enable_thinking" to enableThinking,
-                    ),
-                )
-                responseMessage.extractText().stripMarkdownFence().toSuccessResult()
+                val responseText = StringBuilder()
+                try {
+                    conversation.sendMessageAsync(
+                        message = lastMessage,
+                        extraContext = mapOf(
+                            "enable_thinking" to enableThinking,
+                        ),
+                    ).collect { responseMessage ->
+                        responseText.append(responseMessage.extractText())
+                    }
+                } catch (e: CancellationException) {
+                    conversation.cancelProcess()
+                    throw e
+                }
+                responseText.toString().stripMarkdownFence().toSuccessResult()
             }
-        }.getOrElse { throwable ->
+        } catch (e: CancellationException) {
+            throw e
+        } catch (throwable: Throwable) {
             AiClient.GptResult.Error(
                 AiClient.GptResult.ErrorReason.Unknown(
                     throwable.message ?: "LiteRT-LM モデルでの推論に失敗しました",

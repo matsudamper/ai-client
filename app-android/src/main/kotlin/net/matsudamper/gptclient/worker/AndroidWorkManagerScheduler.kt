@@ -33,6 +33,10 @@ class AndroidWorkManagerScheduler(
         return workRequest.id.toString()
     }
 
+    override fun cancelWork(workId: String) {
+        workManager.cancelWorkById(UUID.fromString(workId))
+    }
+
     override fun isWorkRunning(workId: String): Boolean {
         return runCatching {
             val workInfo = workManager.getWorkInfoById(UUID.fromString(workId)).get()

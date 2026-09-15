@@ -2,8 +2,11 @@ package net.matsudamper.gptclient.worker
 
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.client.gemini.GeminiClient
@@ -31,6 +34,7 @@ class ChatRequestRunner(
 ) {
     suspend fun run(
         chatRoomId: ChatRoomId,
+        workId: String,
     ): Result {
         return try {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
@@ -78,6 +82,11 @@ class ChatRequestRunner(
             clearWorkerState(chatRoomId = chatRoomId)
 
             Result.Success
+        } catch (e: CancellationException) {
+            withContext(NonCancellable) {
+                clearWorkerStateIfMatches(chatRoomId = chatRoomId, workId = workId)
+            }
+            throw e
         } catch (throwable: Throwable) {
             throwable.printStackTrace()
             fail(
@@ -295,6 +304,22 @@ class ChatRequestRunner(
                 workerId = null,
                 latestErrorMessage = null,
             )
+        }
+    }
+
+    private suspend fun clearWorkerStateIfMatches(
+        chatRoomId: ChatRoomId,
+        workId: String,
+    ) {
+        appDatabase.chatRoomDao().update(id = chatRoomId) { room ->
+            if (room.workerId == workId) {
+                room.copy(
+                    workerId = null,
+                    latestErrorMessage = null,
+                )
+            } else {
+                room
+            }
         }
     }
 
