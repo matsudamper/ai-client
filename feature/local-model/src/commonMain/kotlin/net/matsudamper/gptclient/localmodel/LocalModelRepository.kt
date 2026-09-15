@@ -7,6 +7,7 @@ interface LocalModelRepository {
     suspend fun getModels(): List<LocalModelDefinition>
     fun observeStatuses(): Flow<Map<LocalModelId, LocalModelState>>
     fun observeEngineLabels(): Flow<Map<LocalModelId, String>> = flowOf(emptyMap())
+    suspend fun refreshStatuses()
     suspend fun enqueueDownload(modelId: LocalModelId)
     suspend fun delete(modelId: LocalModelId)
 }

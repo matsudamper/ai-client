@@ -11,6 +11,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.matsudamper.gptclient.MediaRequest
@@ -147,7 +149,13 @@ fun App(
                                 },
                             )
                         }
-                        return viewModel.uiStateFlow.collectAsState().value
+                        val uiState = viewModel.uiStateFlow.collectAsState().value
+                        LifecycleEventEffect(Lifecycle.Event.ON_START) {
+                            if (uiState is SettingsScreenUiState.Loaded) {
+                                (uiState.listener as? SettingViewModel.LifecycleListener)?.onStart()
+                            }
+                        }
+                        return uiState
                     }
 
                     @Composable
