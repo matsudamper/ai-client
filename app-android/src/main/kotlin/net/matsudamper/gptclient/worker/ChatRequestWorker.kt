@@ -36,6 +36,10 @@ class ChatRequestWorker(
     private val localModelAiClientFactory: LocalModelAiClientFactory = GlobalContext.get().get()
 
     override suspend fun doWork(): Result {
+        if (runAttemptCount > 0) {
+            return Result.failure()
+        }
+
         val chatRoomId = ChatRoomId(inputData.getLong(KEY_CHAT_ROOM_ID, 0))
 
         val chatRoom = appDatabase.chatRoomDao()
