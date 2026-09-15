@@ -22,12 +22,8 @@ class AddRequestUseCase(
 
         withContext(Dispatchers.IO) {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-            val workerId = room.workerId
-            if (workerId != null) {
-                val isRunning = workManagerScheduler.isWorkRunning(workerId)
-                if (isRunning) {
-                    return@withContext Result.WorkInProgress
-                }
+            if (room.workerId != null) {
+                return@withContext Result.WorkInProgress
             }
 
             val chatDao = appDatabase.chatDao()
@@ -108,7 +104,7 @@ class AddRequestUseCase(
 
     suspend fun isWorkInProgress(chatRoomId: ChatRoomId): Boolean {
         val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-        return room.workerId?.let { workManagerScheduler.isWorkRunning(it) } ?: false
+        return room.workerId != null
     }
 
     interface WorkManagerScheduler {
