@@ -6,6 +6,9 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.google.mlkit.genai.common.DownloadStatus
+import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.prompt.Generation
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,9 +22,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.google.mlkit.genai.common.DownloadStatus
-import com.google.mlkit.genai.common.FeatureStatus
-import com.google.mlkit.genai.prompt.Generation
 
 internal class LocalModelRepositoryImpl(
     private val context: Context,
@@ -37,7 +37,17 @@ internal class LocalModelRepositoryImpl(
         }
     }
 
-    override suspend fun getModels(): List<LocalModelDefinition> = AndroidLocalModels.entries.map { it.toDefinition() }
+    override suspend fun getModels(): List<LocalModelDefinition> =
+        AndroidLocalModels.entries.map { it.toDefinition() }
+
+    override suspend fun getResolvedModels(): List<LocalModelDefinition> =
+        AndroidLocalModels.entries.map { model ->
+            if (model.providerId == LocalModelProviderId.MlKitPrompt) {
+                resolveMlKitModel(model)
+            } else {
+                model.toDefinition()
+            }
+        }
 
     override fun observeEngineLabels(): Flow<Map<LocalModelId, String>> = LiteRtLmEngineStore.backendLabels
 
@@ -108,36 +118,83 @@ internal class LocalModelRepositoryImpl(
         }
     }
 
+    private suspend fun resolveMlKitModel(model: AndroidLocalModel): LocalModelDefinition {
+        val client = try {
+            Generation.getClient(model.createMlKitGenerationConfig())
+        } catch (_: Exception) {
+            mlKitStatuses.update {
+                it + (model.modelId to LocalModelState(LocalModelStatus.UNAVAILABLE))
+            }
+            return model.toDefinition()
+        }
+
+        return try {
+            val state = try {
+                client.checkStatus().toLocalModelState()
+            } catch (_: Exception) {
+                LocalModelState(LocalModelStatus.UNAVAILABLE)
+            }
+            mlKitStatuses.update { it + (model.modelId to state) }
+            if (state.status == LocalModelStatus.UNAVAILABLE) {
+                model.toDefinition()
+            } else {
+                val variant = requireNotNull(model.mlKitModelVariant)
+                val baseModelName = try {
+                    client.getBaseModelName()
+                } catch (_: Exception) {
+                    null
+                }
+                if (baseModelName == null) {
+                    model.toDefinition()
+                } else {
+                    model.toDefinition(
+                        resolvedDisplayName = "$baseModelName / ${variant.preferenceDisplayName}",
+                    )
+                }
+            }
+        } finally {
+            client.close()
+        }
+    }
+
     private suspend fun refreshMlKitStatuses() {
         val states =
             AndroidLocalModels.entries
                 .filter { it.providerId == LocalModelProviderId.MlKitPrompt }
                 .associate { model ->
-                    model.modelId to checkMlKitStatus()
+                    model.modelId to checkMlKitStatus(model)
                 }
         mlKitStatuses.value = states
     }
 
-    private suspend fun checkMlKitStatus(): LocalModelState {
+    private suspend fun checkMlKitStatus(model: AndroidLocalModel): LocalModelState {
         return try {
-            val client = Generation.getClient()
-            val status =
-                when (client.checkStatus()) {
-                    FeatureStatus.AVAILABLE -> LocalModelStatus.DOWNLOADED
-                    FeatureStatus.DOWNLOADABLE -> LocalModelStatus.NOT_DOWNLOADED
-                    FeatureStatus.DOWNLOADING -> LocalModelStatus.DOWNLOADING
-                    else -> LocalModelStatus.UNAVAILABLE
-                }
-            client.close()
-            LocalModelState(status = status)
+            val client = Generation.getClient(model.createMlKitGenerationConfig())
+            val state = try {
+                client.checkStatus().toLocalModelState()
+            } finally {
+                client.close()
+            }
+            state
         } catch (_: Exception) {
             LocalModelState(status = LocalModelStatus.UNAVAILABLE)
         }
     }
 
+    private fun Int.toLocalModelState(): LocalModelState =
+        LocalModelState(
+            status =
+                when (this) {
+                    FeatureStatus.AVAILABLE -> LocalModelStatus.DOWNLOADED
+                    FeatureStatus.DOWNLOADABLE -> LocalModelStatus.NOT_DOWNLOADED
+                    FeatureStatus.DOWNLOADING -> LocalModelStatus.DOWNLOADING
+                    else -> LocalModelStatus.UNAVAILABLE
+                },
+        )
+
     private suspend fun downloadMlKitModel(model: AndroidLocalModel) {
         val client = try {
-            Generation.getClient()
+            Generation.getClient(model.createMlKitGenerationConfig())
         } catch (_: Exception) {
             mlKitStatuses.update { it + (model.modelId to LocalModelState(LocalModelStatus.UNAVAILABLE)) }
             return
