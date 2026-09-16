@@ -80,12 +80,12 @@ class SettingViewModel(
 
     private fun createLocalModelSections(models: List<LocalModelDefinition>, statuses: Map<LocalModelId, LocalModelState>, activeKeys: Set<LocalModelId>): List<SettingsScreenUiState.LocalModelSection> =
         models.groupBy { it.section }.map { (section, sectionModels) ->
-            val allCandidatesByDisplayName = sectionModels.groupBy { it.displayName }
+            val allCandidatesByDisplayGroupKey = sectionModels.groupBy { it.displayGroupKey }
             val visibleModelItems = sectionModels
                 .filter { model -> !section.hideUnavailableModels || model.modelId in activeKeys || modelState(model, statuses).status != LocalModelStatus.UNAVAILABLE }
-                .groupBy { it.displayName }
-                .map { (displayName, candidates) ->
-                    val allCandidates = allCandidatesByDisplayName.getValue(displayName)
+                .groupBy { it.displayGroupKey }
+                .map { (displayGroupKey, candidates) ->
+                    val allCandidates = allCandidatesByDisplayGroupKey.getValue(displayGroupKey)
                     val model = selectVisibleModel(candidates, statuses, activeKeys)
                     model.toUiItem(modelState(model, statuses), allCandidates.any { it.modelId in activeKeys }, allCandidates.mapTo(linkedSetOf()) { it.modelId })
                 }

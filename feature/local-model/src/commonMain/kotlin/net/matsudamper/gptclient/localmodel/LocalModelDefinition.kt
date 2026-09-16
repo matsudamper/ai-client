@@ -12,6 +12,7 @@ data class LocalModelDefinition(
     val modelId: LocalModelId,
     val section: LocalModelSectionDefinition,
     val displayName: String,
+    val displayGroupKey: String,
     val description: String,
     val enableImage: Boolean,
     val supportedImageMimeTypes: List<String>,

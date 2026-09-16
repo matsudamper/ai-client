@@ -37,13 +37,27 @@ internal data class AndroidLocalModel(
     val maxImageCount: Int
         get() = if (enableImage) 1 else 0
 
-    fun toDefinition(): LocalModelDefinition = toDefinition(displayName)
+    fun toDefinition(): LocalModelDefinition =
+        toDefinition(
+            resolvedDisplayName = displayName,
+            displayGroupKey = if (providerId == LocalModelProviderId.MlKitPrompt) modelId.value else displayName,
+        )
 
     fun toDefinition(resolvedDisplayName: String): LocalModelDefinition =
+        toDefinition(
+            resolvedDisplayName = resolvedDisplayName,
+            displayGroupKey = resolvedDisplayName,
+        )
+
+    private fun toDefinition(
+        resolvedDisplayName: String,
+        displayGroupKey: String,
+    ): LocalModelDefinition =
         LocalModelDefinition(
             modelId = modelId,
             section = section,
             displayName = resolvedDisplayName,
+            displayGroupKey = displayGroupKey,
             description = description,
             enableImage = enableImage,
             supportedImageMimeTypes = supportedImageMimeTypes,
@@ -188,7 +202,7 @@ internal object AndroidLocalModels {
             modelId = modelId,
             providerId = LocalModelProviderId.MlKitPrompt,
             section = geminiNanoSection,
-            displayName = "Gemini Nano (${releaseStageDisplayName(releaseStage)}) / $preferenceDisplayName",
+            displayName = "Gemini Nano / $preferenceDisplayName",
             description = "ML Kit",
             mlKitModelVariant = MlKitModelVariant(
                 releaseStage = releaseStage,
@@ -200,11 +214,4 @@ internal object AndroidLocalModels {
             defaultToken = 1024,
             supportsThinking = false,
         )
-
-    private fun releaseStageDisplayName(releaseStage: Int): String =
-        when (releaseStage) {
-            ModelReleaseStage.STABLE -> "Stable"
-            ModelReleaseStage.PREVIEW -> "Preview"
-            else -> releaseStage.toString()
-        }
 }
