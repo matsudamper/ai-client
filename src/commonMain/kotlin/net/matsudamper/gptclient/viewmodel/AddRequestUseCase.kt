@@ -14,7 +14,6 @@ import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
-import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 
 class AddRequestUseCase(
@@ -64,7 +63,7 @@ class AddRequestUseCase(
                 )
             }
 
-            startWork(chatRoomId = chatRoomId, room = room)
+            startWork(chatRoomId = chatRoomId)
 
             Result.Success
         }
@@ -72,27 +71,28 @@ class AddRequestUseCase(
 
     suspend fun retryRequest(chatRoomId: ChatRoomId): Result {
         return withContext(Dispatchers.IO) {
-            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val chats = appDatabase.chatDao().get(chatRoomId = chatRoomId.value).first()
 
             if (chats.none { it.role == Chat.Role.User }) {
                 return@withContext Result.IsLastUserChat
             }
 
-            startWork(chatRoomId = chatRoomId, room = room)
+            startWork(chatRoomId = chatRoomId)
 
             return@withContext Result.Success
         }
     }
 
     /**
-     * Work は登録直後に実行され得るため、Worker が書き込んだ結果を上書きしないよう
-     * 前回の実行結果は登録前に消し、workerId は最新の Room に対して書き込む。
+     * Work は登録直後に実行され得る。Worker が書き込んだ結果を上書きしないよう、
+     * 前回の実行結果は登録前に消し、登録後は workerId の列だけを更新する。
      */
-    private suspend fun startWork(chatRoomId: ChatRoomId, room: ChatRoom) {
-        appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
+    private suspend fun startWork(chatRoomId: ChatRoomId) {
+        val chatRoomDao = appDatabase.chatRoomDao()
+        chatRoomDao.clearRequestState(chatRoomId = chatRoomId.value)
+
         val workId = workManagerScheduler.scheduleWork(chatRoomId = chatRoomId)
-        appDatabase.chatRoomDao().update(id = chatRoomId) { it.copy(workerId = workId) }
+        chatRoomDao.updateWorkerId(chatRoomId = chatRoomId.value, workerId = workId)
         if (workManagerScheduler.hasWork(workId).not()) {
             clearWorkerStateIfMatches(chatRoomId = chatRoomId, workerId = workId)
         }
@@ -131,9 +131,7 @@ class AddRequestUseCase(
 
     private suspend fun clearWorkerStateIfMatches(chatRoomId: ChatRoomId, workerId: String) {
         withContext(Dispatchers.IO) {
-            appDatabase.chatRoomDao().update(id = chatRoomId) { room ->
-                if (room.workerId == workerId) room.copy(workerId = null) else room
-            }
+            appDatabase.chatRoomDao().clearWorkerId(chatRoomId = chatRoomId.value, workerId = workerId)
         }
     }
 

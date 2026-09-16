@@ -72,6 +72,18 @@ interface ChatRoomDao {
     @Query("DELETE FROM chat_room where id = :chatRoomId")
     suspend fun delete(chatRoomId: Long)
 
+    @Query("UPDATE chat_room SET worker_id = null, latest_error_message = null WHERE id = :chatRoomId")
+    suspend fun clearRequestState(chatRoomId: Long)
+
+    @Query("UPDATE chat_room SET worker_id = :workerId WHERE id = :chatRoomId")
+    suspend fun updateWorkerId(chatRoomId: Long, workerId: String?)
+
+    @Query("UPDATE chat_room SET worker_id = null WHERE id = :chatRoomId AND worker_id = :workerId")
+    suspend fun clearWorkerId(chatRoomId: Long, workerId: String)
+
+    @Query("UPDATE chat_room SET latest_error_message = :errorMessage WHERE id = :chatRoomId")
+    suspend fun updateLatestErrorMessage(chatRoomId: Long, errorMessage: String?)
+
     suspend fun update(id: ChatRoomId, block: (ChatRoom) -> ChatRoom): ChatRoom {
         val chatRoom = get(id.value).first()
         val new = block(chatRoom)

@@ -298,9 +298,10 @@ class ChatRequestRunner(
         errorMessage: String,
     ): Result.Error {
         Log.e("ChatRequestRunner", errorMessage)
-        appDatabase.chatRoomDao().update(id = chatRoomId) {
-            it.copy(latestErrorMessage = errorMessage)
-        }
+        appDatabase.chatRoomDao().updateLatestErrorMessage(
+            chatRoomId = chatRoomId.value,
+            errorMessage = errorMessage,
+        )
         return Result.Error(errorMessage = errorMessage)
     }
 
