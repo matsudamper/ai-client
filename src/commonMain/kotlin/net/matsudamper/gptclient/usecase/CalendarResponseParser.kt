@@ -22,24 +22,26 @@ class CalendarResponseParser {
         if (response.results.isEmpty()) {
             UiNode.Text(value = response.errorMessage ?: original)
         } else {
-            UiNode.Column(children = buildList {
-                for ((index, result) in response.results.withIndex()) {
-                    add(UiNode.Text(value = result.title))
-                    add(UiNode.KeyValue(key = "日時", value = "${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}"))
-                    add(UiNode.KeyValue(key = "場所", value = result.location.toString()))
-                    add(UiNode.KeyValue(key = "説明", value = result.description.toString()))
-                    val googleCalendarUrl = "https://calendar.google.com/calendar/render" +
-                        "?action=TEMPLATE" +
-                        "&text=${result.title.encodeURLParameter()}" +
-                        "&dates=${result.startDate.toGoogleCalendarFormat()}/${result.endDate.toGoogleCalendarFormat()}" +
-                        "&details=${result.description.orEmpty().encodeURLParameter()}" +
-                        "&location=${result.location.orEmpty().encodeURLParameter()}"
-                    add(UiNode.Link(label = "Google Calendar追加リンク", url = googleCalendarUrl))
-                    if (index < response.results.size - 1) {
-                        add(UiNode.Divider)
+            UiNode.Column(
+                children = buildList {
+                    for ((index, result) in response.results.withIndex()) {
+                        add(UiNode.Text(value = result.title))
+                        add(UiNode.KeyValue(key = "日時", value = "${result.startDate.toDisplayFormat()}~${result.endDate.toDisplayFormat()}"))
+                        add(UiNode.KeyValue(key = "場所", value = result.location.toString()))
+                        add(UiNode.KeyValue(key = "説明", value = result.description.toString()))
+                        val googleCalendarUrl = "https://calendar.google.com/calendar/render" +
+                            "?action=TEMPLATE" +
+                            "&text=${result.title.encodeURLParameter()}" +
+                            "&dates=${result.startDate.toGoogleCalendarFormat()}/${result.endDate.toGoogleCalendarFormat()}" +
+                            "&details=${result.description.orEmpty().encodeURLParameter()}" +
+                            "&location=${result.location.orEmpty().encodeURLParameter()}"
+                        add(UiNode.Link(label = "Google Calendar追加リンク", url = googleCalendarUrl))
+                        if (index < response.results.size - 1) {
+                            add(UiNode.Divider)
+                        }
                     }
-                }
-            })
+                },
+            )
         }
     } catch (e: Throwable) {
         e.printStackTrace()

@@ -19,29 +19,31 @@ class MoneyResponseParser {
         if (response.results.isEmpty()) {
             UiNode.Text(value = response.errorMessage ?: original)
         } else {
-            UiNode.Column(children = buildList {
-                for ((index, result) in response.results.withIndex()) {
-                    val dateTime = DateTimeFormatterBuilder()
-                        .appendPattern("yyyy-MM-dd HH:mm")
-                        .toFormatter()
-                        .format(result.date)
+            UiNode.Column(
+                children = buildList {
+                    for ((index, result) in response.results.withIndex()) {
+                        val dateTime = DateTimeFormatterBuilder()
+                            .appendPattern("yyyy-MM-dd HH:mm")
+                            .toFormatter()
+                            .format(result.date)
 
-                    add(UiNode.KeyValue(key = "タイトル", value = result.title))
-                    add(UiNode.KeyValue(key = "日時", value = dateTime))
-                    add(UiNode.KeyValue(key = "金額", value = result.amount.toString()))
-                    add(UiNode.KeyValue(key = "説明", value = result.description.toString()))
-                    val url = "https://money.matsudamper.net/add/money-usage" +
-                        "?action=TEMPLATE" +
-                        "&title=${result.title.encodeURLParameter()}" +
-                        "&date=${result.date}" +
-                        "&price=${result.amount}" +
-                        "&description=${result.description.orEmpty().encodeURLParameter()}"
-                    add(UiNode.Link(label = "家計簿への追加リンク", url = url))
-                    if (index < response.results.size - 1) {
-                        add(UiNode.Divider)
+                        add(UiNode.KeyValue(key = "タイトル", value = result.title))
+                        add(UiNode.KeyValue(key = "日時", value = dateTime))
+                        add(UiNode.KeyValue(key = "金額", value = result.amount.toString()))
+                        add(UiNode.KeyValue(key = "説明", value = result.description.toString()))
+                        val url = "https://money.matsudamper.net/add/money-usage" +
+                            "?action=TEMPLATE" +
+                            "&title=${result.title.encodeURLParameter()}" +
+                            "&date=${result.date}" +
+                            "&price=${result.amount}" +
+                            "&description=${result.description.orEmpty().encodeURLParameter()}"
+                        add(UiNode.Link(label = "家計簿への追加リンク", url = url))
+                        if (index < response.results.size - 1) {
+                            add(UiNode.Divider)
+                        }
                     }
-                }
-            })
+                },
+            )
         }
     } catch (e: Throwable) {
         e.printStackTrace()

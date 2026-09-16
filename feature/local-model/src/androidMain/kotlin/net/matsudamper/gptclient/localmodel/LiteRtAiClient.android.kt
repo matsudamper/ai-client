@@ -7,13 +7,13 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collect
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SamplerConfig
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.collect
 import net.matsudamper.gptclient.client.AiClient
 
 internal class LiteRtAiClient(
