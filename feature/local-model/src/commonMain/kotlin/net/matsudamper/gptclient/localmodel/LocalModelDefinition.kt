@@ -2,8 +2,15 @@ package net.matsudamper.gptclient.localmodel
 
 data class LocalModelId(val value: String)
 
+data class LocalModelSectionDefinition(
+    val displayName: String,
+    val unavailableMessage: String?,
+    val hideUnavailableModels: Boolean,
+)
+
 data class LocalModelDefinition(
     val modelId: LocalModelId,
+    val section: LocalModelSectionDefinition,
     val displayName: String,
     val description: String,
     val enableImage: Boolean,

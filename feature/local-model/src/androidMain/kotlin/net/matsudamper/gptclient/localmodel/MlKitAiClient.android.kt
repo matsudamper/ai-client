@@ -1,8 +1,6 @@
 package net.matsudamper.gptclient.localmodel
 
 import android.graphics.BitmapFactory
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.GenerateTypedContentResponse
 import com.google.mlkit.genai.prompt.Generation
@@ -10,18 +8,19 @@ import com.google.mlkit.genai.prompt.GenerationConfig
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
 import com.google.mlkit.genai.prompt.generateTypedContentRequest
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import net.matsudamper.gptclient.client.AiClient
 
-internal class MlKitAiClient : AiClient {
+internal class MlKitAiClient(
+    private val generationConfig: GenerationConfig,
+) : AiClient {
     @OptIn(ExperimentalEncodingApi::class)
     override suspend fun request(
         messages: List<AiClient.GptMessage>,
         format: AiClient.Format,
     ): AiClient.GptResult {
-        val client = Generation.getClient(
-            GenerationConfig.builder()
-                .build(),
-        )
+        val client = Generation.getClient(generationConfig)
 
         return try {
             val textParts = mutableListOf<String>()

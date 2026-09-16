@@ -158,13 +158,11 @@ class SettingViewModel(
                         initialGeminiSecretKey = state.geminiSecretKey,
                         initialGeminiBillingKey = state.geminiBillingKey,
                         themeOption = state.themeMode.toUiState(),
-                        localModels = state.models.map { model ->
-                            model.toUiItem(
-                                modelState = state.statuses[model.modelId]
-                                    ?: LocalModelState(LocalModelStatus.NOT_DOWNLOADED),
-                                isActive = model.modelId in state.activeKeys,
-                            )
-                        },
+                        localModelSections = createLocalModelSections(
+                            models = state.models,
+                            statuses = state.statuses,
+                            activeKeys = state.activeKeys,
+                        ),
                         deleteDialog = state.deleteModelId
                             ?.let { deleteModelId ->
                                 val model = state.models.firstOrNull { it.modelId == deleteModelId } ?: return@let null
@@ -178,6 +176,68 @@ class SettingViewModel(
             }
         }
     }
+
+    private fun createLocalModelSections(
+        models: List<LocalModelDefinition>,
+        statuses: Map<LocalModelId, LocalModelState>,
+        activeKeys: Set<LocalModelId>,
+    ): List<SettingsScreenUiState.LocalModelSection> =
+        models
+            .groupBy { it.section }
+            .map { (section, sectionModels) ->
+                val visibleModels =
+                    sectionModels
+                        .filter { model ->
+                            !section.hideUnavailableModels ||
+                                modelState(model, statuses).status != LocalModelStatus.UNAVAILABLE
+                        }
+                        .groupBy { it.displayName }
+                        .values
+                        .map { candidates ->
+                            selectVisibleModel(
+                                candidates = candidates,
+                                statuses = statuses,
+                                activeKeys = activeKeys,
+                            )
+                        }
+                SettingsScreenUiState.LocalModelSection(
+                    title = section.displayName,
+                    models = visibleModels.map { model ->
+                        model.toUiItem(
+                            modelState = modelState(model, statuses),
+                            isActive = model.modelId in activeKeys,
+                        )
+                    },
+                    emptyMessage = if (visibleModels.isEmpty()) section.unavailableMessage else null,
+                )
+            }
+
+    private fun selectVisibleModel(
+        candidates: List<LocalModelDefinition>,
+        statuses: Map<LocalModelId, LocalModelState>,
+        activeKeys: Set<LocalModelId>,
+    ): LocalModelDefinition =
+        candidates.firstOrNull { it.modelId in activeKeys }
+            ?: candidates.firstOrNull {
+                modelState(it, statuses).status == LocalModelStatus.DOWNLOADED
+            }
+            ?: candidates.firstOrNull {
+                modelState(it, statuses).status == LocalModelStatus.DOWNLOADING
+            }
+            ?: candidates.first()
+
+    private fun modelState(
+        model: LocalModelDefinition,
+        statuses: Map<LocalModelId, LocalModelState>,
+    ): LocalModelState =
+        statuses[model.modelId]
+            ?: LocalModelState(
+                status = if (model.section.hideUnavailableModels) {
+                    LocalModelStatus.UNAVAILABLE
+                } else {
+                    LocalModelStatus.NOT_DOWNLOADED
+                },
+            )
 
     private fun createModelListener(modelId: LocalModelId) =
         object : SettingsScreenUiState.LocalModelItem.Listener {
