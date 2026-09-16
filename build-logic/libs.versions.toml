@@ -5,6 +5,7 @@ androidCompileSdk = "37"
 androidMinSdk = "34"
 androidTargetSdk = "37"
 compose = "1.12.0"
+androidxComposeTest = "1.12.1"
 androidxComposeUiToolingPreview = "1.12.1"
 jetbrainsComposeUiToolingPreview = "1.12.0"
 composeIcons = "1.7.3"
@@ -56,9 +57,9 @@ ktlint = { module = "com.pinterest:ktlint", version.ref = "ktlint" }
 androidxWorkRuntime = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
 
 # ktor
-ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.5.2" }
-ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "3.5.2" }
-ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "3.5.2" }
+ktorClientCore = { module = "io.ktor:ktor-client-core", version.require = "3.6.0" }
+ktorClientCio = { module = "io.ktor:ktor-client-cio", version.require = "3.6.0" }
+ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.require = "3.6.0" }
 
 # Coil
 coil3Compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
@@ -104,8 +105,8 @@ jetbrainsComposeUiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooli
 # Test
 androidxTestCoreKtx = { module = "androidx.test:core-ktx", version.require = "1.7.0" }
 androidxTestRules = { module = "androidx.test:rules", version.ref = "androidxTestRules" }
-androidxTestManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose" }
-androidxComposeTestJunitAndroid = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "compose" }
+androidxTestManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidxComposeTest" }
+androidxComposeTestJunitAndroid = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidxComposeTest" }
 androidxComposeUiToolingPreview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidxComposeUiToolingPreview" }
 kotlinxCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine" }
 paparazzi = { module = "app.cash.paparazzi:paparazzi", version.ref = "paparazzi" }
