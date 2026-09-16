@@ -190,7 +190,7 @@ internal class LocalModelRepositoryImpl(
             state
         } else {
             LocalModelState(
-                status = LocalModelStatus.UNAVAILABLE,
+                status = LocalModelStatus.DOWNLOADED,
                 unavailableReason = STRUCTURED_OUTPUT_UNAVAILABLE_REASON,
             )
         }
