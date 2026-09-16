@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.room.AppDatabase
@@ -20,6 +22,8 @@ class AddRequestUseCase(
     private val appDatabase: AppDatabase,
     private val workManagerScheduler: WorkManagerScheduler,
 ) {
+    private val cancelReservation = WorkStartCancelReservation()
+
     suspend fun addRequest(
         chatRoomId: ChatRoomId,
         message: String,
@@ -90,16 +94,24 @@ class AddRequestUseCase(
     private suspend fun startWork(chatRoomId: ChatRoomId) {
         val chatRoomDao = appDatabase.chatRoomDao()
         chatRoomDao.clearRequestState(chatRoomId = chatRoomId.value)
+        cancelReservation.beginStart(chatRoomId = chatRoomId)
 
         val workId = workManagerScheduler.scheduleWork(chatRoomId = chatRoomId)
         chatRoomDao.updateWorkerId(chatRoomId = chatRoomId.value, workerId = workId)
-        if (workManagerScheduler.hasWork(workId).not()) {
+
+        val cancelReserved = cancelReservation.endStartAndTakeCancel(chatRoomId = chatRoomId)
+        if (cancelReserved) {
+            workManagerScheduler.cancelWork(workId)
+        }
+        if (cancelReserved || workManagerScheduler.hasWork(workId).not()) {
             clearWorkerStateIfMatches(chatRoomId = chatRoomId, workerId = workId)
         }
     }
 
     suspend fun cancelRequest(chatRoomId: ChatRoomId) {
         withContext(Dispatchers.IO) {
+            if (cancelReservation.reserveCancelIfStarting(chatRoomId = chatRoomId)) return@withContext
+
             val workerId = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first().workerId
                 ?: return@withContext
             workManagerScheduler.cancelWork(workerId)
@@ -132,6 +144,37 @@ class AddRequestUseCase(
     private suspend fun clearWorkerStateIfMatches(chatRoomId: ChatRoomId, workerId: String) {
         withContext(Dispatchers.IO) {
             appDatabase.chatRoomDao().clearWorkerId(chatRoomId = chatRoomId.value, workerId = workerId)
+        }
+    }
+
+    /**
+     * Work の登録中は workerId がまだ無くキャンセルできないため、要求を預かって登録完了後に適用する。
+     */
+    private class WorkStartCancelReservation {
+        private val mutex = Mutex()
+        private val startingRooms = mutableSetOf<ChatRoomId>()
+        private val reservedRooms = mutableSetOf<ChatRoomId>()
+
+        suspend fun beginStart(chatRoomId: ChatRoomId) {
+            mutex.withLock {
+                startingRooms.add(chatRoomId)
+                reservedRooms.remove(chatRoomId)
+            }
+        }
+
+        suspend fun endStartAndTakeCancel(chatRoomId: ChatRoomId): Boolean {
+            return mutex.withLock {
+                startingRooms.remove(chatRoomId)
+                reservedRooms.remove(chatRoomId)
+            }
+        }
+
+        suspend fun reserveCancelIfStarting(chatRoomId: ChatRoomId): Boolean {
+            return mutex.withLock {
+                if (startingRooms.contains(chatRoomId).not()) return@withLock false
+                reservedRooms.add(chatRoomId)
+                true
+            }
         }
     }
 
