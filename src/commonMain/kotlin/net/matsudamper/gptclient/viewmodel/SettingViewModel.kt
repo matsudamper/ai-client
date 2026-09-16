@@ -48,7 +48,7 @@ class SettingViewModel(
     private val loadedListener = object : SettingsScreenUiState.Loaded.Listener, LifecycleListener {
         override fun onStart() {
             viewModelScope.launch {
-                localModelRepository.refreshStatuses()
+                modelsFlow.value = localModelRepository.getResolvedModels()
             }
         }
 
@@ -100,7 +100,7 @@ class SettingViewModel(
 
     init {
         viewModelScope.launch {
-            modelsFlow.value = localModelRepository.getModels()
+            modelsFlow.value = localModelRepository.getResolvedModels()
         }
         viewModelScope.launch {
             localModelRepository.observeStatuses().collect { statuses ->
@@ -185,7 +185,7 @@ class SettingViewModel(
         models
             .groupBy { it.section }
             .map { (section, sectionModels) ->
-                val visibleModels =
+                val visibleModelItems =
                     sectionModels
                         .filter { model ->
                             !section.hideUnavailableModels ||
@@ -194,21 +194,21 @@ class SettingViewModel(
                         .groupBy { it.displayName }
                         .values
                         .map { candidates ->
-                            selectVisibleModel(
+                            val model = selectVisibleModel(
                                 candidates = candidates,
                                 statuses = statuses,
                                 activeKeys = activeKeys,
                             )
+                            model.toUiItem(
+                                modelState = modelState(model, statuses),
+                                isActive = candidates.any { it.modelId in activeKeys },
+                                groupedModelIds = candidates.mapTo(linkedSetOf()) { it.modelId },
+                            )
                         }
                 SettingsScreenUiState.LocalModelSection(
                     title = section.displayName,
-                    models = visibleModels.map { model ->
-                        model.toUiItem(
-                            modelState = modelState(model, statuses),
-                            isActive = model.modelId in activeKeys,
-                        )
-                    },
-                    emptyMessage = if (visibleModels.isEmpty()) section.unavailableMessage else null,
+                    models = visibleModelItems,
+                    emptyMessage = if (visibleModelItems.isEmpty()) section.unavailableMessage else null,
                 )
             }
 
@@ -239,7 +239,10 @@ class SettingViewModel(
                 },
             )
 
-    private fun createModelListener(modelId: LocalModelId) =
+    private fun createModelListener(
+        modelId: LocalModelId,
+        groupedModelIds: Set<LocalModelId>,
+    ) =
         object : SettingsScreenUiState.LocalModelItem.Listener {
             override fun onClickDownload() {
                 viewModelScope.launch {
@@ -252,7 +255,9 @@ class SettingViewModel(
                     if (active) {
                         settingDataStore.addActiveLocalModelKey(modelId)
                     } else {
-                        settingDataStore.removeActiveLocalModelKey(modelId)
+                        groupedModelIds.forEach { groupedModelId ->
+                            settingDataStore.removeActiveLocalModelKey(groupedModelId)
+                        }
                     }
                 }
             }
@@ -280,6 +285,7 @@ class SettingViewModel(
     private fun LocalModelDefinition.toUiItem(
         modelState: LocalModelState,
         isActive: Boolean,
+        groupedModelIds: Set<LocalModelId>,
     ): SettingsScreenUiState.LocalModelItem {
         val status =
             when (modelState.status) {
@@ -295,7 +301,10 @@ class SettingViewModel(
             downloadProgress = modelState.progress,
             canDelete = canDelete,
             isActive = isActive,
-            listener = createModelListener(modelId),
+            listener = createModelListener(
+                modelId = modelId,
+                groupedModelIds = groupedModelIds,
+            ),
         )
     }
 

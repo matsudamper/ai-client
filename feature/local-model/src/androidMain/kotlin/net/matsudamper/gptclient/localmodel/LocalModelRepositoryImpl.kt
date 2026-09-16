@@ -38,6 +38,9 @@ internal class LocalModelRepositoryImpl(
     }
 
     override suspend fun getModels(): List<LocalModelDefinition> =
+        AndroidLocalModels.entries.map { it.toDefinition() }
+
+    override suspend fun getResolvedModels(): List<LocalModelDefinition> =
         AndroidLocalModels.entries.map { model ->
             if (model.providerId == LocalModelProviderId.MlKitPrompt) {
                 resolveMlKitModel(model)
@@ -126,21 +129,29 @@ internal class LocalModelRepositoryImpl(
         }
 
         return try {
-            val state = client.checkStatus().toLocalModelState()
+            val state = try {
+                client.checkStatus().toLocalModelState()
+            } catch (_: Exception) {
+                LocalModelState(LocalModelStatus.UNAVAILABLE)
+            }
             mlKitStatuses.update { it + (model.modelId to state) }
             if (state.status == LocalModelStatus.UNAVAILABLE) {
                 model.toDefinition()
             } else {
                 val variant = requireNotNull(model.mlKitModelVariant)
-                model.toDefinition(
-                    resolvedDisplayName = "${client.getBaseModelName()} / ${variant.preferenceDisplayName}",
-                )
+                val baseModelName = try {
+                    client.getBaseModelName()
+                } catch (_: Exception) {
+                    null
+                }
+                if (baseModelName == null) {
+                    model.toDefinition()
+                } else {
+                    model.toDefinition(
+                        resolvedDisplayName = "$baseModelName / ${variant.preferenceDisplayName}",
+                    )
+                }
             }
-        } catch (_: Exception) {
-            mlKitStatuses.update {
-                it + (model.modelId to LocalModelState(LocalModelStatus.UNAVAILABLE))
-            }
-            model.toDefinition()
         } finally {
             client.close()
         }
