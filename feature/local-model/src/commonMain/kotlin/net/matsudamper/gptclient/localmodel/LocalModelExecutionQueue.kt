@@ -18,7 +18,6 @@ class LocalModelExecutionQueue(
     private val waitingEntries = mutableListOf<WaitingEntry>()
     private var runningModelId: LocalModelId? = null
     private var loadedModelId: LocalModelId? = null
-    private var continuousPriorityCount = 0
 
     suspend fun <T> withExclusiveModel(
         modelId: LocalModelId,
@@ -59,19 +58,14 @@ class LocalModelExecutionQueue(
 
     /**
      * ロード済みモデルと同じモデルの待機を優先して、モデルのロードとアンロードの回数を減らす。
-     * ただし優先が続くと別モデルの待機が開始されなくなるため、連続して優先できる回数を制限する。
      */
     private suspend fun releaseTurn() {
         stateLock.withLock {
             runningModelId = null
 
-            val oldestEntry = waitingEntries.firstOrNull() ?: return
-            val nextEntry = if (continuousPriorityCount < MAX_CONTINUOUS_PRIORITY_COUNT) {
-                waitingEntries.firstOrNull { it.modelId == loadedModelId } ?: oldestEntry
-            } else {
-                oldestEntry
-            }
-            continuousPriorityCount = if (nextEntry === oldestEntry) 0 else continuousPriorityCount + 1
+            val nextEntry = waitingEntries.firstOrNull { it.modelId == loadedModelId }
+                ?: waitingEntries.firstOrNull()
+                ?: return
             waitingEntries.remove(nextEntry)
             runningModelId = nextEntry.modelId
             nextEntry.turn.complete(Unit)
@@ -90,10 +84,6 @@ class LocalModelExecutionQueue(
         val modelId: LocalModelId,
         val turn: CompletableDeferred<Unit>,
     )
-
-    private companion object {
-        private const val MAX_CONTINUOUS_PRIORITY_COUNT = 5
-    }
 }
 
 /**
