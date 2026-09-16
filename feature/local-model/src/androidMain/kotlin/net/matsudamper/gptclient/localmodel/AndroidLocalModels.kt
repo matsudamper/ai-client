@@ -188,7 +188,7 @@ internal object AndroidLocalModels {
             modelId = modelId,
             providerId = LocalModelProviderId.MlKitPrompt,
             section = geminiNanoSection,
-            displayName = "Gemini Nano / $preferenceDisplayName",
+            displayName = "Gemini Nano (${releaseStageDisplayName(releaseStage)}) / $preferenceDisplayName",
             description = "ML Kit",
             mlKitModelVariant = MlKitModelVariant(
                 releaseStage = releaseStage,
@@ -200,4 +200,11 @@ internal object AndroidLocalModels {
             defaultToken = 1024,
             supportsThinking = false,
         )
+
+    private fun releaseStageDisplayName(releaseStage: Int): String =
+        when (releaseStage) {
+            ModelReleaseStage.STABLE -> "Stable"
+            ModelReleaseStage.PREVIEW -> "Preview"
+            else -> releaseStage.toString()
+        }
 }
