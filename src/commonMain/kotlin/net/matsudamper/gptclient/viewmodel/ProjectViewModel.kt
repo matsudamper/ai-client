@@ -261,7 +261,7 @@ class ProjectViewModel(
             }
         }
         viewModelScope.launch {
-            val defs = localModelRepository.getModels()
+            val defs = localModelRepository.getResolvedModels()
             viewModelStateFlow.update { it.copy(localModelDefs = defs) }
         }
         viewModelScope.launch {
