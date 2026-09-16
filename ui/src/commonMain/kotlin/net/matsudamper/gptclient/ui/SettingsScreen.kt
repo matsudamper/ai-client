@@ -507,6 +507,23 @@ private fun LocalModelCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
+                if (model.isActive) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "有効にする",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Switch(
+                            checked = model.isActive,
+                            onCheckedChange = { model.listener.onToggleActive(it) },
+                        )
+                    }
+                }
             }
 
             SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED -> {
