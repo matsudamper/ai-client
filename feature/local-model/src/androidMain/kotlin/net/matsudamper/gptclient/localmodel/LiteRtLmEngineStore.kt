@@ -40,6 +40,16 @@ internal object LiteRtLmEngineStore {
         }
     }
 
+    fun removeExcept(modelId: LocalModelId) {
+        synchronized(lock) {
+            val removedModelIds = engines.keys.filterNot { it == modelId }
+            for (removedModelId in removedModelIds) {
+                engines.remove(removedModelId)?.close()
+            }
+            _backendLabels.update { it - removedModelIds.toSet() }
+        }
+    }
+
     private fun createEngineWithFallback(
         context: Context,
         modelDefinition: AndroidLocalModel,
