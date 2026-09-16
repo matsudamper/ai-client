@@ -3,6 +3,7 @@ package net.matsudamper.gptclient.viewmodel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -32,79 +33,97 @@ class AddRequestUseCase(
         if (message.isEmpty() && uris.isEmpty()) return Result.IsLastUserChat
 
         return withContext(Dispatchers.IO) {
-            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-            val workerId = room.workerId
-            if (workerId != null && workManagerScheduler.hasWork(workerId)) {
-                return@withContext Result.WorkInProgress
-            }
+            whileStartingRequest(chatRoomId = chatRoomId) start@{
+                val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+                val workerId = room.workerId
+                if (workerId != null && workManagerScheduler.hasWork(workerId)) {
+                    return@start Result.WorkInProgress
+                }
 
-            val chatDao = appDatabase.chatDao()
-            val lastItem = chatDao.getChatRoomLastIndexItem(
-                chatRoomId = chatRoomId.value,
-            )
-            val newChatIndex = lastItem?.index?.plus(1) ?: 0
-
-            chatDao.insertAll(
-                uris.map {
-                    Chat(
-                        chatRoomId = chatRoomId,
-                        index = newChatIndex,
-                        textMessage = null,
-                        imageUri = it,
-                        role = Chat.Role.User,
-                    )
-                },
-            )
-            if (message.isNotEmpty()) {
-                chatDao.insertAll(
-                    Chat(
-                        chatRoomId = chatRoomId,
-                        index = newChatIndex,
-                        textMessage = message,
-                        imageUri = null,
-                        role = Chat.Role.User,
-                    ),
+                val chatDao = appDatabase.chatDao()
+                val lastItem = chatDao.getChatRoomLastIndexItem(
+                    chatRoomId = chatRoomId.value,
                 )
+                val newChatIndex = lastItem?.index?.plus(1) ?: 0
+
+                chatDao.insertAll(
+                    uris.map {
+                        Chat(
+                            chatRoomId = chatRoomId,
+                            index = newChatIndex,
+                            textMessage = null,
+                            imageUri = it,
+                            role = Chat.Role.User,
+                        )
+                    },
+                )
+                if (message.isNotEmpty()) {
+                    chatDao.insertAll(
+                        Chat(
+                            chatRoomId = chatRoomId,
+                            index = newChatIndex,
+                            textMessage = message,
+                            imageUri = null,
+                            role = Chat.Role.User,
+                        ),
+                    )
+                }
+
+                startWork(chatRoomId = chatRoomId)
+
+                Result.Success
             }
-
-            startWork(chatRoomId = chatRoomId)
-
-            Result.Success
         }
     }
 
     suspend fun retryRequest(chatRoomId: ChatRoomId): Result {
         return withContext(Dispatchers.IO) {
-            val chats = appDatabase.chatDao().get(chatRoomId = chatRoomId.value).first()
+            whileStartingRequest(chatRoomId = chatRoomId) start@{
+                val chats = appDatabase.chatDao().get(chatRoomId = chatRoomId.value).first()
 
-            if (chats.none { it.role == Chat.Role.User }) {
-                return@withContext Result.IsLastUserChat
+                if (chats.none { it.role == Chat.Role.User }) {
+                    return@start Result.IsLastUserChat
+                }
+
+                startWork(chatRoomId = chatRoomId)
+
+                Result.Success
             }
+        }
+    }
 
-            startWork(chatRoomId = chatRoomId)
-
-            return@withContext Result.Success
+    /**
+     * UI は開始操作の直後からキャンセルを表示するため、開始処理の全体をキャンセル予約の対象にする。
+     */
+    private suspend fun <T> whileStartingRequest(chatRoomId: ChatRoomId, block: suspend () -> T): T {
+        cancelReservation.beginStart(chatRoomId = chatRoomId)
+        try {
+            return block()
+        } finally {
+            withContext(NonCancellable) {
+                if (cancelReservation.endStartAndTakeCancel(chatRoomId = chatRoomId)) {
+                    cancelScheduledWork(chatRoomId = chatRoomId)
+                }
+            }
         }
     }
 
     /**
      * Work は登録直後に実行され得る。Worker が書き込んだ結果を上書きしないよう、
      * 前回の実行結果は登録前に消し、登録後は workerId の列だけを更新する。
+     *
+     * 登録の完了待ちはコルーチンのキャンセルに反応しないため、workerId を保存するまでは中断させない。
      */
     private suspend fun startWork(chatRoomId: ChatRoomId) {
-        val chatRoomDao = appDatabase.chatRoomDao()
-        chatRoomDao.clearRequestState(chatRoomId = chatRoomId.value)
-        cancelReservation.beginStart(chatRoomId = chatRoomId)
+        withContext(NonCancellable) {
+            val chatRoomDao = appDatabase.chatRoomDao()
+            chatRoomDao.clearRequestState(chatRoomId = chatRoomId.value)
 
-        val workId = workManagerScheduler.scheduleWork(chatRoomId = chatRoomId)
-        chatRoomDao.updateWorkerId(chatRoomId = chatRoomId.value, workerId = workId)
-
-        val cancelReserved = cancelReservation.endStartAndTakeCancel(chatRoomId = chatRoomId)
-        if (cancelReserved) {
-            workManagerScheduler.cancelWork(workId)
-        }
-        if (cancelReserved || workManagerScheduler.hasWork(workId).not()) {
-            clearWorkerStateIfMatches(chatRoomId = chatRoomId, workerId = workId)
+            val workId = workManagerScheduler.scheduleWork(chatRoomId = chatRoomId)
+            chatRoomDao.updateWorkerId(chatRoomId = chatRoomId.value, workerId = workId)
+            if (workManagerScheduler.hasWork(workId).not()) {
+                clearWorkerStateIfMatches(chatRoomId = chatRoomId, workerId = workId)
+            }
         }
     }
 
@@ -112,10 +131,15 @@ class AddRequestUseCase(
         withContext(Dispatchers.IO) {
             if (cancelReservation.reserveCancelIfStarting(chatRoomId = chatRoomId)) return@withContext
 
-            val workerId = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first().workerId
-                ?: return@withContext
-            workManagerScheduler.cancelWork(workerId)
+            cancelScheduledWork(chatRoomId = chatRoomId)
         }
+    }
+
+    private suspend fun cancelScheduledWork(chatRoomId: ChatRoomId) {
+        val workerId = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first().workerId
+            ?: return
+        workManagerScheduler.cancelWork(workerId)
+        clearWorkerStateIfMatches(chatRoomId = chatRoomId, workerId = workerId)
     }
 
     /**
