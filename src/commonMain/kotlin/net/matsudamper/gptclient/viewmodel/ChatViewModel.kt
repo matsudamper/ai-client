@@ -245,7 +245,7 @@ class ChatViewModel(
                         },
                         selectedImage = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
-                        enableSend = !viewModelState.isChatLoading &&
+                        enableSend = !viewModelState.isRequestStarting &&
                             !viewModelState.isWorkInProgress &&
                             !viewModelState.isMediaLoading,
                         imageAttachmentBlocked = !isImageAttachmentAllowed(
@@ -254,7 +254,7 @@ class ChatViewModel(
                         ),
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
-                            isChatLoading = viewModelState.isWorkInProgress,
+                            isChatLoading = viewModelState.isRequestStarting || viewModelState.isWorkInProgress,
                             onClickCancel = { cancelRequest() },
                             agentTransformer = {
                                 when (val info = viewModelState.roomInfo) {
@@ -406,6 +406,9 @@ class ChatViewModel(
 
         viewModelScope.launch {
             try {
+                viewModelStateFlow.update {
+                    it.copy(isRequestStarting = true)
+                }
                 val result = insertDataAndAddRequestUseCase.retryRequest(chatRoomId)
                 when (result) {
                     is AddRequestUseCase.Result.Success,
@@ -428,6 +431,10 @@ class ChatViewModel(
             } catch (_: Throwable) {
                 withPlatformRequest {
                     showToast("エラー")
+                }
+            } finally {
+                viewModelStateFlow.update {
+                    it.copy(isRequestStarting = false)
                 }
             }
         }
@@ -477,7 +484,7 @@ class ChatViewModel(
         viewModelScope.launch {
             try {
                 viewModelStateFlow.update {
-                    it.copy(isChatLoading = true)
+                    it.copy(isRequestStarting = true)
                 }
                 val result = insertDataAndAddRequestUseCase.addRequest(
                     chatRoomId = chatRoomId,
@@ -505,7 +512,7 @@ class ChatViewModel(
                 }
             } finally {
                 viewModelStateFlow.update {
-                    it.copy(isChatLoading = false)
+                    it.copy(isRequestStarting = false)
                 }
             }
         }
@@ -578,7 +585,8 @@ class ChatViewModel(
         val chats: List<Chat> = listOf(),
         val selectedMedia: List<ChatFooterImage> = listOf(),
         val isMediaLoading: Boolean = false,
-        val isChatLoading: Boolean = false,
+        /** Work の登録が完了して監視できるようになるまでの、実行中と同じ扱いにする期間 */
+        val isRequestStarting: Boolean = false,
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
