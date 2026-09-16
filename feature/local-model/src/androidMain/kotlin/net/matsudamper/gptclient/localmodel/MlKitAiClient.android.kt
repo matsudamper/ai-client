@@ -1,6 +1,9 @@
 package net.matsudamper.gptclient.localmodel
 
 import android.graphics.BitmapFactory
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.CancellationException
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.GenerateTypedContentResponse
 import com.google.mlkit.genai.prompt.Generation
@@ -8,9 +11,6 @@ import com.google.mlkit.genai.prompt.GenerationConfig
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
 import com.google.mlkit.genai.prompt.generateTypedContentRequest
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlinx.coroutines.CancellationException
 import net.matsudamper.gptclient.client.AiClient
 
 internal class MlKitAiClient(

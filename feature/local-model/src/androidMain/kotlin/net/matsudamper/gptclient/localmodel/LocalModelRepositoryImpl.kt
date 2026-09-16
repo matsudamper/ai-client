@@ -6,10 +6,6 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.google.mlkit.genai.common.DownloadStatus
-import com.google.mlkit.genai.common.FeatureStatus
-import com.google.mlkit.genai.prompt.Generation
-import com.google.mlkit.genai.prompt.GenerativeModel
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +19,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.google.mlkit.genai.common.DownloadStatus
+import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.prompt.Generation
+import com.google.mlkit.genai.prompt.GenerativeModel
 
 internal class LocalModelRepositoryImpl(
     private val context: Context,
@@ -199,12 +199,12 @@ internal class LocalModelRepositoryImpl(
     private fun Int.toLocalModelState(): LocalModelState =
         LocalModelState(
             status =
-                when (this) {
-                    FeatureStatus.AVAILABLE -> LocalModelStatus.DOWNLOADED
-                    FeatureStatus.DOWNLOADABLE -> LocalModelStatus.NOT_DOWNLOADED
-                    FeatureStatus.DOWNLOADING -> LocalModelStatus.DOWNLOADING
-                    else -> LocalModelStatus.UNAVAILABLE
-                },
+            when (this) {
+                FeatureStatus.AVAILABLE -> LocalModelStatus.DOWNLOADED
+                FeatureStatus.DOWNLOADABLE -> LocalModelStatus.NOT_DOWNLOADED
+                FeatureStatus.DOWNLOADING -> LocalModelStatus.DOWNLOADING
+                else -> LocalModelStatus.UNAVAILABLE
+            },
         )
 
     private suspend fun downloadMlKitModel(model: AndroidLocalModel) {

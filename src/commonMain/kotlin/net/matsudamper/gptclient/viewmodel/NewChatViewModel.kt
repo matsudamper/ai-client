@@ -97,7 +97,26 @@ class NewChatViewModel(
                     viewModelScope.launch {
                         val imageFormat = selectedModel.preferredImageFormat ?: ImageFormat.Jpeg
                         viewModelStateFlow.update { it.copy(isLoading = true) }
-                        appNavigator.navigate(Navigator.Chat(Navigator.Chat.ChatOpenContext.NewMessage(initialMessage = text, uriList = mediaList.mapNotNull map@{ eventSender.send { event -> event.providePlatformRequest().prepareImage(uri = it.imageUri, cropRect = it.rect?.let { rect -> PlatformRequest.CropRect(left = rect.left, top = rect.top, right = rect.right, bottom = rect.bottom) }, imageFormat = imageFormat) } }, chatType = Navigator.Chat.ChatType.Normal, model = selectedModel)))
+                        appNavigator.navigate(
+                            Navigator.Chat(
+                                Navigator.Chat.ChatOpenContext.NewMessage(
+                                    initialMessage = text,
+                                    uriList = mediaList.mapNotNull map@{
+                                        eventSender.send { event ->
+                                            event.providePlatformRequest().prepareImage(
+                                                uri = it.imageUri,
+                                                cropRect = it.rect?.let { rect ->
+                                                    PlatformRequest.CropRect(left = rect.left, top = rect.top, right = rect.right, bottom = rect.bottom)
+                                                },
+                                                imageFormat = imageFormat,
+                                            )
+                                        }
+                                    },
+                                    chatType = Navigator.Chat.ChatType.Normal,
+                                    model = selectedModel,
+                                ),
+                            ),
+                        )
                         viewModelStateFlow.update { it.copy(isLoading = false) }
                     }
                     return true
@@ -111,15 +130,31 @@ class NewChatViewModel(
                             val (acceptedImageUrls, validation) = selectedModel.selectableImages(currentCount = 0, newSelections = imageUrlList)
                             validation.errorMessage()?.let { message -> eventSender.send { it.providePlatformRequest().showToast(message) } }
                             if (acceptedImageUrls.isEmpty()) return@launch
-                            viewModelStateFlow.update { it.copy(mediaList = acceptedImageUrls.map { imageUrl -> ChatFooterImage(imageUri = imageUrl, rect = null, listener = ChatFooterImageListener(imageUrl)) }) }
-                        } finally { viewModelStateFlow.update { it.copy(mediaLoading = false) } }
+                            viewModelStateFlow.update {
+                                it.copy(mediaList = acceptedImageUrls.map { imageUrl -> ChatFooterImage(imageUri = imageUrl, rect = null, listener = ChatFooterImageListener(imageUrl)) })
+                            }
+                        } finally {
+                            viewModelStateFlow.update { it.copy(mediaLoading = false) }
+                        }
                     }
                 }
                 override fun addProject() {
-                    viewModelStateFlow.update { it.copy(projectNameDialog = NewChatUiState.ProjectNameDialog(object : NewChatUiState.ProjectNameDialog.Listener {
-                        override fun onCancel() { viewModelStateFlow.update { it.copy(projectNameDialog = null) } }
-                        override fun onDone(text: String) { viewModelScope.launch { val projectId = appDatabase.projectDao().insert(Project(index = 0, name = text, modelName = "", systemMessage = "")); viewModelStateFlow.update { it.copy(projectNameDialog = null) }; appNavigator.navigate(Navigator.Project(title = text, type = Navigator.Project.ProjectType.Project(ProjectId(projectId)))) } }
-                    })) }
+                    viewModelStateFlow.update {
+                        it.copy(
+                            projectNameDialog = NewChatUiState.ProjectNameDialog(object : NewChatUiState.ProjectNameDialog.Listener {
+                                override fun onCancel() {
+                                    viewModelStateFlow.update { it.copy(projectNameDialog = null) }
+                                }
+                                override fun onDone(text: String) {
+                                    viewModelScope.launch {
+                                        val projectId = appDatabase.projectDao().insert(Project(index = 0, name = text, modelName = "", systemMessage = ""))
+                                        viewModelStateFlow.update { it.copy(projectNameDialog = null) }
+                                        appNavigator.navigate(Navigator.Project(title = text, type = Navigator.Project.ProjectType.Project(ProjectId(projectId))))
+                                    }
+                                }
+                            }),
+                        )
+                    }
                 }
                 override fun onClickVoice() {}
             },
@@ -127,15 +162,83 @@ class NewChatViewModel(
     ).also { uiState ->
         viewModelScope.launch { appDatabase.projectDao().getAll().collectLatest { projects -> viewModelStateFlow.update { it.copy(projects = projects) } } }
         viewModelScope.launch { settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys -> viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) } } }
-        viewModelScope.launch { val defs = localModelRepository.getResolvedModels(); viewModelStateFlow.update { it.copy(localModelDefs = defs) } }
+        viewModelScope.launch {
+            val defs = localModelRepository.getResolvedModels()
+            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+        }
         viewModelScope.launch { GeminiBillingKeyOverrideStore.enabledSelectionKeys.collectLatest { keys -> viewModelStateFlow.update { it.copy(geminiBillingKeyOverrideSelectionKeys = keys) } } }
-        viewModelScope.launch { viewModelStateFlow.collectLatest { viewModelState -> uiState.update { it.copy(selectedMedia = viewModelState.mediaList, visibleMediaLoading = viewModelState.mediaLoading, modelState = createModelState(viewModelState.selectedModel), projectNameDialog = viewModelState.projectNameDialog, isLoading = viewModelState.isLoading, enableSend = !viewModelState.mediaLoading, imageAttachmentBlocked = !isImageAttachmentAllowed(viewModelState.selectedModel, viewModelState.mediaList.size), projects = builtinProjects.plus(viewModelState.projects.orEmpty().map { project -> NewChatUiState.Project(name = project.name, icon = NewChatUiState.Project.Icon.Favorite, listener = object : NewChatUiState.Project.Listener { override fun onClick() { appNavigator.navigate(Navigator.Project(title = project.name, type = Navigator.Project.ProjectType.Project(project.id))) } }) })) } } }
+        viewModelScope.launch {
+            viewModelStateFlow.collectLatest { viewModelState ->
+                uiState.update {
+                    it.copy(
+                        selectedMedia = viewModelState.mediaList,
+                        visibleMediaLoading = viewModelState.mediaLoading,
+                        modelState = createModelState(viewModelState.selectedModel),
+                        projectNameDialog = viewModelState.projectNameDialog,
+                        isLoading = viewModelState.isLoading,
+                        enableSend = !viewModelState.mediaLoading,
+                        imageAttachmentBlocked = !isImageAttachmentAllowed(viewModelState.selectedModel, viewModelState.mediaList.size),
+                        projects = builtinProjects.plus(
+                            viewModelState.projects.orEmpty().map { project ->
+                                NewChatUiState.Project(
+                                    name = project.name,
+                                    icon = NewChatUiState.Project.Icon.Favorite,
+                                    listener = object : NewChatUiState.Project.Listener {
+                                        override fun onClick() {
+                                            appNavigator.navigate(Navigator.Project(title = project.name, type = Navigator.Project.ProjectType.Project(project.id)))
+                                        }
+                                    },
+                                )
+                            },
+                        ),
+                    )
+                }
+            }
+        }
     }
 
-    private fun createModelState(selectedModel: ChatGptModel): ModelSelectorUiState = ModelSelectorStateFactory.create(selectedModel, viewModelStateFlow.value.activeLocalModelKeys, viewModelStateFlow.value.localModelDefs, viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys, { model -> viewModelStateFlow.update { it.copy(selectedModel = model) } }, { selectionKey, enabled -> GeminiBillingKeyOverrideStore.setEnabled(selectionKey, enabled) })
-    private inner class ChatFooterImageListener(private val imageUrl: String) : ChatFooterImage.Listener {
-        override fun crop(rect: ChatFooterImage.Rect) { viewModelStateFlow.update { state -> state.copy(mediaList = state.mediaList.map { image -> if (image.imageUri == imageUrl) image.copy(rect = rect) else image }) } }
-        override fun delete() { viewModelStateFlow.update { it.copy(mediaList = it.mediaList.filter { image -> image.imageUri != imageUrl }) } }
+    private fun createModelState(selectedModel: ChatGptModel): ModelSelectorUiState {
+        return ModelSelectorStateFactory.create(
+            selectedModel,
+            viewModelStateFlow.value.activeLocalModelKeys,
+            viewModelStateFlow.value.localModelDefs,
+            viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys,
+            { model ->
+                viewModelStateFlow.update { it.copy(selectedModel = model) }
+            },
+            { selectionKey, enabled -> GeminiBillingKeyOverrideStore.setEnabled(selectionKey, enabled) },
+        )
     }
-    private data class ViewModelState(val mediaList: List<ChatFooterImage> = listOf(), val mediaLoading: Boolean = false, val selectedModel: ChatGptModel = ChatGptModel.Remote.Gpt.Gpt5Nano, val projectNameDialog: NewChatUiState.ProjectNameDialog? = null, val projects: List<Project>? = null, val isLoading: Boolean = false, val activeLocalModelKeys: Set<LocalModelId> = setOf(), val localModelDefs: List<LocalModelDefinition> = listOf(), val geminiBillingKeyOverrideSelectionKeys: Set<String> = setOf())
+
+    private inner class ChatFooterImageListener(private val imageUrl: String) : ChatFooterImage.Listener {
+        override fun crop(rect: ChatFooterImage.Rect) {
+            viewModelStateFlow.update { state ->
+                state.copy(
+                    mediaList = state.mediaList.map { image ->
+                        if (image.imageUri ==
+                            imageUrl
+                        ) {
+                            image.copy(rect = rect)
+                        } else {
+                            image
+                        }
+                    },
+                )
+            }
+        }
+        override fun delete() {
+            viewModelStateFlow.update { it.copy(mediaList = it.mediaList.filter { image -> image.imageUri != imageUrl }) }
+        }
+    }
+    private data class ViewModelState(
+        val mediaList: List<ChatFooterImage> = listOf(),
+        val mediaLoading: Boolean = false,
+        val selectedModel: ChatGptModel = ChatGptModel.Remote.Gpt.Gpt5Nano,
+        val projectNameDialog: NewChatUiState.ProjectNameDialog? = null,
+        val projects: List<Project>? = null,
+        val isLoading: Boolean = false,
+        val activeLocalModelKeys: Set<LocalModelId> = setOf(),
+        val localModelDefs: List<LocalModelDefinition> = listOf(),
+        val geminiBillingKeyOverrideSelectionKeys: Set<String> = setOf(),
+    )
 }

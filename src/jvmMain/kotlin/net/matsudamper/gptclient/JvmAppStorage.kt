@@ -3,7 +3,7 @@ package net.matsudamper.gptclient
 import java.io.File
 
 object JvmAppStorage {
-    private const val appDirectoryName = "gpt-client"
+    private const val APP_DIRECTORY_NAME = "gpt-client"
 
     fun resolve(filename: String): File {
         return appDirectory().resolve(filename)
@@ -26,7 +26,7 @@ object JvmAppStorage {
                     ?: File(userHome, ".local/share")
             }
         }
-        return baseDirectory.resolve(appDirectoryName).also { directory ->
+        return baseDirectory.resolve(APP_DIRECTORY_NAME).also { directory ->
             if (!directory.isDirectory) {
                 if (directory.isFile) {
                     error("App storage path already exists as a file: ${directory.absolutePath}")

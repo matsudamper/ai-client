@@ -49,9 +49,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import java.time.Instant
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.MessageSquare
-import java.time.Instant
 import net.matsudamper.gptclient.ui.component.ChatFooter
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 import net.matsudamper.gptclient.ui.component.ModelSelectorBar
