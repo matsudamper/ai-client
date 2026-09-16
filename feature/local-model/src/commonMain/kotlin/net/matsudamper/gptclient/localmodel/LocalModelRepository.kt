@@ -5,8 +5,10 @@ import kotlinx.coroutines.flow.flowOf
 
 interface LocalModelRepository {
     suspend fun getModels(): List<LocalModelDefinition>
+    suspend fun getResolvedModels(): List<LocalModelDefinition> = getModels()
     fun observeStatuses(): Flow<Map<LocalModelId, LocalModelState>>
     fun observeEngineLabels(): Flow<Map<LocalModelId, String>> = flowOf(emptyMap())
+    suspend fun refreshStatuses()
     suspend fun enqueueDownload(modelId: LocalModelId)
     suspend fun delete(modelId: LocalModelId)
 }

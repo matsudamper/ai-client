@@ -26,3 +26,30 @@ private fun SettingsApiKeyScreenLightPreview() {
 private fun SettingsApiKeyScreenDarkPreview() {
     SettingsApiKeyScreenPreviewContent(isDark = true)
 }
+
+@Preview(name = "Settings Model Light")
+@Composable
+private fun SettingsModelScreenLightPreview() {
+    SettingsModelScreenPreviewContent(
+        isDark = false,
+        geminiAvailable = true,
+    )
+}
+
+@Preview(name = "Settings Model Dark")
+@Composable
+private fun SettingsModelScreenDarkPreview() {
+    SettingsModelScreenPreviewContent(
+        isDark = true,
+        geminiAvailable = true,
+    )
+}
+
+@Preview(name = "Settings Model Gemini Unavailable")
+@Composable
+private fun SettingsModelGeminiUnavailablePreview() {
+    SettingsModelScreenPreviewContent(
+        isDark = false,
+        geminiAvailable = false,
+    )
+}

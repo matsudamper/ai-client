@@ -75,7 +75,7 @@ sealed interface SettingsScreenUiState {
         val initialGeminiSecretKey: String,
         val initialGeminiBillingKey: String,
         val themeOption: ThemeOption,
-        val localModels: List<LocalModelItem>,
+        val localModelSections: List<LocalModelSection>,
         val deleteDialog: DeleteDialog?,
         val listener: Listener,
     ) : SettingsScreenUiState {
@@ -107,6 +107,12 @@ sealed interface SettingsScreenUiState {
         LIGHT,
         DARK,
     }
+
+    data class LocalModelSection(
+        val title: String,
+        val models: List<LocalModelItem>,
+        val emptyMessage: String?,
+    )
 
     data class LocalModelItem(
         val displayName: String,
@@ -389,7 +395,7 @@ private fun SettingsModelContent(
             )
             .verticalScroll(scrollState),
     ) {
-        if (uiState.localModels.isEmpty()) {
+        if (uiState.localModelSections.isEmpty()) {
             Text(
                 modifier = Modifier.padding(
                     horizontal = HorizontalPadding,
@@ -400,10 +406,12 @@ private fun SettingsModelContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            LocalModelSettingSection(
-                modifier = Modifier.fillMaxWidth(),
-                models = uiState.localModels,
-            )
+            uiState.localModelSections.forEach { section ->
+                LocalModelSettingSection(
+                    modifier = Modifier.fillMaxWidth(),
+                    section = section,
+                )
+            }
         }
         Spacer(modifier = Modifier.height(12.dp))
         Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
@@ -441,17 +449,26 @@ private fun SettingsNavigationItem(
 @Composable
 private fun LocalModelSettingSection(
     modifier: Modifier = Modifier,
-    models: List<SettingsScreenUiState.LocalModelItem>,
+    section: SettingsScreenUiState.LocalModelSection,
 ) {
     SettingItem(
         modifier = modifier,
-        title = { Text("ローカルモデル") },
+        title = { Text(section.title) },
         content = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                models.forEach { model ->
-                    LocalModelCard(model = model)
+                val emptyMessage = section.emptyMessage
+                if (section.models.isEmpty() && emptyMessage != null) {
+                    Text(
+                        text = emptyMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    section.models.forEach { model ->
+                        LocalModelCard(model = model)
+                    }
                 }
             }
         },
@@ -474,11 +491,13 @@ private fun LocalModelCard(
             text = model.displayName,
             style = MaterialTheme.typography.titleSmall,
         )
-        Text(
-            text = model.description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (model.description.isNotBlank()) {
+            Text(
+                text = model.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(modifier = Modifier.height(8.dp))
 
         when (model.status) {
@@ -488,6 +507,23 @@ private fun LocalModelCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
+                if (model.isActive) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "有効にする",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Switch(
+                            checked = model.isActive,
+                            onCheckedChange = { model.listener.onToggleActive(it) },
+                        )
+                    }
+                }
             }
 
             SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED -> {
@@ -670,23 +706,9 @@ internal fun SettingsScreenPreviewContent(
                     initialGeminiSecretKey = "AIza-test-gemini-key",
                     initialGeminiBillingKey = "billing-test-key",
                     themeOption = SettingsScreenUiState.ThemeOption.DARK,
-                    localModels = listOf(),
+                    localModelSections = listOf(),
                     deleteDialog = null,
-                    listener = object : SettingsScreenUiState.Loaded.Listener {
-                        override fun updateSecretKey(text: String) = Unit
-
-                        override fun updateGeminiSecretKey(text: String) = Unit
-
-                        override fun updateGeminiBillingKey(text: String) = Unit
-
-                        override fun onClickOpenAiUsage() = Unit
-
-                        override fun onClickGeminiUsage() = Unit
-
-                        override fun onClickLatestRelease() = Unit
-
-                        override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) = Unit
-                    },
+                    listener = createPreviewLoadedListener(),
                 ),
                 onClickMenu = {},
             )
@@ -726,25 +748,140 @@ internal fun SettingsApiKeyScreenPreviewContent(
                     initialGeminiSecretKey = "AIza-test-gemini-key",
                     initialGeminiBillingKey = "billing-test-key",
                     themeOption = SettingsScreenUiState.ThemeOption.DARK,
-                    localModels = listOf(),
+                    localModelSections = listOf(),
                     deleteDialog = null,
-                    listener = object : SettingsScreenUiState.Loaded.Listener {
-                        override fun updateSecretKey(text: String) = Unit
-
-                        override fun updateGeminiSecretKey(text: String) = Unit
-
-                        override fun updateGeminiBillingKey(text: String) = Unit
-
-                        override fun onClickOpenAiUsage() = Unit
-
-                        override fun onClickGeminiUsage() = Unit
-
-                        override fun onClickLatestRelease() = Unit
-
-                        override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) = Unit
-                    },
+                    listener = createPreviewLoadedListener(),
                 ),
             )
         }
     }
 }
+
+@Composable
+internal fun SettingsModelScreenPreviewContent(
+    isDark: Boolean,
+    geminiAvailable: Boolean,
+) {
+    val lightColors = lightColorScheme(
+        primary = Color(0xFF5A46C8),
+        surfaceVariant = Color(0xFFF1F0F8),
+        secondaryContainer = Color(0xFFE8E4F8),
+    )
+    val darkColors = darkColorScheme(
+        primary = Color(0xFFC5B7FF),
+        onPrimary = Color(0xFF2A176F),
+        surface = Color(0xFF111018),
+        onSurface = Color(0xFFF2F0FA),
+        surfaceVariant = Color(0xFF2A2835),
+        onSurfaceVariant = Color(0xFFE7E1F7),
+        secondaryContainer = Color(0xFF47435A),
+        onSecondaryContainer = Color(0xFFF2EEFF),
+    )
+    val modelListener = createPreviewLocalModelListener()
+    val geminiModels =
+        if (geminiAvailable) {
+            listOf(
+                SettingsScreenUiState.LocalModelItem(
+                    displayName = "nano-v4 / Fast",
+                    description = "ML Kit",
+                    status = SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED,
+                    downloadProgress = null,
+                    canDelete = false,
+                    isActive = true,
+                    listener = modelListener,
+                ),
+                SettingsScreenUiState.LocalModelItem(
+                    displayName = "nano-v4 / Full",
+                    description = "ML Kit",
+                    status = SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED,
+                    downloadProgress = null,
+                    canDelete = false,
+                    isActive = false,
+                    listener = modelListener,
+                ),
+            )
+        } else {
+            listOf()
+        }
+
+    MaterialTheme(
+        colorScheme = if (isDark) darkColors else lightColors,
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            SettingsModelContent(
+                uiState = SettingsScreenUiState.Loaded(
+                    initialSecretKey = "",
+                    initialGeminiSecretKey = "",
+                    initialGeminiBillingKey = "",
+                    themeOption = if (isDark) {
+                        SettingsScreenUiState.ThemeOption.DARK
+                    } else {
+                        SettingsScreenUiState.ThemeOption.LIGHT
+                    },
+                    localModelSections = listOf(
+                        SettingsScreenUiState.LocalModelSection(
+                            title = "Gemini Nano (AI Core)",
+                            models = geminiModels,
+                            emptyMessage = if (geminiModels.isEmpty()) "使用できません" else null,
+                        ),
+                        SettingsScreenUiState.LocalModelSection(
+                            title = "Gemma",
+                            models = listOf(
+                                SettingsScreenUiState.LocalModelItem(
+                                    displayName = "Gemma 4 E4B",
+                                    description = "LiteRT-LM",
+                                    status = SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED,
+                                    downloadProgress = null,
+                                    canDelete = true,
+                                    isActive = false,
+                                    listener = modelListener,
+                                ),
+                                SettingsScreenUiState.LocalModelItem(
+                                    displayName = "Gemma 4 E2B",
+                                    description = "LiteRT-LM",
+                                    status = SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED,
+                                    downloadProgress = null,
+                                    canDelete = true,
+                                    isActive = false,
+                                    listener = modelListener,
+                                ),
+                            ),
+                            emptyMessage = null,
+                        ),
+                    ),
+                    deleteDialog = null,
+                    listener = createPreviewLoadedListener(),
+                ),
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+private fun createPreviewLoadedListener(): SettingsScreenUiState.Loaded.Listener =
+    object : SettingsScreenUiState.Loaded.Listener {
+        override fun updateSecretKey(text: String) = Unit
+
+        override fun updateGeminiSecretKey(text: String) = Unit
+
+        override fun updateGeminiBillingKey(text: String) = Unit
+
+        override fun onClickOpenAiUsage() = Unit
+
+        override fun onClickGeminiUsage() = Unit
+
+        override fun onClickLatestRelease() = Unit
+
+        override fun onClickThemeOption(themeOption: SettingsScreenUiState.ThemeOption) = Unit
+    }
+
+private fun createPreviewLocalModelListener(): SettingsScreenUiState.LocalModelItem.Listener =
+    object : SettingsScreenUiState.LocalModelItem.Listener {
+        override fun onClickDownload() = Unit
+
+        override fun onToggleActive(active: Boolean) = Unit
+
+        override fun onClickDelete() = Unit
+    }

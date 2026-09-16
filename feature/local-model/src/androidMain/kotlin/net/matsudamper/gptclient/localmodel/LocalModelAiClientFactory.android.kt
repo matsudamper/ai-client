@@ -9,7 +9,11 @@ internal class AndroidLocalModelAiClientFactory(
     override fun create(modelId: LocalModelId, enableThinking: Boolean): AiClient? {
         val modelDefinition = AndroidLocalModels.find(modelId) ?: return null
         return when (modelDefinition.providerId) {
-            LocalModelProviderId.MlKitPrompt -> MlKitAiClient()
+            LocalModelProviderId.MlKitPrompt ->
+                MlKitAiClient(
+                    generationConfig = modelDefinition.createMlKitGenerationConfig(),
+                )
+
             LocalModelProviderId.LiteRtLm -> {
                 val modelFile = LocalModelRepositoryImpl.getModelFile(context, modelId)
                 if (!modelFile.exists()) return null

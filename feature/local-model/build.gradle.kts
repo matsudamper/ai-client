@@ -33,6 +33,7 @@ kotlin {
             }
         }
         val androidMain by getting {
+            resources.srcDir(layout.buildDirectory.dir("generated/ksp/android/androidMain/resources"))
             dependencies {
                 implementation(libs.androidxCoreKtx)
                 implementation(libs.androidxWorkRuntime)
