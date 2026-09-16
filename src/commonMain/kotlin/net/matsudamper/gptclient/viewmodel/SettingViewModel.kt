@@ -50,7 +50,15 @@ class SettingViewModel(
 
     init {
         viewModelScope.launch { modelsFlow.value = localModelRepository.getResolvedModels() }
-        viewModelScope.launch { localModelRepository.observeStatuses().collect { modelStateMap.value = it } }
+        viewModelScope.launch {
+            localModelRepository.observeStatuses().collect { statuses ->
+                modelStateMap.value = statuses
+                statuses
+                    .filterValues { it.unavailableReason != null }
+                    .keys
+                    .forEach { settingDataStore.removeActiveLocalModelKey(it) }
+            }
+        }
         viewModelScope.launch {
             secretKeyState.value = settingDataStore.getSecretKey()
             geminiSecretKeyState.value = settingDataStore.getGeminiSecretKey()
@@ -89,11 +97,24 @@ class SettingViewModel(
                     val model = selectVisibleModel(candidates, statuses, activeKeys)
                     model.toUiItem(modelState(model, statuses), allCandidates.any { it.modelId in activeKeys }, allCandidates.mapTo(linkedSetOf()) { it.modelId })
                 }
-            SettingsScreenUiState.LocalModelSection(section.displayName, visibleModelItems, if (visibleModelItems.isEmpty()) section.unavailableMessage else null)
+            val emptyMessage =
+                if (visibleModelItems.isEmpty()) {
+                    sectionModels
+                        .mapNotNull { modelState(it, statuses).unavailableReason }
+                        .distinct()
+                        .singleOrNull()
+                        ?: section.unavailableMessage
+                } else {
+                    null
+                }
+            SettingsScreenUiState.LocalModelSection(section.displayName, visibleModelItems, emptyMessage)
         }
 
     private fun selectVisibleModel(candidates: List<LocalModelDefinition>, statuses: Map<LocalModelId, LocalModelState>, activeKeys: Set<LocalModelId>): LocalModelDefinition =
-        candidates.firstOrNull { it.modelId in activeKeys } ?: candidates.firstOrNull { modelState(it, statuses).status == LocalModelStatus.DOWNLOADED } ?: candidates.firstOrNull { modelState(it, statuses).status == LocalModelStatus.DOWNLOADING } ?: candidates.first()
+        candidates.firstOrNull { it.modelId in activeKeys && modelState(it, statuses).unavailableReason == null }
+            ?: candidates.firstOrNull { modelState(it, statuses).status == LocalModelStatus.DOWNLOADED && modelState(it, statuses).unavailableReason == null }
+            ?: candidates.firstOrNull { modelState(it, statuses).status == LocalModelStatus.DOWNLOADING }
+            ?: candidates.first()
 
     private fun modelState(model: LocalModelDefinition, statuses: Map<LocalModelId, LocalModelState>): LocalModelState = statuses[model.modelId] ?: LocalModelState(if (model.section.hideUnavailableModels) LocalModelStatus.UNAVAILABLE else LocalModelStatus.NOT_DOWNLOADED)
 
@@ -109,13 +130,22 @@ class SettingViewModel(
     }
 
     private fun LocalModelDefinition.toUiItem(modelState: LocalModelState, isActive: Boolean, groupedModelIds: Set<LocalModelId>): SettingsScreenUiState.LocalModelItem {
-        val status = when (modelState.status) {
-            LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE
-            LocalModelStatus.NOT_DOWNLOADED -> SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED
-            LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING
-            LocalModelStatus.DOWNLOADED -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED
-        }
-        return SettingsScreenUiState.LocalModelItem(displayName, description, status, modelState.progress, canDelete, isActive, createModelListener(modelId, groupedModelIds))
+        val status =
+            if (modelState.unavailableReason != null) {
+                SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE
+            } else {
+                when (modelState.status) {
+                    LocalModelStatus.UNAVAILABLE -> SettingsScreenUiState.LocalModelItem.ModelStatus.UNAVAILABLE
+                    LocalModelStatus.NOT_DOWNLOADED -> SettingsScreenUiState.LocalModelItem.ModelStatus.NOT_DOWNLOADED
+                    LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING
+                    LocalModelStatus.DOWNLOADED -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED
+                }
+            }
+        val resolvedDescription =
+            modelState.unavailableReason?.let { reason ->
+                if (description.isBlank()) reason else "$description\n$reason"
+            } ?: description
+        return SettingsScreenUiState.LocalModelItem(displayName, resolvedDescription, status, modelState.progress, canDelete, isActive, createModelListener(modelId, groupedModelIds))
     }
 
     private fun saveSecretKey(text: String) { viewModelScope.launch { settingDataStore.setSecretKey(text) } }

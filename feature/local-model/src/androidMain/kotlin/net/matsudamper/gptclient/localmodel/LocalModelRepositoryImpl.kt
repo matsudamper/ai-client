@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
+import com.google.mlkit.genai.prompt.GenerativeModel
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -130,7 +131,7 @@ internal class LocalModelRepositoryImpl(
 
         return try {
             val state = try {
-                client.checkStatus().toLocalModelState()
+                client.toLocalModelState()
             } catch (_: Exception) {
                 LocalModelState(LocalModelStatus.UNAVAILABLE)
             }
@@ -171,13 +172,27 @@ internal class LocalModelRepositoryImpl(
         return try {
             val client = Generation.getClient(model.createMlKitGenerationConfig())
             val state = try {
-                client.checkStatus().toLocalModelState()
+                client.toLocalModelState()
             } finally {
                 client.close()
             }
             state
         } catch (_: Exception) {
             LocalModelState(status = LocalModelStatus.UNAVAILABLE)
+        }
+    }
+
+    private suspend fun GenerativeModel.toLocalModelState(): LocalModelState {
+        val state = checkStatus().toLocalModelState()
+        if (state.status != LocalModelStatus.DOWNLOADED) return state
+
+        return if (isStructuredOutputFeatureAvailable()) {
+            state
+        } else {
+            LocalModelState(
+                status = LocalModelStatus.DOWNLOADED,
+                unavailableReason = STRUCTURED_OUTPUT_UNAVAILABLE_REASON,
+            )
         }
     }
 
@@ -230,7 +245,7 @@ internal class LocalModelRepositoryImpl(
 
                     is DownloadStatus.DownloadCompleted -> {
                         mlKitStatuses.update {
-                            it + (model.modelId to LocalModelState(LocalModelStatus.DOWNLOADED))
+                            it + (model.modelId to client.toLocalModelState())
                         }
                     }
 
@@ -301,6 +316,9 @@ internal class LocalModelRepositoryImpl(
     }
 
     companion object {
+        private const val STRUCTURED_OUTPUT_UNAVAILABLE_REASON =
+            "この端末のGemini NanoではStructured Outputを利用できないため、有効化できません"
+
         internal fun getModelsDirectory(context: Context): File =
             File(context.filesDir, "models").apply {
                 mkdirs()
