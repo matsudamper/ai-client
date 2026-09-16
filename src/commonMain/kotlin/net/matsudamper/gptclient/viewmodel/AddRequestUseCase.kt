@@ -35,9 +35,7 @@ class AddRequestUseCase(
 
         return withContext(Dispatchers.IO) {
             whileStartingRequest(chatRoomId = chatRoomId) start@{
-                val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-                val workerId = room.workerId
-                if (workerId != null && workManagerScheduler.hasWork(workerId)) {
+                if (isWorkRunning(chatRoomId = chatRoomId)) {
                     return@start Result.WorkInProgress
                 }
 
@@ -80,6 +78,10 @@ class AddRequestUseCase(
     suspend fun retryRequest(chatRoomId: ChatRoomId): Result {
         return withContext(Dispatchers.IO) {
             whileStartingRequest(chatRoomId = chatRoomId) start@{
+                if (isWorkRunning(chatRoomId = chatRoomId)) {
+                    return@start Result.WorkInProgress
+                }
+
                 val chats = appDatabase.chatDao().get(chatRoomId = chatRoomId.value).first()
 
                 if (chats.none { it.role == Chat.Role.User }) {
@@ -91,6 +93,12 @@ class AddRequestUseCase(
                 Result.Success
             }
         }
+    }
+
+    private suspend fun isWorkRunning(chatRoomId: ChatRoomId): Boolean {
+        val workerId = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first().workerId
+            ?: return false
+        return workManagerScheduler.hasWork(workerId)
     }
 
     /**
