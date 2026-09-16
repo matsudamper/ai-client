@@ -135,11 +135,13 @@ class AddRequestUseCase(
         }
     }
 
+    /**
+     * キャンセルの完了は待てないため、workerId の解放は Work が終了状態になるまで状態監視に任せる。
+     */
     private suspend fun cancelScheduledWork(chatRoomId: ChatRoomId) {
         val workerId = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first().workerId
             ?: return
         workManagerScheduler.cancelWork(workerId)
-        clearWorkerStateIfMatches(chatRoomId = chatRoomId, workerId = workerId)
     }
 
     /**
