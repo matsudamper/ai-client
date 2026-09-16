@@ -93,6 +93,9 @@ class AddRequestUseCase(
         appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
         val workId = workManagerScheduler.scheduleWork(chatRoomId = chatRoomId)
         appDatabase.chatRoomDao().update(id = chatRoomId) { it.copy(workerId = workId) }
+        if (workManagerScheduler.hasWork(workId).not()) {
+            clearWorkerStateIfMatches(chatRoomId = chatRoomId, workerId = workId)
+        }
     }
 
     suspend fun cancelRequest(chatRoomId: ChatRoomId) {

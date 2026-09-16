@@ -74,7 +74,6 @@ class ChatRequestRunner(
             }
 
             writeResponse(chatRoomId = chatRoomId, response = response)
-            clearWorkerState(chatRoomId = chatRoomId)
 
             Result.Success
         } catch (cancellation: CancellationException) {
@@ -291,25 +290,16 @@ class ChatRequestRunner(
         }.filterNotNull()
     }
 
-    private suspend fun clearWorkerState(chatRoomId: ChatRoomId) {
-        appDatabase.chatRoomDao().update(id = chatRoomId) {
-            it.copy(
-                workerId = null,
-                latestErrorMessage = null,
-            )
-        }
-    }
-
+    /**
+     * workerId は Work の状態監視が所有するため、Runner は実行結果だけを書き込む。
+     */
     private suspend fun fail(
         chatRoomId: ChatRoomId,
         errorMessage: String,
     ): Result.Error {
         Log.e("ChatRequestRunner", errorMessage)
         appDatabase.chatRoomDao().update(id = chatRoomId) {
-            it.copy(
-                workerId = null,
-                latestErrorMessage = errorMessage,
-            )
+            it.copy(latestErrorMessage = errorMessage)
         }
         return Result.Error(errorMessage = errorMessage)
     }

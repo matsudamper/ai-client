@@ -27,11 +27,13 @@ class JvmWorkManagerScheduler(
     private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) : AddRequestUseCase.WorkManagerScheduler {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val runningJobs = MutableStateFlow<Map<String, Job>>(mapOf())
+    private val runningWorks = MutableStateFlow<Map<String, RunningWork>>(mapOf())
 
     override fun scheduleWork(
         chatRoomId: ChatRoomId,
     ): String {
+        cancelWorkOf(chatRoomId = chatRoomId)
+
         val workId = UUID.randomUUID().toString()
         val job = scope.launch {
             ChatRequestRunner(
@@ -42,24 +44,38 @@ class JvmWorkManagerScheduler(
                 localModelAiClientFactory = localModelAiClientFactory,
             ).run(chatRoomId = chatRoomId)
         }
-        runningJobs.update { it.plus(workId to job) }
+        runningWorks.update { it.plus(workId to RunningWork(chatRoomId = chatRoomId, job = job)) }
         job.invokeOnCompletion {
-            runningJobs.update { it.minus(workId) }
+            runningWorks.update { it.minus(workId) }
         }
         return workId
     }
 
     override fun cancelWork(workId: String) {
-        runningJobs.value[workId]?.cancel()
+        runningWorks.value[workId]?.job?.cancel()
     }
 
     override fun hasWork(workId: String): Boolean {
-        return runningJobs.value.containsKey(workId)
+        return runningWorks.value.containsKey(workId)
     }
 
     override fun observeWorkInProgress(workId: String): Flow<Boolean> {
-        return runningJobs
+        return runningWorks
             .map { it.containsKey(workId) }
             .distinctUntilChanged()
     }
+
+    /**
+     * Android の enqueueUniqueWork(REPLACE) と同じく、同一ルームの実行は常に一つに保つ。
+     */
+    private fun cancelWorkOf(chatRoomId: ChatRoomId) {
+        runningWorks.value.values
+            .filter { it.chatRoomId == chatRoomId }
+            .forEach { it.job.cancel() }
+    }
+
+    private data class RunningWork(
+        val chatRoomId: ChatRoomId,
+        val job: Job,
+    )
 }
