@@ -16,6 +16,7 @@ interface LocalModelRepository {
 data class LocalModelState(
     val status: LocalModelStatus,
     val progress: Float? = null,
+    val unavailableReason: String? = null,
 )
 
 enum class LocalModelStatus {
