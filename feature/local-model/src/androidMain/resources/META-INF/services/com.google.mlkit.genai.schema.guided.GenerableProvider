@@ -1,0 +1,5 @@
+net.matsudamper.gptclient.localmodel.CalendarOutput_GeneratedProvider
+net.matsudamper.gptclient.localmodel.CalendarItem_GeneratedProvider
+net.matsudamper.gptclient.localmodel.MoneyOutput_GeneratedProvider
+net.matsudamper.gptclient.localmodel.MoneyItem_GeneratedProvider
+net.matsudamper.gptclient.localmodel.EmojiOutput_GeneratedProvider
