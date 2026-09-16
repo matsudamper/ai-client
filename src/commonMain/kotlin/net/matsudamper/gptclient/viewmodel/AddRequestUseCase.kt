@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.room.AppDatabase
 import net.matsudamper.gptclient.room.entity.Chat
+import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 
 class AddRequestUseCase(
@@ -63,15 +64,7 @@ class AddRequestUseCase(
                 )
             }
 
-            val workId = workManagerScheduler.scheduleWork(
-                chatRoomId = chatRoomId,
-            )
-            appDatabase.chatRoomDao().update(
-                room.copy(
-                    workerId = workId,
-                    latestErrorMessage = null,
-                ),
-            )
+            startWork(chatRoomId = chatRoomId, room = room)
 
             Result.Success
         }
@@ -86,18 +79,20 @@ class AddRequestUseCase(
                 return@withContext Result.IsLastUserChat
             }
 
-            val workId = workManagerScheduler.scheduleWork(
-                chatRoomId = chatRoomId,
-            )
-            appDatabase.chatRoomDao().update(
-                room.copy(
-                    workerId = workId,
-                    latestErrorMessage = null,
-                ),
-            )
+            startWork(chatRoomId = chatRoomId, room = room)
 
             return@withContext Result.Success
         }
+    }
+
+    /**
+     * Work は登録直後に実行され得るため、Worker が書き込んだ結果を上書きしないよう
+     * 前回の実行結果は登録前に消し、workerId は最新の Room に対して書き込む。
+     */
+    private suspend fun startWork(chatRoomId: ChatRoomId, room: ChatRoom) {
+        appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
+        val workId = workManagerScheduler.scheduleWork(chatRoomId = chatRoomId)
+        appDatabase.chatRoomDao().update(id = chatRoomId) { it.copy(workerId = workId) }
     }
 
     suspend fun cancelRequest(chatRoomId: ChatRoomId) {
@@ -133,9 +128,9 @@ class AddRequestUseCase(
 
     private suspend fun clearWorkerStateIfMatches(chatRoomId: ChatRoomId, workerId: String) {
         withContext(Dispatchers.IO) {
-            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-            if (room.workerId != workerId) return@withContext
-            appDatabase.chatRoomDao().update(room.copy(workerId = null, latestErrorMessage = null))
+            appDatabase.chatRoomDao().update(id = chatRoomId) { room ->
+                if (room.workerId == workerId) room.copy(workerId = null) else room
+            }
         }
     }
 
