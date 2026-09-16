@@ -89,7 +89,17 @@ class SettingViewModel(
                     val model = selectVisibleModel(candidates, statuses, activeKeys)
                     model.toUiItem(modelState(model, statuses), allCandidates.any { it.modelId in activeKeys }, allCandidates.mapTo(linkedSetOf()) { it.modelId })
                 }
-            SettingsScreenUiState.LocalModelSection(section.displayName, visibleModelItems, if (visibleModelItems.isEmpty()) section.unavailableMessage else null)
+            val emptyMessage =
+                if (visibleModelItems.isEmpty()) {
+                    sectionModels
+                        .mapNotNull { modelState(it, statuses).unavailableReason }
+                        .distinct()
+                        .singleOrNull()
+                        ?: section.unavailableMessage
+                } else {
+                    null
+                }
+            SettingsScreenUiState.LocalModelSection(section.displayName, visibleModelItems, emptyMessage)
         }
 
     private fun selectVisibleModel(candidates: List<LocalModelDefinition>, statuses: Map<LocalModelId, LocalModelState>, activeKeys: Set<LocalModelId>): LocalModelDefinition =
@@ -115,7 +125,11 @@ class SettingViewModel(
             LocalModelStatus.DOWNLOADING -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADING
             LocalModelStatus.DOWNLOADED -> SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED
         }
-        return SettingsScreenUiState.LocalModelItem(displayName, description, status, modelState.progress, canDelete, isActive, createModelListener(modelId, groupedModelIds))
+        val resolvedDescription =
+            modelState.unavailableReason?.let { reason ->
+                if (description.isBlank()) reason else "$description\n$reason"
+            } ?: description
+        return SettingsScreenUiState.LocalModelItem(displayName, resolvedDescription, status, modelState.progress, canDelete, isActive, createModelListener(modelId, groupedModelIds))
     }
 
     private fun saveSecretKey(text: String) { viewModelScope.launch { settingDataStore.setSecretKey(text) } }
