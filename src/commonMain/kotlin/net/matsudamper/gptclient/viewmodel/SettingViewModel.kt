@@ -25,13 +25,8 @@ class SettingViewModel(
     private val eventSender = EventSender<Event>()
     val eventHandler = eventSender.asHandler()
 
-    interface Event {
-        fun providePlatformRequest(): PlatformRequest
-    }
-
-    interface LifecycleListener {
-        fun onStart()
-    }
+    interface Event { fun providePlatformRequest(): PlatformRequest }
+    interface LifecycleListener { fun onStart() }
 
     private val _uiStateFlow = MutableStateFlow<SettingsScreenUiState>(SettingsScreenUiState.Loading)
     val uiStateFlow: StateFlow<SettingsScreenUiState> = _uiStateFlow
@@ -63,50 +58,44 @@ class SettingViewModel(
         }
         viewModelScope.launch {
             combine(
-                combine(secretKeyState, geminiSecretKeyState, geminiBillingKeyState, settingDataStore.getThemeModeFlow(), settingDataStore.getActiveLocalModelKeysFlow()) { secretKey, geminiSecretKey, geminiBillingKey, themeMode, activeKeys ->
-                    KeyViewState(secretKey, geminiSecretKey, geminiBillingKey, themeMode, activeKeys)
-                },
+                combine(secretKeyState, geminiSecretKeyState, geminiBillingKeyState, settingDataStore.getThemeModeFlow(), settingDataStore.getActiveLocalModelKeysFlow()) { secretKey, geminiSecretKey, geminiBillingKey, themeMode, activeKeys -> KeyViewState(secretKey, geminiSecretKey, geminiBillingKey, themeMode, activeKeys) },
                 combine(modelsFlow, modelStateMap, pendingDeleteModelId) { models, statuses, deleteModelId -> ModelViewState(models, statuses, deleteModelId) },
-            ) { keyState, modelState ->
-                ViewState(keyState.secretKey, keyState.geminiSecretKey, keyState.geminiBillingKey, keyState.themeMode, keyState.activeKeys, modelState.models, modelState.statuses, modelState.deleteModelId)
-            }.collect { state ->
-                _uiStateFlow.value = SettingsScreenUiState.Loaded(
-                    initialSecretKey = state.secretKey,
-                    initialGeminiSecretKey = state.geminiSecretKey,
-                    initialGeminiBillingKey = state.geminiBillingKey,
-                    themeOption = state.themeMode.toUiState(),
-                    localModelSections = createLocalModelSections(state.models, state.statuses, state.activeKeys),
-                    deleteDialog = state.deleteModelId?.let { deleteModelId ->
-                        val model = state.models.firstOrNull { it.modelId == deleteModelId } ?: return@let null
-                        SettingsScreenUiState.DeleteDialog(model.displayName, createDeleteDialogListener(deleteModelId))
-                    },
-                    listener = loadedListener,
-                )
-            }
+            ) { keyState, modelState -> ViewState(keyState.secretKey, keyState.geminiSecretKey, keyState.geminiBillingKey, keyState.themeMode, keyState.activeKeys, modelState.models, modelState.statuses, modelState.deleteModelId) }
+                .collect { state ->
+                    _uiStateFlow.value = SettingsScreenUiState.Loaded(
+                        initialSecretKey = state.secretKey,
+                        initialGeminiSecretKey = state.geminiSecretKey,
+                        initialGeminiBillingKey = state.geminiBillingKey,
+                        themeOption = state.themeMode.toUiState(),
+                        localModelSections = createLocalModelSections(state.models, state.statuses, state.activeKeys),
+                        deleteDialog = state.deleteModelId?.let { deleteModelId ->
+                            val model = state.models.firstOrNull { it.modelId == deleteModelId } ?: return@let null
+                            SettingsScreenUiState.DeleteDialog(model.displayName, createDeleteDialogListener(deleteModelId))
+                        },
+                        listener = loadedListener,
+                    )
+                }
         }
     }
 
     private fun createLocalModelSections(models: List<LocalModelDefinition>, statuses: Map<LocalModelId, LocalModelState>, activeKeys: Set<LocalModelId>): List<SettingsScreenUiState.LocalModelSection> =
         models.groupBy { it.section }.map { (section, sectionModels) ->
+            val allCandidatesByDisplayName = sectionModels.groupBy { it.displayName }
             val visibleModelItems = sectionModels
                 .filter { model -> !section.hideUnavailableModels || model.modelId in activeKeys || modelState(model, statuses).status != LocalModelStatus.UNAVAILABLE }
                 .groupBy { it.displayName }
-                .values
-                .map { candidates ->
+                .map { (displayName, candidates) ->
+                    val allCandidates = allCandidatesByDisplayName.getValue(displayName)
                     val model = selectVisibleModel(candidates, statuses, activeKeys)
-                    model.toUiItem(modelState(model, statuses), candidates.any { it.modelId in activeKeys }, candidates.mapTo(linkedSetOf()) { it.modelId })
+                    model.toUiItem(modelState(model, statuses), allCandidates.any { it.modelId in activeKeys }, allCandidates.mapTo(linkedSetOf()) { it.modelId })
                 }
             SettingsScreenUiState.LocalModelSection(section.displayName, visibleModelItems, if (visibleModelItems.isEmpty()) section.unavailableMessage else null)
         }
 
     private fun selectVisibleModel(candidates: List<LocalModelDefinition>, statuses: Map<LocalModelId, LocalModelState>, activeKeys: Set<LocalModelId>): LocalModelDefinition =
-        candidates.firstOrNull { it.modelId in activeKeys }
-            ?: candidates.firstOrNull { modelState(it, statuses).status == LocalModelStatus.DOWNLOADED }
-            ?: candidates.firstOrNull { modelState(it, statuses).status == LocalModelStatus.DOWNLOADING }
-            ?: candidates.first()
+        candidates.firstOrNull { it.modelId in activeKeys } ?: candidates.firstOrNull { modelState(it, statuses).status == LocalModelStatus.DOWNLOADED } ?: candidates.firstOrNull { modelState(it, statuses).status == LocalModelStatus.DOWNLOADING } ?: candidates.first()
 
-    private fun modelState(model: LocalModelDefinition, statuses: Map<LocalModelId, LocalModelState>): LocalModelState =
-        statuses[model.modelId] ?: LocalModelState(if (model.section.hideUnavailableModels) LocalModelStatus.UNAVAILABLE else LocalModelStatus.NOT_DOWNLOADED)
+    private fun modelState(model: LocalModelDefinition, statuses: Map<LocalModelId, LocalModelState>): LocalModelState = statuses[model.modelId] ?: LocalModelState(if (model.section.hideUnavailableModels) LocalModelStatus.UNAVAILABLE else LocalModelStatus.NOT_DOWNLOADED)
 
     private fun createModelListener(modelId: LocalModelId, groupedModelIds: Set<LocalModelId>) = object : SettingsScreenUiState.LocalModelItem.Listener {
         override fun onClickDownload() { viewModelScope.launch { localModelRepository.enqueueDownload(modelId) } }
