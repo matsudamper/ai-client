@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -29,7 +30,7 @@ class JvmWorkManagerScheduler(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val runningWorks = MutableStateFlow<Map<String, RunningWork>>(mapOf())
 
-    override fun scheduleWork(
+    override suspend fun scheduleWork(
         chatRoomId: ChatRoomId,
     ): String {
         cancelWorkOf(chatRoomId = chatRoomId)
@@ -67,11 +68,12 @@ class JvmWorkManagerScheduler(
 
     /**
      * Android の enqueueUniqueWork(REPLACE) と同じく、同一ルームの実行は常に一つに保つ。
+     * 新しい実行と書き込みが重ならないよう、終了まで待ってから戻る。
      */
-    private fun cancelWorkOf(chatRoomId: ChatRoomId) {
+    private suspend fun cancelWorkOf(chatRoomId: ChatRoomId) {
         runningWorks.value.values
             .filter { it.chatRoomId == chatRoomId }
-            .forEach { it.job.cancel() }
+            .forEach { it.job.cancelAndJoin() }
     }
 
     private data class RunningWork(

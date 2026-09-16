@@ -14,7 +14,7 @@ class AndroidWorkManagerScheduler(
     private val workManager: WorkManager,
 ) : AddRequestUseCase.WorkManagerScheduler {
 
-    override fun scheduleWork(
+    override suspend fun scheduleWork(
         chatRoomId: ChatRoomId,
     ): String {
         val inputData = ChatRequestWorker.createInputData(

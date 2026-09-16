@@ -23,6 +23,7 @@ class AddRequestUseCase(
     private val appDatabase: AppDatabase,
     private val workManagerScheduler: WorkManagerScheduler,
 ) {
+    private val startMutex = Mutex()
     private val cancelReservation = WorkStartCancelReservation()
 
     suspend fun addRequest(
@@ -93,16 +94,21 @@ class AddRequestUseCase(
     }
 
     /**
+     * 実行中の確認から workerId の保存までを直列化する。並行した開始処理が
+     * 互いの workerId を後から上書きすると、実行中の Work を見失う。
+     *
      * UI は開始操作の直後からキャンセルを表示するため、開始処理の全体をキャンセル予約の対象にする。
      */
     private suspend fun <T> whileStartingRequest(chatRoomId: ChatRoomId, block: suspend () -> T): T {
-        cancelReservation.beginStart(chatRoomId = chatRoomId)
-        try {
-            return block()
-        } finally {
-            withContext(NonCancellable) {
-                if (cancelReservation.endStartAndTakeCancel(chatRoomId = chatRoomId)) {
-                    cancelScheduledWork(chatRoomId = chatRoomId)
+        return startMutex.withLock {
+            cancelReservation.beginStart(chatRoomId = chatRoomId)
+            try {
+                block()
+            } finally {
+                withContext(NonCancellable) {
+                    if (cancelReservation.endStartAndTakeCancel(chatRoomId = chatRoomId)) {
+                        cancelScheduledWork(chatRoomId = chatRoomId)
+                    }
                 }
             }
         }
@@ -205,7 +211,7 @@ class AddRequestUseCase(
     }
 
     interface WorkManagerScheduler {
-        fun scheduleWork(
+        suspend fun scheduleWork(
             chatRoomId: ChatRoomId,
         ): String
 
