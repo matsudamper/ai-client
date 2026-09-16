@@ -1,8 +1,10 @@
 package net.matsudamper.gptclient.worker
 
+import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -10,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlin.random.Random
 import kotlinx.coroutines.flow.first
@@ -37,65 +40,36 @@ class ChatRequestWorker(
 
     override suspend fun doWork(): Result {
         val chatRoomId = ChatRoomId(inputData.getLong(KEY_CHAT_ROOM_ID, 0))
-        if (runAttemptCount > 0) {
-            appDatabase.chatRoomDao().update(id = chatRoomId) {
-                it.copy(workerId = null)
-            }
-            return Result.failure()
-        }
+        if (runAttemptCount > 0) return Result.failure()
 
-        val chatRoom = appDatabase.chatRoomDao()
-
-        val firstChatRoom = chatRoom.get(chatRoomId = chatRoomId.value).first()
-        val roomTitle = firstChatRoom.summary ?: "チャット"
-
+        val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+        val roomTitle = room.summary ?: "チャット"
         val pendingIntent = createPendingIntent(chatRoomId = chatRoomId.value.toString())
-        setForeground(
-            ForegroundInfo(
-                Random.nextInt(),
-                createNotificationBuilder(
-                    title = roomTitle,
-                    message = "処理中...",
-                    channelId = GPT_CLIENT_NOTIFICATION_CHANNEL_ID,
-                    pendingIntent = pendingIntent,
-                )
-                    .setOngoing(true)
-                    .setProgress(1, 1, true).build(),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
-            ),
-        )
+        setForeground(createProgressForegroundInfo(title = roomTitle, pendingIntent = pendingIntent))
 
-        return when (
-            val result = ChatRequestRunner(
-                appDatabase = appDatabase,
-                platformRequest = platformRequest,
-                settingDataStore = settingDataStore,
-                localModelRepository = localModelRepository,
-                localModelAiClientFactory = localModelAiClientFactory,
-            ).run(
-                chatRoomId = chatRoomId,
-            )
-        ) {
+        val result = ChatRequestRunner(
+            appDatabase = appDatabase,
+            platformRequest = platformRequest,
+            settingDataStore = settingDataStore,
+            localModelRepository = localModelRepository,
+            localModelAiClientFactory = localModelAiClientFactory,
+        ).run(chatRoomId = chatRoomId)
+
+        return when (result) {
             is ChatRequestRunner.Result.Error -> {
-                snowFinishNotification(
+                showFinishNotification(
                     title = "処理失敗",
                     message = result.errorMessage,
-                    channelId = GPT_CLIENT_NOTIFICATION_CHANNEL_ID,
-                    notificationId = Random.nextInt(),
                     pendingIntent = pendingIntent,
                 )
                 Result.failure()
             }
 
             ChatRequestRunner.Result.Success -> {
-                val updatedRoom = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-                val notificationTitle = updatedRoom.summary ?: roomTitle
-
-                snowFinishNotification(
+                val finishedRoom = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+                showFinishNotification(
                     title = "処理完了",
-                    message = "${notificationTitle}の処理が完了しました",
-                    channelId = GPT_CLIENT_NOTIFICATION_CHANNEL_ID,
-                    notificationId = Random.nextInt(),
+                    message = "${finishedRoom.summary ?: roomTitle}の処理が完了しました",
                     pendingIntent = pendingIntent,
                 )
                 Result.success()
@@ -103,43 +77,59 @@ class ChatRequestWorker(
         }
     }
 
-    private fun snowFinishNotification(
+    private fun createProgressForegroundInfo(
         title: String,
-        message: String,
-        channelId: String,
-        notificationId: Int,
         pendingIntent: PendingIntent,
-    ) {
-        val builder = createNotificationBuilder(
+    ): ForegroundInfo {
+        val cancelPendingIntent = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)
+        val notification = createNotificationBuilder(
             title = title,
-            message = message,
-            channelId = channelId,
+            message = "処理中...",
             pendingIntent = pendingIntent,
         )
-
-        if (android.content.pm.PackageManager.PERMISSION_GRANTED ==
-            ContextCompat.checkSelfPermission(
-                applicationContext,
-                android.Manifest.permission.POST_NOTIFICATIONS,
+            .setOngoing(true)
+            .setProgress(1, 1, true)
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "キャンセル",
+                cancelPendingIntent,
             )
-        ) {
-            NotificationManagerCompat.from(applicationContext)
-                .notify(notificationId, builder.build())
-        }
+            .build()
+
+        return ForegroundInfo(
+            Random.nextInt(),
+            notification,
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+        )
     }
 
-    private fun createPendingIntent(
-        chatRoomId: String?,
-    ): PendingIntent {
+    private fun showFinishNotification(
+        title: String,
+        message: String,
+        pendingIntent: PendingIntent,
+    ) {
+        val isNotificationGranted = ContextCompat.checkSelfPermission(
+            applicationContext,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (isNotificationGranted.not()) return
+
+        val notification = createNotificationBuilder(
+            title = title,
+            message = message,
+            pendingIntent = pendingIntent,
+        ).build()
+        NotificationManagerCompat.from(applicationContext).notify(Random.nextInt(), notification)
+    }
+
+    private fun createPendingIntent(chatRoomId: String): PendingIntent {
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            if (chatRoomId != null) {
-                putExtra(EXTRA_CHATROOM_ID, chatRoomId)
-            }
+            putExtra(EXTRA_CHATROOM_ID, chatRoomId)
         }
         return PendingIntent.getActivity(
             applicationContext,
-            chatRoomId?.hashCode() ?: 0,
+            chatRoomId.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -148,10 +138,9 @@ class ChatRequestWorker(
     private fun createNotificationBuilder(
         title: String,
         message: String,
-        channelId: String,
         pendingIntent: PendingIntent,
     ): NotificationCompat.Builder {
-        return NotificationCompat.Builder(applicationContext, channelId)
+        return NotificationCompat.Builder(applicationContext, GPT_CLIENT_NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)

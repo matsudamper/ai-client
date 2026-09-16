@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.worker
 
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import net.matsudamper.gptclient.PlatformRequest
@@ -29,9 +30,7 @@ class ChatRequestRunner(
     private val localModelRepository: LocalModelRepository,
     private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) {
-    suspend fun run(
-        chatRoomId: ChatRoomId,
-    ): Result {
+    suspend fun run(chatRoomId: ChatRoomId): Result {
         return try {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val requestInfo = createRequestInfo(room)
@@ -75,9 +74,11 @@ class ChatRequestRunner(
             }
 
             writeResponse(chatRoomId = chatRoomId, response = response)
-            clearWorkerState(chatRoomId = chatRoomId)
 
             Result.Success
+        } catch (cancellation: CancellationException) {
+            // キャンセルはエラーではないため、workerIdの解放はWorkの状態監視側に任せる
+            throw cancellation
         } catch (throwable: Throwable) {
             throwable.printStackTrace()
             fail(
@@ -289,26 +290,18 @@ class ChatRequestRunner(
         }.filterNotNull()
     }
 
-    private suspend fun clearWorkerState(chatRoomId: ChatRoomId) {
-        appDatabase.chatRoomDao().update(id = chatRoomId) {
-            it.copy(
-                workerId = null,
-                latestErrorMessage = null,
-            )
-        }
-    }
-
+    /**
+     * workerId は Work の状態監視が所有するため、Runner は実行結果だけを書き込む。
+     */
     private suspend fun fail(
         chatRoomId: ChatRoomId,
         errorMessage: String,
     ): Result.Error {
         Log.e("ChatRequestRunner", errorMessage)
-        appDatabase.chatRoomDao().update(id = chatRoomId) {
-            it.copy(
-                workerId = null,
-                latestErrorMessage = errorMessage,
-            )
-        }
+        appDatabase.chatRoomDao().updateLatestErrorMessage(
+            chatRoomId = chatRoomId.value,
+            errorMessage = errorMessage,
+        )
         return Result.Error(errorMessage = errorMessage)
     }
 

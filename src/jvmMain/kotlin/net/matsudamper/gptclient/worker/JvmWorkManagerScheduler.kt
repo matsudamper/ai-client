@@ -1,11 +1,16 @@
 package net.matsudamper.gptclient.worker
 
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.datastore.SettingDataStore
@@ -23,11 +28,13 @@ class JvmWorkManagerScheduler(
     private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) : AddRequestUseCase.WorkManagerScheduler {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val jobs = ConcurrentHashMap<String, Job>()
+    private val runningWorks = MutableStateFlow<Map<String, RunningWork>>(mapOf())
 
-    override fun scheduleWork(
+    override suspend fun scheduleWork(
         chatRoomId: ChatRoomId,
     ): String {
+        cancelWorkOf(chatRoomId = chatRoomId)
+
         val workId = UUID.randomUUID().toString()
         val job = scope.launch {
             ChatRequestRunner(
@@ -36,18 +43,41 @@ class JvmWorkManagerScheduler(
                 settingDataStore = settingDataStore,
                 localModelRepository = localModelRepository,
                 localModelAiClientFactory = localModelAiClientFactory,
-            ).run(
-                chatRoomId = chatRoomId,
-            )
+            ).run(chatRoomId = chatRoomId)
         }
-        jobs[workId] = job
+        runningWorks.update { it.plus(workId to RunningWork(chatRoomId = chatRoomId, job = job)) }
         job.invokeOnCompletion {
-            jobs.remove(workId)
+            runningWorks.update { it.minus(workId) }
         }
         return workId
     }
 
-    override fun isWorkRunning(workId: String): Boolean {
-        return jobs[workId]?.isActive == true
+    override fun cancelWork(workId: String) {
+        runningWorks.value[workId]?.job?.cancel()
     }
+
+    override fun hasWork(workId: String): Boolean {
+        return runningWorks.value.containsKey(workId)
+    }
+
+    override fun observeWorkInProgress(workId: String): Flow<Boolean> {
+        return runningWorks
+            .map { it.containsKey(workId) }
+            .distinctUntilChanged()
+    }
+
+    /**
+     * Android の enqueueUniqueWork(REPLACE) と同じく、同一ルームの実行は常に一つに保つ。
+     * 新しい実行と書き込みが重ならないよう、終了まで待ってから戻る。
+     */
+    private suspend fun cancelWorkOf(chatRoomId: ChatRoomId) {
+        runningWorks.value.values
+            .filter { it.chatRoomId == chatRoomId }
+            .forEach { it.job.cancelAndJoin() }
+    }
+
+    private data class RunningWork(
+        val chatRoomId: ChatRoomId,
+        val job: Job,
+    )
 }

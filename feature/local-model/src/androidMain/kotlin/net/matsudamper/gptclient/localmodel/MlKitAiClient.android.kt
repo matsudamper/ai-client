@@ -10,6 +10,7 @@ import com.google.mlkit.genai.prompt.TextPart
 import com.google.mlkit.genai.prompt.generateTypedContentRequest
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.CancellationException
 import net.matsudamper.gptclient.client.AiClient
 
 internal class MlKitAiClient(
@@ -83,6 +84,8 @@ internal class MlKitAiClient(
                     ),
                 ),
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             AiClient.GptResult.Error(
                 AiClient.GptResult.ErrorReason.Unknown(

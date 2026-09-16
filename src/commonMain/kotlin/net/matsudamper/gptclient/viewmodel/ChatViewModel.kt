@@ -4,15 +4,15 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -199,19 +199,13 @@ class ChatViewModel(
             }
         }
         viewModelScope.launch {
-            viewModelStateFlow.map { it.roomInfo?.room?.id }
-                .filterNotNull()
-                .stateIn(this)
-                .collectLatest { roomId ->
-                    appDatabase.chatDao().get(chatRoomId = roomId.value)
-                        .collectLatest { chats ->
-                            viewModelStateFlow.update { viewModelState ->
-                                viewModelState.copy(
-                                    chats = chats,
-                                )
-                            }
-                        }
+            chatRoomIdFlow().collectLatest { roomId ->
+                appDatabase.chatDao().get(chatRoomId = roomId.value).collectLatest { chats ->
+                    viewModelStateFlow.update { viewModelState ->
+                        viewModelState.copy(chats = chats)
+                    }
                 }
+            }
         }
         viewModelScope.launch {
             viewModelStateFlow.collectLatest { viewModelState ->
@@ -251,7 +245,7 @@ class ChatViewModel(
                         },
                         selectedImage = viewModelState.selectedMedia,
                         visibleMediaLoading = viewModelState.isMediaLoading,
-                        enableSend = !viewModelState.isChatLoading &&
+                        enableSend = !viewModelState.isRequestStarting &&
                             !viewModelState.isWorkInProgress &&
                             !viewModelState.isMediaLoading,
                         imageAttachmentBlocked = !isImageAttachmentAllowed(
@@ -260,7 +254,8 @@ class ChatViewModel(
                         ),
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
-                            isChatLoading = viewModelState.isWorkInProgress,
+                            isChatLoading = viewModelState.isRequestStarting || viewModelState.isWorkInProgress,
+                            onClickCancel = { cancelRequest() },
                             agentTransformer = {
                                 when (val info = viewModelState.roomInfo) {
                                     is ViewModelState.RoomInfo.BuiltinProject -> {
@@ -300,17 +295,22 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
-            viewModelStateFlow.mapNotNull { viewModelState ->
-                viewModelState.roomInfo?.room?.id
-            }.stateIn(this).collectLatest { roomId ->
+            chatRoomIdFlow().collectLatest { roomId ->
                 appDatabase.chatRoomDao().get(chatRoomId = roomId.value).collectLatest { room ->
-                    val isWorkInProgress = insertDataAndAddRequestUseCase.isWorkInProgress(roomId)
                     viewModelStateFlow.update {
                         it.copy(
                             roomInfo = it.roomInfo?.copyOnlyRoom(room),
-                            isWorkInProgress = isWorkInProgress,
                             latestChatErrorMessage = room.latestErrorMessage,
                         )
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            chatRoomIdFlow().collectLatest { roomId ->
+                insertDataAndAddRequestUseCase.observeWorkInProgress(roomId).collect { isWorkInProgress ->
+                    viewModelStateFlow.update {
+                        it.copy(isWorkInProgress = isWorkInProgress)
                     }
                 }
             }
@@ -387,6 +387,19 @@ class ChatViewModel(
         }
     }
 
+    private fun chatRoomIdFlow(): Flow<ChatRoomId> {
+        return viewModelStateFlow
+            .mapNotNull { it.roomInfo?.room?.id }
+            .distinctUntilChanged()
+    }
+
+    private fun cancelRequest() {
+        val roomInfo = viewModelStateFlow.value.roomInfo ?: return
+        viewModelScope.launch {
+            insertDataAndAddRequestUseCase.cancelRequest(roomInfo.room.id)
+        }
+    }
+
     private fun retryRequest() {
         val roomInfo = viewModelStateFlow.value.roomInfo ?: return
         val chatRoomId = roomInfo.room.id
@@ -394,9 +407,8 @@ class ChatViewModel(
         viewModelScope.launch {
             try {
                 viewModelStateFlow.update {
-                    it.copy(isWorkInProgress = true)
+                    it.copy(isRequestStarting = true)
                 }
-
                 val result = insertDataAndAddRequestUseCase.retryRequest(chatRoomId)
                 when (result) {
                     is AddRequestUseCase.Result.Success,
@@ -422,7 +434,7 @@ class ChatViewModel(
                 }
             } finally {
                 viewModelStateFlow.update {
-                    it.copy(isWorkInProgress = false)
+                    it.copy(isRequestStarting = false)
                 }
             }
         }
@@ -472,7 +484,7 @@ class ChatViewModel(
         viewModelScope.launch {
             try {
                 viewModelStateFlow.update {
-                    it.copy(isChatLoading = true)
+                    it.copy(isRequestStarting = true)
                 }
                 val result = insertDataAndAddRequestUseCase.addRequest(
                     chatRoomId = chatRoomId,
@@ -500,7 +512,7 @@ class ChatViewModel(
                 }
             } finally {
                 viewModelStateFlow.update {
-                    it.copy(isChatLoading = false)
+                    it.copy(isRequestStarting = false)
                 }
             }
         }
@@ -573,7 +585,8 @@ class ChatViewModel(
         val chats: List<Chat> = listOf(),
         val selectedMedia: List<ChatFooterImage> = listOf(),
         val isMediaLoading: Boolean = false,
-        val isChatLoading: Boolean = false,
+        /** Work の登録が完了して監視できるようになるまでの、実行中と同じ扱いにする期間 */
+        val isRequestStarting: Boolean = false,
         val isWorkInProgress: Boolean = false,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
