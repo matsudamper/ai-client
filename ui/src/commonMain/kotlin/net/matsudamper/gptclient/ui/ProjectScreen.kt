@@ -49,7 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import java.time.Instant
@@ -181,6 +183,8 @@ fun ProjectScreen(
                 BasicTextField(
                     modifier = Modifier.fillMaxWidth(),
                     state = newNameState,
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     decorator = {
                         TextFieldDefaults.DecorationBox(
                             value = newNameState.text.toString(),
@@ -279,11 +283,12 @@ fun ProjectScreen(
                                 BasicTextField(
                                     modifier = systemMessageModifier
                                         .clip(MaterialTheme.shapes.small)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                                         .padding(8.dp),
                                     textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     ),
+                                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                     state = state,
                                     enabled = uiState.systemMessage.editable,
                                 )
@@ -351,7 +356,7 @@ fun ProjectScreen(
             val state = rememberTextFieldState()
             Column(
                 modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .navigationBarsPadding(),
             ) {
                 ModelSelectorBar(

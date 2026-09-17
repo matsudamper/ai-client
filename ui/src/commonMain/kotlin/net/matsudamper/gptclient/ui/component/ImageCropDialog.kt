@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -77,50 +79,53 @@ fun ImageCropDialog(
             usePlatformDefaultWidth = false,
         ),
     ) {
-        Column(
+        Surface(
             modifier = modifier,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
-            Box(
-                modifier = Modifier.fillMaxWidth()
-                    .weight(1f)
-                    .background(Color.Black)
-                    .padding(24.dp),
-            ) {
-                ImageContent(
-                    imageUri = imageUri,
-                    initialRect = initialRect,
-                    imageRectProviderFlow = remember(imageRectProviderFlow) { imageRectProviderFlow.consumeAsFlow() },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Button(
-                    onClick = onDismissRequest,
-                    modifier = Modifier.padding(end = 8.dp),
+            Column {
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                        .weight(1f)
+                        .background(Color.Black)
+                        .padding(24.dp),
                 ) {
-                    Text("Cancel")
+                    ImageContent(
+                        imageUri = imageUri,
+                        initialRect = initialRect,
+                        imageRectProviderFlow = remember(imageRectProviderFlow) { imageRectProviderFlow.consumeAsFlow() },
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Button(
+                        onClick = onDismissRequest,
+                        modifier = Modifier.padding(end = 8.dp),
+                    ) {
+                        Text("Cancel")
+                    }
 
-                val coroutineScope = rememberCoroutineScope()
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            imageRectProviderFlow.send { rect ->
-                                if (rect != null) {
-                                    onCropComplete(rect)
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    val coroutineScope = rememberCoroutineScope()
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                imageRectProviderFlow.send { rect ->
+                                    if (rect != null) {
+                                        onCropComplete(rect)
+                                    }
                                 }
                             }
-                        }
-                    },
-                ) {
-                    Text("Complete")
+                        },
+                    ) {
+                        Text("Complete")
+                    }
                 }
             }
         }

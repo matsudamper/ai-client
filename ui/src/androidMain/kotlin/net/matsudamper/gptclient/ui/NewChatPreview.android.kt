@@ -6,5 +6,11 @@ import androidx.compose.ui.tooling.preview.Preview
 @Preview(name = "Home")
 @Composable
 private fun HomePreview() {
-    NewChatPreviewContent()
+    NewChatPreviewContent(isDark = false)
+}
+
+@Preview(name = "Home Dark")
+@Composable
+private fun HomeDarkPreview() {
+    NewChatPreviewContent(isDark = true)
 }

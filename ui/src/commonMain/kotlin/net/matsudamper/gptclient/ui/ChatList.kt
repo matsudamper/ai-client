@@ -20,7 +20,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -84,9 +83,6 @@ public fun ChatList(
         ) {
             Card(
                 modifier = Modifier.fillMaxSize(),
-                colors = CardDefaults.cardColors().copy(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
             ) {
                 Text(uiState.errorDialogMessage)
             }
@@ -150,7 +146,7 @@ public fun ChatList(
             }
             Column(
                 modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .navigationBarsPadding(),
             ) {
                 val state = rememberTextFieldState()
@@ -188,7 +184,10 @@ private fun AgentItem(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.CenterStart,
         ) {
-            item.uiSet.Content(modifier = Modifier.padding(horizontal = ChatHorizontalPadding))
+            item.uiSet.Content(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
+            )
         }
         Spacer(modifier = Modifier.width(AgentUserHorizontalPadding))
     }
@@ -205,7 +204,10 @@ private fun UserItem(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.CenterEnd,
         ) {
-            item.uiSet.Content(Modifier.padding(horizontal = ChatHorizontalPadding))
+            item.uiSet.Content(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
+            )
         }
     }
 }

@@ -60,7 +60,6 @@ fun JsonUiRenderer(
                 modifier = modifier,
                 text = node.value,
                 style = textStyle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -86,7 +85,6 @@ fun JsonUiRenderer(
                 Text(
                     text = node.value,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

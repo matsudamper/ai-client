@@ -37,14 +37,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlin.math.ceil
@@ -141,13 +144,15 @@ public fun NewChat(
                     Box(
                         modifier = Modifier.fillMaxWidth()
                             .clip(MaterialTheme.shapes.medium)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                         contentAlignment = Alignment.Center,
                     ) {
                         BasicTextField(
                             modifier = Modifier.fillMaxWidth()
                                 .padding(8.dp),
                             state = state,
+                            textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         )
                     }
                 },
@@ -292,7 +297,7 @@ public fun NewChat(
                 val state = rememberTextFieldState()
                 Column(
                     modifier = Modifier.fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
                         .navigationBarsPadding(),
                 ) {
                     ModelSelectorBar(
@@ -319,7 +324,7 @@ public fun NewChat(
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize()
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)),
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = SCRIM_ALPHA)),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator()
@@ -338,7 +343,7 @@ private fun ProjectScreen(
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         onClick = { onClick() },
     ) {
         content()
@@ -346,9 +351,9 @@ private fun ProjectScreen(
 }
 
 @Composable
-internal fun NewChatPreviewContent() {
+internal fun NewChatPreviewContent(isDark: Boolean) {
     MaterialTheme(
-        colorScheme = lightColorScheme(),
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,

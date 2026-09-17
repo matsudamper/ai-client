@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.matsudamper.gptclient.ui.DISABLED_CONTENT_ALPHA
 
 data class ModelSelectorUiState(
     val selectedModelName: String,
@@ -150,7 +151,7 @@ fun ModelSelectorBar(
                 color = if (uiState.thinkingToggleEnabled) {
                     MaterialTheme.colorScheme.onSurface
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
                 },
             )
             Spacer(modifier = Modifier.width(8.dp))

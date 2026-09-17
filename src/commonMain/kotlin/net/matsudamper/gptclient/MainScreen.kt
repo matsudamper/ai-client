@@ -45,7 +45,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -64,6 +63,7 @@ import net.matsudamper.gptclient.navigation.Navigator
 import net.matsudamper.gptclient.ui.ChatList
 import net.matsudamper.gptclient.ui.NewChat
 import net.matsudamper.gptclient.ui.ProjectScreen
+import net.matsudamper.gptclient.ui.SCRIM_ALPHA
 import net.matsudamper.gptclient.ui.SettingsScreen
 import net.matsudamper.gptclient.ui.util.formatRelativeTime
 
@@ -194,10 +194,10 @@ public fun MainScreen(
                         )
                     }
                     if (offset > 0.dp) {
-                        val alpha = 0.4f * (offset / panelWidth).coerceIn(0f, 1f)
+                        val alpha = SCRIM_ALPHA * (offset / panelWidth).coerceIn(0f, 1f)
                         Box(
                             modifier = Modifier.fillMaxSize()
-                                .background(Color.Black.copy(alpha = alpha))
+                                .background(MaterialTheme.colorScheme.scrim.copy(alpha = alpha))
                                 .clickable(
                                     interactionSource = null,
                                     indication = null,
@@ -399,7 +399,7 @@ private fun SidePanel(
             }
         }
         Row(
-            modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer)
+            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
                 .navigationBarsPadding()
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
