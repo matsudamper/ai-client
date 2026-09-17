@@ -47,6 +47,8 @@ fun App(
         ThemeMode.DARK -> true
     }
 
+    SyncSystemBarsAppearance(isDark = isDark)
+
     MaterialTheme(
         colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
     ) {
