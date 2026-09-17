@@ -43,8 +43,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlin.math.ceil
@@ -148,6 +150,8 @@ public fun NewChat(
                             modifier = Modifier.fillMaxWidth()
                                 .padding(8.dp),
                             state = state,
+                            textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurfaceVariant),
                         )
                     }
                 },
@@ -319,7 +323,7 @@ public fun NewChat(
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize()
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)),
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator()

@@ -49,7 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import java.time.Instant
@@ -181,6 +183,8 @@ fun ProjectScreen(
                 BasicTextField(
                     modifier = Modifier.fillMaxWidth(),
                     state = newNameState,
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                     decorator = {
                         TextFieldDefaults.DecorationBox(
                             value = newNameState.text.toString(),
@@ -284,6 +288,7 @@ fun ProjectScreen(
                                     textStyle = MaterialTheme.typography.bodyMedium.copy(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     ),
+                                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurfaceVariant),
                                     state = state,
                                     enabled = uiState.systemMessage.editable,
                                 )

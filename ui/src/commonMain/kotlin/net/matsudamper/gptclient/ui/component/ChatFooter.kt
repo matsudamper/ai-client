@@ -36,11 +36,13 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -247,6 +249,8 @@ private fun FooterTextSection(
                     .fillMaxHeight()
                     .weight(1f),
                 state = textFieldState,
+                textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                 decorator = {
                     Box(contentAlignment = Alignment.CenterStart) {
                         it()
