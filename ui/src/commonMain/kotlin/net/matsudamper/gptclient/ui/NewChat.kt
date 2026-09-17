@@ -37,6 +37,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -350,9 +351,9 @@ private fun ProjectScreen(
 }
 
 @Composable
-internal fun NewChatPreviewContent() {
+internal fun NewChatPreviewContent(isDark: Boolean) {
     MaterialTheme(
-        colorScheme = lightColorScheme(),
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
