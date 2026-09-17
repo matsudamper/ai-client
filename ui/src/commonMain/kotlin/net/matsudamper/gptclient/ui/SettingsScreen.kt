@@ -55,7 +55,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
@@ -680,24 +679,8 @@ private fun SettingItem(
 internal fun SettingsScreenPreviewContent(
     isDark: Boolean,
 ) {
-    val lightColors = lightColorScheme(
-        primary = Color(0xFF5A46C8),
-        surfaceVariant = Color(0xFFF1F0F8),
-        secondaryContainer = Color(0xFFE8E4F8),
-    )
-    val darkColors = darkColorScheme(
-        primary = Color(0xFFC5B7FF),
-        onPrimary = Color(0xFF2A176F),
-        surface = Color(0xFF111018),
-        onSurface = Color(0xFFF2F0FA),
-        surfaceVariant = Color(0xFF2A2835),
-        onSurfaceVariant = Color(0xFFE7E1F7),
-        secondaryContainer = Color(0xFF47435A),
-        onSecondaryContainer = Color(0xFFF2EEFF),
-    )
-
     MaterialTheme(
-        colorScheme = if (isDark) darkColors else lightColors,
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
@@ -722,24 +705,8 @@ internal fun SettingsScreenPreviewContent(
 internal fun SettingsApiKeyScreenPreviewContent(
     isDark: Boolean,
 ) {
-    val lightColors = lightColorScheme(
-        primary = Color(0xFF5A46C8),
-        surfaceVariant = Color(0xFFF1F0F8),
-        secondaryContainer = Color(0xFFE8E4F8),
-    )
-    val darkColors = darkColorScheme(
-        primary = Color(0xFFC5B7FF),
-        onPrimary = Color(0xFF2A176F),
-        surface = Color(0xFF111018),
-        onSurface = Color(0xFFF2F0FA),
-        surfaceVariant = Color(0xFF2A2835),
-        onSurfaceVariant = Color(0xFFE7E1F7),
-        secondaryContainer = Color(0xFF47435A),
-        onSecondaryContainer = Color(0xFFF2EEFF),
-    )
-
     MaterialTheme(
-        colorScheme = if (isDark) darkColors else lightColors,
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
@@ -764,21 +731,6 @@ internal fun SettingsModelScreenPreviewContent(
     isDark: Boolean,
     geminiAvailable: Boolean,
 ) {
-    val lightColors = lightColorScheme(
-        primary = Color(0xFF5A46C8),
-        surfaceVariant = Color(0xFFF1F0F8),
-        secondaryContainer = Color(0xFFE8E4F8),
-    )
-    val darkColors = darkColorScheme(
-        primary = Color(0xFFC5B7FF),
-        onPrimary = Color(0xFF2A176F),
-        surface = Color(0xFF111018),
-        onSurface = Color(0xFFF2F0FA),
-        surfaceVariant = Color(0xFF2A2835),
-        onSurfaceVariant = Color(0xFFE7E1F7),
-        secondaryContainer = Color(0xFF47435A),
-        onSecondaryContainer = Color(0xFFF2EEFF),
-    )
     val modelListener = createPreviewLocalModelListener()
     val geminiModels =
         if (geminiAvailable) {
@@ -807,7 +759,7 @@ internal fun SettingsModelScreenPreviewContent(
         }
 
     MaterialTheme(
-        colorScheme = if (isDark) darkColors else lightColors,
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
