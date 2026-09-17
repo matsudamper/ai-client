@@ -43,3 +43,8 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Paparazzi ###
+# 撮影結果は追跡しない
+# README が参照する画像だけ README/ にコピーしてコミットする
+/app-android/src/test/snapshots/
