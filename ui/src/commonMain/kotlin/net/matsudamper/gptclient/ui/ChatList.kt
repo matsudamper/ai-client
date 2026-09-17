@@ -20,7 +20,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -84,9 +83,6 @@ public fun ChatList(
         ) {
             Card(
                 modifier = Modifier.fillMaxSize(),
-                colors = CardDefaults.cardColors().copy(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
             ) {
                 Text(uiState.errorDialogMessage)
             }
@@ -150,7 +146,7 @@ public fun ChatList(
             }
             Column(
                 modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .navigationBarsPadding(),
             ) {
                 val state = rememberTextFieldState()

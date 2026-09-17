@@ -47,7 +47,7 @@ data class ImageMessageComposableInterface(
             modifier = modifier
                 .size(200.dp)
                 .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .clickable { showImageUri = uiState.url },
             contentScale = ContentScale.Crop,
             contentDescription = null,

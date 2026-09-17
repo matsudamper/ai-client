@@ -190,12 +190,10 @@ internal fun ChatFooter(
                 item {
                     Box(
                         modifier = imageModifier
-                            .background(MaterialTheme.colorScheme.secondary),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onSecondary,
-                        )
+                        CircularProgressIndicator()
                     }
                 }
             }
@@ -234,13 +232,13 @@ private fun FooterTextSection(
             Icon(
                 imageVector = FeatherIcons.Image,
                 contentDescription = "add image",
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Row(
             modifier = Modifier.weight(1f)
                 .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 .padding(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -250,7 +248,7 @@ private fun FooterTextSection(
                     .weight(1f),
                 state = textFieldState,
                 textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorator = {
                     Box(contentAlignment = Alignment.CenterStart) {
                         it()
@@ -275,7 +273,7 @@ private fun FooterTextSection(
                 Icon(
                     imageVector = FeatherIcons.RotateCcw,
                     contentDescription = "retry",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -290,7 +288,7 @@ private fun FooterTextSection(
                 tint = if (imageAttachmentBlocked) {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 } else {
-                    MaterialTheme.colorScheme.onSecondaryContainer
+                    MaterialTheme.colorScheme.primary
                 },
             )
         }

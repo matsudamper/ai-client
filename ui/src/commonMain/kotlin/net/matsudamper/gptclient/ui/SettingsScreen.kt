@@ -484,7 +484,7 @@ private fun LocalModelCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(12.dp),
     ) {
         Text(
@@ -638,14 +638,14 @@ private fun ApiKeySettingItem(
                 modifier = Modifier.fillMaxWidth(),
                 state = state,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurface,
                 ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurfaceVariant),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorator = {
                     Box(
                         modifier = Modifier
                             .clip(MaterialTheme.shapes.medium)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                             .padding(8.dp),
                         contentAlignment = Alignment.CenterStart,
                     ) {

@@ -143,15 +143,15 @@ public fun NewChat(
                     Box(
                         modifier = Modifier.fillMaxWidth()
                             .clip(MaterialTheme.shapes.medium)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                         contentAlignment = Alignment.Center,
                     ) {
                         BasicTextField(
                             modifier = Modifier.fillMaxWidth()
                                 .padding(8.dp),
                             state = state,
-                            textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurfaceVariant),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurfaceVariant),
+                            textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         )
                     }
                 },
@@ -296,7 +296,7 @@ public fun NewChat(
                 val state = rememberTextFieldState()
                 Column(
                     modifier = Modifier.fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
                         .navigationBarsPadding(),
                 ) {
                     ModelSelectorBar(
@@ -323,7 +323,7 @@ public fun NewChat(
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = SCRIM_ALPHA)),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator()
@@ -342,7 +342,7 @@ private fun ProjectScreen(
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         onClick = { onClick() },
     ) {
         content()
