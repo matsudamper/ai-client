@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import net.matsudamper.gptclient.ui.jsonui.JsonUiRenderer
 import net.matsudamper.gptclient.ui.jsonui.UiNode
@@ -15,12 +16,12 @@ data class JsonUiMessageComposableInterface(
     val onChipClick: ((String) -> Unit)? = null,
 ) : ChatMessageComposableInterface {
     @Composable
-    override fun Content(modifier: Modifier) {
+    override fun Content(containerColor: Color, modifier: Modifier) {
         SelectionContainer {
             Surface(
                 modifier = modifier,
                 shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = containerColor,
             ) {
                 JsonUiRenderer(
                     node = node,

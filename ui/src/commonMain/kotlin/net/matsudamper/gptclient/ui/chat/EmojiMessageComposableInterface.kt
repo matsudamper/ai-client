@@ -8,6 +8,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 data class EmojiMessageComposableInterface(
@@ -15,7 +16,7 @@ data class EmojiMessageComposableInterface(
 ) : ChatMessageComposableInterface {
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
-    override fun Content(modifier: Modifier) {
+    override fun Content(containerColor: Color, modifier: Modifier) {
         FlowRow(
             modifier = modifier,
             horizontalArrangement = Arrangement.spacedBy(8.dp),

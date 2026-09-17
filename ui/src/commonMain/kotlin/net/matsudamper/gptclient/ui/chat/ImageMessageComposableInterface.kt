@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -24,7 +25,7 @@ data class ImageMessageComposableInterface(
     val uiState: UiState,
 ) : ChatMessageComposableInterface {
     @Composable
-    override fun Content(modifier: Modifier) {
+    override fun Content(containerColor: Color, modifier: Modifier) {
         var showImageUri by remember { mutableStateOf<String?>(null) }
         if (showImageUri != null) {
             Dialog(
@@ -47,7 +48,7 @@ data class ImageMessageComposableInterface(
             modifier = modifier
                 .size(200.dp)
                 .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .background(containerColor)
                 .clickable { showImageUri = uiState.url },
             contentScale = ContentScale.Crop,
             contentDescription = null,

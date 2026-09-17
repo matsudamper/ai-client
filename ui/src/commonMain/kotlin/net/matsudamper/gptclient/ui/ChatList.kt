@@ -184,7 +184,10 @@ private fun AgentItem(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.CenterStart,
         ) {
-            item.uiSet.Content(modifier = Modifier.padding(horizontal = ChatHorizontalPadding))
+            item.uiSet.Content(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
+            )
         }
         Spacer(modifier = Modifier.width(AgentUserHorizontalPadding))
     }
@@ -201,7 +204,10 @@ private fun UserItem(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.CenterEnd,
         ) {
-            item.uiSet.Content(Modifier.padding(horizontal = ChatHorizontalPadding))
+            item.uiSet.Content(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.padding(horizontal = ChatHorizontalPadding),
+            )
         }
     }
 }

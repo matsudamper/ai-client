@@ -10,6 +10,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 
@@ -18,7 +19,7 @@ data class ChatErrorMessageRetryComposableInterface(
     private val retry: () -> Unit,
 ) : ChatMessageComposableInterface {
     @Composable
-    override fun Content(modifier: Modifier) {
+    override fun Content(containerColor: Color, modifier: Modifier) {
         Column(
             modifier = modifier,
         ) {
