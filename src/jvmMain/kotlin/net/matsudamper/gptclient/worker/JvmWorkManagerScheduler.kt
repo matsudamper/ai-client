@@ -1,5 +1,6 @@
 package net.matsudamper.gptclient.worker
 
+import java.time.Instant
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +37,7 @@ class JvmWorkManagerScheduler(
         cancelWorkOf(chatRoomId = chatRoomId)
 
         val workId = UUID.randomUUID().toString()
+        val startedAt = Instant.now()
         val job = scope.launch {
             ChatRequestRunner(
                 appDatabase = appDatabase,
@@ -45,7 +47,7 @@ class JvmWorkManagerScheduler(
                 localModelAiClientFactory = localModelAiClientFactory,
             ).run(chatRoomId = chatRoomId)
         }
-        runningWorks.update { it.plus(workId to RunningWork(chatRoomId = chatRoomId, job = job)) }
+        runningWorks.update { it.plus(workId to RunningWork(chatRoomId = chatRoomId, job = job, startedAt = startedAt)) }
         job.invokeOnCompletion {
             runningWorks.update { it.minus(workId) }
         }
@@ -66,6 +68,12 @@ class JvmWorkManagerScheduler(
             .distinctUntilChanged()
     }
 
+    override fun observeProcessStartedAt(workId: String): Flow<Instant?> {
+        return runningWorks
+            .map { it[workId]?.startedAt }
+            .distinctUntilChanged()
+    }
+
     /**
      * Android の enqueueUniqueWork(REPLACE) と同じく、同一ルームの実行は常に一つに保つ。
      * 新しい実行と書き込みが重ならないよう、終了まで待ってから戻る。
@@ -79,5 +87,6 @@ class JvmWorkManagerScheduler(
     private data class RunningWork(
         val chatRoomId: ChatRoomId,
         val job: Job,
+        val startedAt: Instant,
     )
 }

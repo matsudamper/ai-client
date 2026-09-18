@@ -16,6 +16,7 @@ private fun ChatProcessingPreview() {
     ) {
         Surface {
             LoadingMessageComposableInterface(
+                processingStartedAt = null,
                 onClickCancel = { },
             ).Content(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -33,6 +34,7 @@ private fun ChatProcessingDarkPreview() {
     ) {
         Surface {
             LoadingMessageComposableInterface(
+                processingStartedAt = null,
                 onClickCancel = { },
             ).Content(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
