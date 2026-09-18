@@ -18,6 +18,7 @@ import io.ktor.http.HttpHeaders
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.util.Log
+import net.matsudamper.gptclient.util.toDetailMessage
 
 class GeminiClient(
     private val apiKey: String,
@@ -138,9 +139,9 @@ class GeminiClient(
                 AiClient.GptResult.Success(geminiResponse.toAiResponse())
             }
         } catch (e: SerializationException) {
-            e.printStackTrace()
+            Log.e("GeminiClient", e.stackTraceToString())
             AiClient.GptResult.Error(
-                AiClient.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"),
+                AiClient.GptResult.ErrorReason.Unknown("Gemini のレスポンスを解析できませんでした\n${e.toDetailMessage()}"),
             )
         }
     }
