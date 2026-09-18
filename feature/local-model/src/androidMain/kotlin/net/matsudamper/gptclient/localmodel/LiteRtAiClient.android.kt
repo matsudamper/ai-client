@@ -15,6 +15,7 @@ import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SamplerConfig
 import net.matsudamper.gptclient.client.AiClient
+import net.matsudamper.gptclient.util.toDetailMessage
 
 internal class LiteRtAiClient(
     private val context: Context,
@@ -73,7 +74,7 @@ internal class LiteRtAiClient(
         } catch (throwable: Throwable) {
             AiClient.GptResult.Error(
                 AiClient.GptResult.ErrorReason.Unknown(
-                    throwable.message ?: "LiteRT-LM モデルでの推論に失敗しました",
+                    "LiteRT-LM モデルでの推論に失敗しました\n${throwable.toDetailMessage()}",
                 ),
             )
         }
