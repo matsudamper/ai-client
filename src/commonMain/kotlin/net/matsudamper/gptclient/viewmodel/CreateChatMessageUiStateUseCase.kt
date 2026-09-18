@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient.viewmodel
 
 import androidx.compose.ui.text.AnnotatedString
+import java.time.Instant
 import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.ui.ChatListUiState
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
@@ -13,6 +14,7 @@ class CreateChatMessageUiStateUseCase {
         chats: List<Chat>,
         agentTransformer: (String) -> ChatMessageComposableInterface = { TextMessageComposableInterface(AnnotatedString(it)) },
         isChatLoading: Boolean,
+        processingStartedAt: Instant?,
         onClickCancel: () -> Unit,
     ): List<ChatListUiState.Message> {
         return chats.mapNotNull { chat ->
@@ -73,7 +75,10 @@ class CreateChatMessageUiStateUseCase {
                 .firstOrNull()
         }.plus(
             ChatListUiState.Message.Agent(
-                uiSet = LoadingMessageComposableInterface(onClickCancel = onClickCancel),
+                uiSet = LoadingMessageComposableInterface(
+                    processingStartedAt = processingStartedAt,
+                    onClickCancel = onClickCancel,
+                ),
             ).takeIf { isChatLoading },
         ).filterNotNull()
     }
