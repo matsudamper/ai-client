@@ -48,20 +48,44 @@ class ChatRequestWorker(
         val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
         val roomTitle = room.summary ?: "チャット"
         val pendingIntent = createPendingIntent(chatRoomId = chatRoomId.value.toString())
-        // 強制終了後の再実行でも doWork() が最初から呼ばれるため、ここで採る時刻は常に今回の実処理開始時刻になる
-        val processStartedAt = Instant.now()
-        setProgress(workDataOf(KEY_PROCESS_STARTED_AT to processStartedAt.toEpochMilli()))
-        setForeground(createProgressForegroundInfo(title = roomTitle, pendingIntent = pendingIntent, processStartedAt = processStartedAt))
+        val notificationId = Random.nextInt()
+        // foreground への昇格は setForeground/setProgress 自体に時間がかかるため、実処理開始前の暫定表示として先に出す
+        setForeground(
+            createProgressForegroundInfo(
+                notificationId = notificationId,
+                title = roomTitle,
+                pendingIntent = pendingIntent,
+                processStartedAt = null,
+            ),
+        )
 
+        // 強制終了後の再実行でも doWork() が最初から呼ばれるため、ここで採る時刻は常に今回の実処理開始時刻になる
+        var processStartedAt: Instant? = null
         val result = ChatRequestRunner(
             appDatabase = appDatabase,
             platformRequest = platformRequest,
             settingDataStore = settingDataStore,
             localModelRepository = localModelRepository,
             localModelAiClientFactory = localModelAiClientFactory,
-        ).run(chatRoomId = chatRoomId)
+        ).run(
+            chatRoomId = chatRoomId,
+            onProcessStarted = { startedAt ->
+                processStartedAt = startedAt
+                setProgress(workDataOf(KEY_PROCESS_STARTED_AT to startedAt.toEpochMilli()))
+                setForeground(
+                    createProgressForegroundInfo(
+                        notificationId = notificationId,
+                        title = roomTitle,
+                        pendingIntent = pendingIntent,
+                        processStartedAt = startedAt,
+                    ),
+                )
+            },
+        )
 
-        val processingDurationText = formatProcessingDuration(Duration.between(processStartedAt, Instant.now()))
+        val processingDurationText = formatProcessingDuration(
+            Duration.between(processStartedAt ?: Instant.now(), Instant.now()),
+        )
         return when (result) {
             is ChatRequestRunner.Result.Error -> {
                 showFinishNotification(
@@ -85,9 +109,10 @@ class ChatRequestWorker(
     }
 
     private fun createProgressForegroundInfo(
+        notificationId: Int,
         title: String,
         pendingIntent: PendingIntent,
-        processStartedAt: Instant,
+        processStartedAt: Instant?,
     ): ForegroundInfo {
         val cancelPendingIntent = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)
         val notification = createNotificationBuilder(
@@ -97,8 +122,12 @@ class ChatRequestWorker(
         )
             .setOngoing(true)
             .setProgress(1, 1, true)
-            .setWhen(processStartedAt.toEpochMilli())
-            .setUsesChronometer(true)
+            .apply {
+                if (processStartedAt != null) {
+                    setWhen(processStartedAt.toEpochMilli())
+                    setUsesChronometer(true)
+                }
+            }
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
                 "キャンセル",
@@ -107,7 +136,7 @@ class ChatRequestWorker(
             .build()
 
         return ForegroundInfo(
-            Random.nextInt(),
+            notificationId,
             notification,
             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
         )

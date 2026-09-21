@@ -30,6 +30,7 @@ class JvmWorkManagerScheduler(
 ) : AddRequestUseCase.WorkManagerScheduler {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val runningWorks = MutableStateFlow<Map<String, RunningWork>>(mapOf())
+    private val processStartedAtByWorkId = MutableStateFlow<Map<String, Instant>>(mapOf())
 
     override suspend fun scheduleWork(
         chatRoomId: ChatRoomId,
@@ -37,7 +38,6 @@ class JvmWorkManagerScheduler(
         cancelWorkOf(chatRoomId = chatRoomId)
 
         val workId = UUID.randomUUID().toString()
-        val startedAt = Instant.now()
         val job = scope.launch {
             ChatRequestRunner(
                 appDatabase = appDatabase,
@@ -45,11 +45,17 @@ class JvmWorkManagerScheduler(
                 settingDataStore = settingDataStore,
                 localModelRepository = localModelRepository,
                 localModelAiClientFactory = localModelAiClientFactory,
-            ).run(chatRoomId = chatRoomId)
+            ).run(
+                chatRoomId = chatRoomId,
+                onProcessStarted = { startedAt ->
+                    processStartedAtByWorkId.update { it.plus(workId to startedAt) }
+                },
+            )
         }
-        runningWorks.update { it.plus(workId to RunningWork(chatRoomId = chatRoomId, job = job, startedAt = startedAt)) }
+        runningWorks.update { it.plus(workId to RunningWork(chatRoomId = chatRoomId, job = job)) }
         job.invokeOnCompletion {
             runningWorks.update { it.minus(workId) }
+            processStartedAtByWorkId.update { it.minus(workId) }
         }
         return workId
     }
@@ -69,8 +75,8 @@ class JvmWorkManagerScheduler(
     }
 
     override fun observeProcessStartedAt(workId: String): Flow<Instant?> {
-        return runningWorks
-            .map { it[workId]?.startedAt }
+        return processStartedAtByWorkId
+            .map { it[workId] }
             .distinctUntilChanged()
     }
 
@@ -87,6 +93,5 @@ class JvmWorkManagerScheduler(
     private data class RunningWork(
         val chatRoomId: ChatRoomId,
         val job: Job,
-        val startedAt: Instant,
     )
 }

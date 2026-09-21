@@ -1,5 +1,6 @@
 package net.matsudamper.gptclient.worker
 
+import java.time.Instant
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.coroutines.CancellationException
@@ -30,7 +31,16 @@ class ChatRequestRunner(
     private val localModelRepository: LocalModelRepository,
     private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) {
-    suspend fun run(chatRoomId: ChatRoomId): Result {
+    /**
+     * onProcessStarted は実処理の開始境界（この関数の先頭）で呼ばれる。
+     * 呼び出し元の setForeground/setProgress などの準備処理より前の時刻を渡さないよう、
+     * 表示用の開始時刻はここで採ったものだけを使うこと。
+     */
+    suspend fun run(
+        chatRoomId: ChatRoomId,
+        onProcessStarted: suspend (Instant) -> Unit,
+    ): Result {
+        onProcessStarted(Instant.now())
         return try {
             val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
             val requestInfo = createRequestInfo(room)
