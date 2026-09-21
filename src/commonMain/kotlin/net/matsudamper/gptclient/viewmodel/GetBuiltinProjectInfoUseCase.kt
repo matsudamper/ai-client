@@ -117,7 +117,7 @@ class GetBuiltinProjectInfoUseCase {
                     model = ChatGptModel.Remote.Gemini.GeminiFlashLiteLatestThinking,
                     summaryProvider = { _, _, response ->
                         val parsed = MoneyResponseParser().parse(response)
-                        parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
+                        parsed?.results?.firstOrNull()?.title ?: parsed?.errorMessage
                     },
                 )
             }
