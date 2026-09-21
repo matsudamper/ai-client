@@ -112,9 +112,8 @@ internal class LiteRtAiClient(
         require(trailingUserMessageCount > 0) { "ユーザーメッセージがありません" }
 
         val taskPromptSpec = modelDefinition.taskPromptSpec
-        // タスク指定型モデルは過去のやり取りを含めると認識精度が落ちるため、履歴はシステムメッセージのみ残す
-        val historySourceMessages = dropLast(trailingUserMessageCount)
-            .filter { taskPromptSpec == null || it.role == AiClient.GptMessage.Role.System }
+        // タスク指定型モデルは規定のタスクプロンプト以外が混ざると生成しないため、履歴を一切渡さない
+        val historySourceMessages = if (taskPromptSpec == null) dropLast(trailingUserMessageCount) else emptyList()
         val trailingUserMessages = takeLast(trailingUserMessageCount)
         val maxImages = if (modelDefinition.enableImage) MAX_IMAGES_PER_TURN else 0
         val mergedLastUserMessage = mergeUserMessages(trailingUserMessages)
