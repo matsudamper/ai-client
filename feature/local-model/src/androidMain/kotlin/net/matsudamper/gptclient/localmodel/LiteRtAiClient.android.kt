@@ -111,13 +111,36 @@ internal class LiteRtAiClient(
             .count()
         require(trailingUserMessageCount > 0) { "ユーザーメッセージがありません" }
 
+        val taskPromptSpec = modelDefinition.taskPromptSpec
+        // タスク指定型モデルは過去のやり取りを含めると認識精度が落ちるため、履歴はシステムメッセージのみ残す
         val historySourceMessages = dropLast(trailingUserMessageCount)
+            .filter { taskPromptSpec == null || it.role == AiClient.GptMessage.Role.System }
         val trailingUserMessages = takeLast(trailingUserMessageCount)
         val maxImages = if (modelDefinition.enableImage) MAX_IMAGES_PER_TURN else 0
         val mergedLastUserMessage = mergeUserMessages(trailingUserMessages)
             .limitImages(maxImages = maxImages)
+            .applyTaskPrompt(taskPromptSpec)
 
         return historySourceMessages to mergedLastUserMessage
+    }
+
+    /**
+     * タスク指定型モデルは規定のタスクプロンプト以外を渡すと何も生成しないため、入力テキストをタスクプロンプトへ置き換える。
+     */
+    private fun AiClient.GptMessage.applyTaskPrompt(taskPromptSpec: TaskPromptSpec?): AiClient.GptMessage {
+        if (taskPromptSpec == null) return this
+
+        val inputText = contents.filterIsInstance<AiClient.GptMessage.Content.Text>()
+            .joinToString(separator = "\n") { it.text }
+            .trimStart()
+        val selectedPrompt = taskPromptSpec.selectablePrompts
+            .firstOrNull { inputText.startsWith(it, ignoreCase = true) }
+            ?: taskPromptSpec.defaultPrompt
+        val nonTextContents = contents.filterNot { it is AiClient.GptMessage.Content.Text }
+
+        return copy(
+            contents = listOf(AiClient.GptMessage.Content.Text(selectedPrompt)) + nonTextContents,
+        )
     }
 
     private fun mergeUserMessages(messages: List<AiClient.GptMessage>): AiClient.GptMessage {

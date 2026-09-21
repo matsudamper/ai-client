@@ -17,6 +17,14 @@ internal data class MlKitModelVariant(
     val preferenceDisplayName: String,
 )
 
+/**
+ * タスク指定型モデルの、プロンプトで選択できるタスクの定義。
+ */
+internal data class TaskPromptSpec(
+    val defaultPrompt: String,
+    val selectablePrompts: List<String>,
+)
+
 internal data class AndroidLocalModel(
     val modelId: LocalModelId,
     val providerId: LocalModelProviderId,
@@ -26,6 +34,7 @@ internal data class AndroidLocalModel(
     val fileName: String? = null,
     val downloadUrl: String? = null,
     val mlKitModelVariant: MlKitModelVariant? = null,
+    val taskPromptSpec: TaskPromptSpec? = null,
     val enableImage: Boolean,
     val supportedImageMimeTypes: List<String>,
     val defaultToken: Int,
@@ -91,6 +100,13 @@ internal object AndroidLocalModels {
     private val gemmaSection =
         LocalModelSectionDefinition(
             displayName = "Gemma",
+            unavailableMessage = null,
+            hideUnavailableModels = false,
+        )
+
+    private val paddleOcrSection =
+        LocalModelSectionDefinition(
+            displayName = "PaddleOCR",
             unavailableMessage = null,
             hideUnavailableModels = false,
         )
@@ -179,6 +195,32 @@ internal object AndroidLocalModels {
             supportsThinking = false,
         )
 
+    private val paddleOcrVl16 =
+        AndroidLocalModel(
+            modelId = LocalModelId("litertlm-paddleocr-vl-1.6"),
+            providerId = LocalModelProviderId.LiteRtLm,
+            section = paddleOcrSection,
+            displayName = "PaddleOCR-VL 1.6",
+            description = "LiteRT-LM / OCR",
+            fileName = "PaddleOCR-VL-1.6.litertlm",
+            downloadUrl = "https://huggingface.co/litert-community/PaddleOCR-VL-1.6/resolve/main/PaddleOCR-VL-1.6.litertlm?download=true",
+            enableImage = true,
+            supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
+            defaultToken = 2000,
+            supportsThinking = false,
+            taskPromptSpec = TaskPromptSpec(
+                defaultPrompt = "OCR:",
+                selectablePrompts = listOf(
+                    "OCR:",
+                    "Table Recognition:",
+                    "Formula Recognition:",
+                    "Chart Recognition:",
+                    "Spotting:",
+                    "Seal Recognition:",
+                ),
+            ),
+        )
+
     val entries: List<AndroidLocalModel> =
         listOf(
             geminiNanoStableFast,
@@ -188,6 +230,7 @@ internal object AndroidLocalModels {
             gemma4E4B,
             gemma4E2B,
             qwen352bVl,
+            paddleOcrVl16,
         )
 
     fun find(modelId: LocalModelId): AndroidLocalModel? = entries.firstOrNull { it.modelId == modelId }
