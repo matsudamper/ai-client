@@ -3,6 +3,7 @@ package net.matsudamper.gptclient.worker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import java.time.Instant
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -49,6 +50,20 @@ class AndroidWorkManagerScheduler(
     override fun observeWorkInProgress(workId: String): Flow<Boolean> {
         return workManager.getWorkInfoByIdFlow(UUID.fromString(workId))
             .map { workInfo -> workInfo?.state?.isFinished == false }
+            .distinctUntilChanged()
+    }
+
+    /**
+     * Worker 内で実際の処理を開始した時刻を Progress データから取得する。
+     * Work が終了している場合や、Worker がまだ処理を開始していない場合は null を返す。
+     */
+    override fun observeProcessStartedAt(workId: String): Flow<Instant?> {
+        return workManager.getWorkInfoByIdFlow(UUID.fromString(workId))
+            .map { workInfo ->
+                if (workInfo == null || workInfo.state.isFinished) return@map null
+                val epochMilli = workInfo.progress.getLong(ChatRequestWorker.KEY_PROCESS_STARTED_AT, -1L)
+                epochMilli.takeIf { it > 0 }?.let(Instant::ofEpochMilli)
+            }
             .distinctUntilChanged()
     }
 
