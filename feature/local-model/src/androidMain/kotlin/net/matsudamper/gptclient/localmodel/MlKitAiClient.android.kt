@@ -73,6 +73,11 @@ internal class MlKitAiClient(
 
                 is AiClient.Format.StructuredJson -> client.generateStructuredJson(request, format.schema)
             }
+            if (text.isBlank()) {
+                return AiClient.GptResult.Error(
+                    AiClient.GptResult.ErrorReason.Unknown("ML Kitモデルの応答が空でした"),
+                )
+            }
             AiClient.GptResult.Success(
                 AiClient.AiResponse(
                     choices = listOf(
