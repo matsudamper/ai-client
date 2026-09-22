@@ -117,6 +117,10 @@ internal class LocalModelDownloadWorker(
                 }
             }
 
+            if (isStopped) {
+                throw IOException("ダウンロードが中断されました")
+            }
+
             if (!tempFile.renameTo(destinationFile)) {
                 tempFile.copyTo(destinationFile, overwrite = true)
                 tempFile.delete()
