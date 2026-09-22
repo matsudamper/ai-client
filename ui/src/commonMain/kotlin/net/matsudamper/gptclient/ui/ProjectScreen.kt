@@ -371,7 +371,6 @@ fun ProjectScreen(
                     visibleMediaLoading = uiState.visibleMediaLoading,
                     enableSend = uiState.enableSend,
                     imageAttachmentBlocked = uiState.imageAttachmentBlocked,
-                    onClickRetry = null,
                     onClickSend = {
                         if (uiState.listener.send(state.text.toString())) {
                             state.clearText()

@@ -54,7 +54,6 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowUp
 import compose.icons.feathericons.Image
 import compose.icons.feathericons.Mic
-import compose.icons.feathericons.RotateCcw
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -87,7 +86,6 @@ internal fun ChatFooter(
     onClickAddImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
-    onClickRetry: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val showImageState = remember { mutableStateOf<ChatFooterImage?>(null) }
@@ -204,7 +202,6 @@ internal fun ChatFooter(
             textFieldState = textFieldState,
             onClickVoice = onClickVoice,
             onClickSend = onClickSend,
-            onClickRetry = onClickRetry,
             enableSend = enableSend,
             imageAttachmentBlocked = imageAttachmentBlocked,
         )
@@ -219,7 +216,6 @@ private fun FooterTextSection(
     onClickSelectImage: () -> Unit,
     onClickVoice: () -> Unit,
     onClickSend: () -> Unit,
-    onClickRetry: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -263,16 +259,6 @@ private fun FooterTextSection(
                     modifier = Modifier.padding(4.dp),
                     imageVector = FeatherIcons.Mic,
                     contentDescription = "input voice",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        if (onClickRetry != null) {
-            IconButton(onClick = { onClickRetry() }) {
-                Icon(
-                    imageVector = FeatherIcons.RotateCcw,
-                    contentDescription = "retry",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

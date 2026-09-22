@@ -172,10 +172,6 @@ class ChatViewModel(
             }
             return true
         }
-
-        override fun onClickRetry() {
-            retryRequest()
-        }
     }
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
         ChatListUiState(

@@ -63,7 +63,6 @@ data class ChatListUiState(
         fun onClickImage()
         fun onClickVoice()
         fun onClickSend(text: String): Boolean
-        fun onClickRetry()
     }
 }
 
@@ -164,7 +163,6 @@ public fun ChatList(
                     },
                     enableSend = uiState.enableSend && state.text.isNotEmpty(),
                     imageAttachmentBlocked = uiState.imageAttachmentBlocked,
-                    onClickRetry = { uiState.listener.onClickRetry() },
                 )
             }
         }
