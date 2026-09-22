@@ -18,6 +18,7 @@ import io.ktor.http.HttpHeaders
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.util.Log
+import net.matsudamper.gptclient.util.toDetailMessage
 
 class GeminiClient(
     private val apiKey: String,
@@ -124,23 +125,11 @@ class GeminiClient(
 
         return try {
             val geminiResponse = ResponseJson.decodeFromString(GeminiResponse.serializer(), responseJson)
-            if (geminiResponse.error != null) {
-                AiClient.GptResult.Error(
-                    AiClient.GptResult.ErrorReason.Unknown(
-                        geminiResponse.error.message ?: "Gemini API Error: ${geminiResponse.error.status}",
-                    ),
-                )
-            } else if (geminiResponse.candidates.isEmpty()) {
-                AiClient.GptResult.Error(
-                    AiClient.GptResult.ErrorReason.Unknown("No response candidates returned"),
-                )
-            } else {
-                AiClient.GptResult.Success(geminiResponse.toAiResponse())
-            }
+            geminiResponse.toGptResult()
         } catch (e: SerializationException) {
-            e.printStackTrace()
+            Log.e("GeminiClient", e.stackTraceToString())
             AiClient.GptResult.Error(
-                AiClient.GptResult.ErrorReason.Unknown(e.message ?: "Unknown Error"),
+                AiClient.GptResult.ErrorReason.Unknown("Gemini のレスポンスを解析できませんでした\n${e.toDetailMessage()}"),
             )
         }
     }
@@ -157,6 +146,39 @@ class GeminiClient(
             ignoreUnknownKeys = true
         }
 
+        private fun GeminiResponse.toGptResult(): AiClient.GptResult {
+            val responseError = error
+            if (responseError != null) {
+                return AiClient.GptResult.Error(
+                    AiClient.GptResult.ErrorReason.Unknown(
+                        responseError.message ?: "Gemini API Error: ${responseError.status}",
+                    ),
+                )
+            }
+            if (candidates.isEmpty()) {
+                return AiClient.GptResult.Error(
+                    AiClient.GptResult.ErrorReason.Unknown("No response candidates returned"),
+                )
+            }
+
+            val aiResponse = toAiResponse()
+            if (aiResponse.choices.isNotEmpty()) {
+                return AiClient.GptResult.Success(aiResponse)
+            }
+
+            val finishReasons = candidates.mapNotNull { it.finishReason }.distinct()
+            val finishReasonText = if (finishReasons.isEmpty()) {
+                "不明"
+            } else {
+                finishReasons.joinToString(", ")
+            }
+            return AiClient.GptResult.Error(
+                AiClient.GptResult.ErrorReason.Unknown(
+                    "Gemini からテキストレスポンスが返されませんでした (finishReason: $finishReasonText)",
+                ),
+            )
+        }
+
         private fun GeminiResponse.toAiResponse(): AiClient.AiResponse {
             return AiClient.AiResponse(
                 choices = candidates.mapNotNull { candidate ->
@@ -165,6 +187,8 @@ class GeminiClient(
                         .filter { it.thought != true }
                         .mapNotNull { it.text }
                         .joinToString("")
+                    if (textContent.isBlank()) return@mapNotNull null
+
                     val role = when (content.role) {
                         "model" -> AiClient.AiResponse.Choice.Role.Assistant
                         "user" -> AiClient.AiResponse.Choice.Role.User

@@ -12,6 +12,7 @@ import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
 import com.google.mlkit.genai.prompt.generateTypedContentRequest
 import net.matsudamper.gptclient.client.AiClient
+import net.matsudamper.gptclient.util.toDetailMessage
 
 internal class MlKitAiClient(
     private val generationConfig: GenerationConfig,
@@ -89,7 +90,7 @@ internal class MlKitAiClient(
         } catch (e: Exception) {
             AiClient.GptResult.Error(
                 AiClient.GptResult.ErrorReason.Unknown(
-                    e.message ?: "ML Kitモデルでの推論に失敗しました",
+                    "ML Kitモデルでの推論に失敗しました\n${e.toDetailMessage()}",
                 ),
             )
         } finally {

@@ -511,7 +511,7 @@ class ChatViewModel(
                     is AddRequestUseCase.Result.GptResultError,
                     -> {
                         withPlatformRequest {
-                            showToast("エラーが発生しました")
+                            showToast(result.gptError.reason.message)
                         }
                     }
 

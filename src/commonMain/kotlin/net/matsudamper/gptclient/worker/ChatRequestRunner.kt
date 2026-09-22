@@ -22,6 +22,7 @@ import net.matsudamper.gptclient.room.entity.Chat
 import net.matsudamper.gptclient.room.entity.ChatRoom
 import net.matsudamper.gptclient.room.entity.ChatRoomId
 import net.matsudamper.gptclient.util.Log
+import net.matsudamper.gptclient.util.toDetailMessage
 import net.matsudamper.gptclient.viewmodel.GetBuiltinProjectInfoUseCase
 
 class ChatRequestRunner(
@@ -90,10 +91,10 @@ class ChatRequestRunner(
             // キャンセルはエラーではないため、workerIdの解放はWorkの状態監視側に任せる
             throw cancellation
         } catch (throwable: Throwable) {
-            throwable.printStackTrace()
+            Log.e("ChatRequestRunner", throwable.stackTraceToString())
             fail(
                 chatRoomId = chatRoomId,
-                errorMessage = throwable.message?.takeIf { it.isNotBlank() } ?: "エラーが発生しました",
+                errorMessage = throwable.toDetailMessage(),
             )
         }
     }
