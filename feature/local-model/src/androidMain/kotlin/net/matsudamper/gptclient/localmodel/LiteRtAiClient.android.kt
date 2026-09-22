@@ -67,7 +67,14 @@ internal class LiteRtAiClient(
                     conversation.cancelProcess()
                     throw e
                 }
-                responseText.toString().stripMarkdownFence().toSuccessResult()
+                val strippedResponseText = responseText.toString().stripMarkdownFence()
+                if (strippedResponseText.isBlank()) {
+                    AiClient.GptResult.Error(
+                        AiClient.GptResult.ErrorReason.Unknown("LiteRT-LM モデルの応答が空でした"),
+                    )
+                } else {
+                    strippedResponseText.toSuccessResult()
+                }
             }
         } catch (e: CancellationException) {
             throw e
