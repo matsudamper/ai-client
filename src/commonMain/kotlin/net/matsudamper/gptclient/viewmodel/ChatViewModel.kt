@@ -30,6 +30,7 @@ import net.matsudamper.gptclient.entity.isImageAttachmentAllowed
 import net.matsudamper.gptclient.entity.selectableImages
 import net.matsudamper.gptclient.entity.validateImageAttachment
 import net.matsudamper.gptclient.localmodel.LocalModelDefinition
+import net.matsudamper.gptclient.localmodel.LocalModelExecutionPhase
 import net.matsudamper.gptclient.localmodel.LocalModelId
 import net.matsudamper.gptclient.localmodel.LocalModelRepository
 import net.matsudamper.gptclient.localmodel.matchesModelKey
@@ -199,6 +200,11 @@ class ChatViewModel(
             }
         }
         viewModelScope.launch {
+            localModelRepository.observeExecutionPhases().collect { phases ->
+                viewModelStateFlow.update { it.copy(localModelExecutionPhases = phases) }
+            }
+        }
+        viewModelScope.launch {
             chatRoomIdFlow().collectLatest { roomId ->
                 appDatabase.chatDao().get(chatRoomId = roomId.value).collectLatest { chats ->
                     viewModelStateFlow.update { viewModelState ->
@@ -255,6 +261,7 @@ class ChatViewModel(
                         items = CreateChatMessageUiStateUseCase().create(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isRequestStarting || viewModelState.isWorkInProgress,
+                            loadingStatusText = createLoadingStatusText(viewModelState),
                             onClickCancel = { cancelRequest() },
                             agentTransformer = {
                                 when (val info = viewModelState.roomInfo) {
@@ -534,6 +541,22 @@ class ChatViewModel(
         }
     }
 
+    /**
+     * ローカルモデルは生成が始まるまでの待ち時間が長いため、待機とロードを区別して出す。
+     */
+    private fun createLoadingStatusText(viewModelState: ViewModelState): String? {
+        val modelKey = viewModelState.roomInfo?.room?.modelKey ?: return null
+        val model = findModel(modelKey)
+        if (model !is ChatGptModel.Local) return null
+
+        val phase = viewModelState.localModelExecutionPhases[LocalModelId(model.baseModelKey)] ?: return null
+        return when (phase) {
+            LocalModelExecutionPhase.WaitingForOtherModel -> "他のモデルの処理を待機中"
+            LocalModelExecutionPhase.LoadingModel -> "モデルを読み込み中"
+            LocalModelExecutionPhase.Generating -> "応答を生成中"
+        }
+    }
+
     private fun findModel(modelKey: String): ChatGptModel? {
         return ChatGptModel.findByModelKey(modelKey)
             ?: viewModelStateFlow.value.localModelDefs
@@ -592,6 +615,7 @@ class ChatViewModel(
         val latestChatErrorMessage: String? = null,
         val localModelDefs: List<LocalModelDefinition> = listOf(),
         val engineLabels: Map<LocalModelId, String> = mapOf(),
+        val localModelExecutionPhases: Map<LocalModelId, LocalModelExecutionPhase> = mapOf(),
     ) {
         sealed interface RoomInfo {
             val room: ChatRoom

@@ -16,6 +16,7 @@ private fun ChatProcessingPreview() {
     ) {
         Surface {
             LoadingMessageComposableInterface(
+                statusText = "モデルを読み込み中",
                 onClickCancel = { },
             ).Content(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -33,6 +34,7 @@ private fun ChatProcessingDarkPreview() {
     ) {
         Surface {
             LoadingMessageComposableInterface(
+                statusText = "モデルを読み込み中",
                 onClickCancel = { },
             ).Content(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
