@@ -25,6 +25,8 @@ internal class JvmLocalModelRepository : LocalModelRepository {
 
     override suspend fun enqueueDownload(modelId: LocalModelId) {}
 
+    override suspend fun cancelDownload(modelId: LocalModelId) {}
+
     override suspend fun delete(modelId: LocalModelId) {}
 }
 

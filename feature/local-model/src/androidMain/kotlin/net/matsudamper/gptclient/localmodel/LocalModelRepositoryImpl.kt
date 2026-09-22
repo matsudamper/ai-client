@@ -9,7 +9,9 @@ import androidx.work.WorkManager
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +33,7 @@ internal class LocalModelRepositoryImpl(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshTrigger = MutableStateFlow(0)
     private val mlKitStatuses = MutableStateFlow<Map<LocalModelId, LocalModelState>>(emptyMap())
+    private val mlKitDownloadJobs = MutableStateFlow<Map<LocalModelId, Job>>(mapOf())
 
     init {
         scope.launch {
@@ -100,8 +103,16 @@ internal class LocalModelRepositoryImpl(
     override suspend fun enqueueDownload(modelId: LocalModelId) {
         val model = AndroidLocalModels.find(modelId) ?: return
         when (model.providerId) {
-            LocalModelProviderId.MlKitPrompt -> downloadMlKitModel(model)
+            LocalModelProviderId.MlKitPrompt -> startMlKitDownload(model)
             LocalModelProviderId.LiteRtLm -> enqueueLiteRtModel(model)
+        }
+    }
+
+    override suspend fun cancelDownload(modelId: LocalModelId) {
+        val model = AndroidLocalModels.find(modelId) ?: return
+        when (model.providerId) {
+            LocalModelProviderId.MlKitPrompt -> cancelMlKitDownload(model)
+            LocalModelProviderId.LiteRtLm -> cancelLiteRtDownload(modelId)
         }
     }
 
@@ -206,6 +217,31 @@ internal class LocalModelRepositoryImpl(
                 else -> LocalModelStatus.UNAVAILABLE
             },
         )
+
+    private fun startMlKitDownload(model: AndroidLocalModel) {
+        if (mlKitDownloadJobs.value[model.modelId]?.isActive == true) return
+
+        val job = scope.launch {
+            downloadMlKitModel(model)
+        }
+        mlKitDownloadJobs.update { it + (model.modelId to job) }
+        job.invokeOnCompletion {
+            mlKitDownloadJobs.update { jobs ->
+                if (jobs[model.modelId] == job) jobs - model.modelId else jobs
+            }
+        }
+    }
+
+    private suspend fun cancelMlKitDownload(model: AndroidLocalModel) {
+        mlKitDownloadJobs.value[model.modelId]?.cancelAndJoin()
+        mlKitStatuses.update { it + (model.modelId to checkMlKitStatus(model)) }
+    }
+
+    private fun cancelLiteRtDownload(modelId: LocalModelId) {
+        workManager.cancelUniqueWork(LocalModelDownloadWorker.getUniqueWorkName(modelId))
+        getTempModelFile(context, modelId).delete()
+        refreshTrigger.update { it + 1 }
+    }
 
     private suspend fun downloadMlKitModel(model: AndroidLocalModel) {
         val client = try {

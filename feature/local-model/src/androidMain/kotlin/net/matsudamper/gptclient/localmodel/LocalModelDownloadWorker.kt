@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import java.io.File
 import java.io.IOException
@@ -53,6 +54,9 @@ internal class LocalModelDownloadWorker(
             }
         }.getOrElse { throwable ->
             LocalModelRepositoryImpl.getTempModelFile(applicationContext, modelId).delete()
+            if (isStopped) {
+                return Result.failure()
+            }
             showCompletedNotification(
                 title = "モデルのダウンロード失敗",
                 message = throwable.message ?: "${model.displayName} のダウンロードに失敗しました",
@@ -144,6 +148,10 @@ internal class LocalModelDownloadWorker(
                     100,
                     progress ?: 0,
                     progress == null,
+                ).addAction(
+                    android.R.drawable.ic_menu_close_clear_cancel,
+                    "キャンセル",
+                    WorkManager.getInstance(applicationContext).createCancelPendingIntent(id),
                 ).build()
 
         return ForegroundInfo(

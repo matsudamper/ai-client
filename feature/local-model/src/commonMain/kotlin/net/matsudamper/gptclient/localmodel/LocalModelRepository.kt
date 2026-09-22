@@ -10,6 +10,7 @@ interface LocalModelRepository {
     fun observeEngineLabels(): Flow<Map<LocalModelId, String>> = flowOf(emptyMap())
     suspend fun refreshStatuses()
     suspend fun enqueueDownload(modelId: LocalModelId)
+    suspend fun cancelDownload(modelId: LocalModelId)
     suspend fun delete(modelId: LocalModelId)
 }
 
