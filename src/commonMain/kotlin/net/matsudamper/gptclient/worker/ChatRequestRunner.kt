@@ -1,10 +1,16 @@
 package net.matsudamper.gptclient.worker
 
+import java.time.Instant
+import kotlin.coroutines.coroutineContext
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.client.gemini.GeminiClient
@@ -31,61 +37,77 @@ class ChatRequestRunner(
     private val localModelRepository: LocalModelRepository,
     private val localModelAiClientFactory: LocalModelAiClientFactory,
 ) {
-    suspend fun run(chatRoomId: ChatRoomId): Result {
-        return try {
-            val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
-            val requestInfo = createRequestInfo(room)
-            val chatModel = ChatGptModel.findByModelKey(requestInfo.modelKey)
-                ?: run {
-                    val localDef = localModelRepository.getModels()
-                        .find { it.matchesModelKey(requestInfo.modelKey) }
-                    if (localDef != null) {
-                        localDef.toChatGptModel(modelKey = requestInfo.modelKey)
-                    } else {
-                        return fail(chatRoomId = chatRoomId, errorMessage = "モデルが見つかりません")
+    /**
+     * onProcessStarted には実処理の開始境界（この関数の先頭）で採った時刻を渡す。
+     * ここで run() を待たせると、呼び出し元が callback 内で行う setForeground/setProgress
+     * の時間だけ実処理の開始が遅れ、表示時間にその分が混入してしまう。
+     * そのため callback は待ち合わせず並行に実行し、実処理はすぐ続行する。
+     */
+    suspend fun run(
+        chatRoomId: ChatRoomId,
+        onProcessStarted: suspend (Instant) -> Unit,
+    ): Result {
+        val processStartedAt = Instant.now()
+        val notifyJob = CoroutineScope(coroutineContext).launch { onProcessStarted(processStartedAt) }
+        try {
+            return try {
+                val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
+                val requestInfo = createRequestInfo(room)
+                val chatModel = ChatGptModel.findByModelKey(requestInfo.modelKey)
+                    ?: run {
+                        val localDef = localModelRepository.getModels()
+                            .find { it.matchesModelKey(requestInfo.modelKey) }
+                        if (localDef != null) {
+                            localDef.toChatGptModel(modelKey = requestInfo.modelKey)
+                        } else {
+                            return fail(chatRoomId = chatRoomId, errorMessage = "モデルが見つかりません")
+                        }
                     }
-                }
 
-            val gptClient = createClient(chatModel, requestInfo.useGeminiBillingKey)
-                ?: return fail(
-                    chatRoomId = chatRoomId,
-                    errorMessage = when {
-                        chatModel is ChatGptModel.Local -> "モデルファイルが見つかりません。ダウンロードしてください"
-                        chatModel is ChatGptModel.Remote.Gemini &&
-                            shouldUseGeminiBillingKey(chatModel, requestInfo.useGeminiBillingKey) -> "Gemini Billing Key が未設定です"
-                        chatModel is ChatGptModel.Remote.Gemini -> "Gemini API Key が未設定です"
-                        else -> "APIキーが未設定です"
-                    },
-                )
-
-            val response = when (
-                val response = gptClient.request(
-                    messages = createMessage(
-                        systemMessage = requestInfo.systemMessage,
+                val gptClient = createClient(chatModel, requestInfo.useGeminiBillingKey)
+                    ?: return fail(
                         chatRoomId = chatRoomId,
-                    ),
-                    format = requestInfo.format,
-                )
-            ) {
-                is AiClient.GptResult.Error -> {
-                    return fail(chatRoomId = chatRoomId, errorMessage = response.reason.message)
+                        errorMessage = when {
+                            chatModel is ChatGptModel.Local -> "モデルファイルが見つかりません。ダウンロードしてください"
+                            chatModel is ChatGptModel.Remote.Gemini &&
+                                shouldUseGeminiBillingKey(chatModel, requestInfo.useGeminiBillingKey) -> "Gemini Billing Key が未設定です"
+                            chatModel is ChatGptModel.Remote.Gemini -> "Gemini API Key が未設定です"
+                            else -> "APIキーが未設定です"
+                        },
+                    )
+
+                val response = when (
+                    val response = gptClient.request(
+                        messages = createMessage(
+                            systemMessage = requestInfo.systemMessage,
+                            chatRoomId = chatRoomId,
+                        ),
+                        format = requestInfo.format,
+                    )
+                ) {
+                    is AiClient.GptResult.Error -> {
+                        return fail(chatRoomId = chatRoomId, errorMessage = response.reason.message)
+                    }
+
+                    is AiClient.GptResult.Success -> response.response
                 }
 
-                is AiClient.GptResult.Success -> response.response
+                writeResponse(chatRoomId = chatRoomId, response = response)
+
+                Result.Success
+            } catch (cancellation: CancellationException) {
+                // キャンセルはエラーではないため、workerIdの解放はWorkの状態監視側に任せる
+                throw cancellation
+            } catch (throwable: Throwable) {
+                Log.e("ChatRequestRunner", throwable.stackTraceToString())
+                fail(
+                    chatRoomId = chatRoomId,
+                    errorMessage = throwable.toDetailMessage(),
+                )
             }
-
-            writeResponse(chatRoomId = chatRoomId, response = response)
-
-            Result.Success
-        } catch (cancellation: CancellationException) {
-            // キャンセルはエラーではないため、workerIdの解放はWorkの状態監視側に任せる
-            throw cancellation
-        } catch (throwable: Throwable) {
-            Log.e("ChatRequestRunner", throwable.stackTraceToString())
-            fail(
-                chatRoomId = chatRoomId,
-                errorMessage = throwable.toDetailMessage(),
-            )
+        } finally {
+            // 実処理の完了後に、呼び出し元の onProcessStarted（progress/通知の更新）を確実に待ち合わせる
+            withContext(NonCancellable) { notifyJob.join() }
         }
     }
 
