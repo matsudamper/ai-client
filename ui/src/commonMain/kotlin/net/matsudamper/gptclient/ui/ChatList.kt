@@ -26,16 +26,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import net.matsudamper.gptclient.ui.chat.ChatMessageComposableInterface
+import net.matsudamper.gptclient.ui.chat.TextMessageComposableInterface
 import net.matsudamper.gptclient.ui.component.ChatFooter
 import net.matsudamper.gptclient.ui.component.ChatFooterImage
 
@@ -228,6 +233,47 @@ private fun ModelInfoHeader(
                 text = modelInfo.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun ChatListPreviewContent(isDark: Boolean) {
+    MaterialTheme(
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            ChatList(
+                uiState = ChatListUiState(
+                    items = listOf(
+                        ChatListUiState.Message.User(
+                            TextMessageComposableInterface(
+                                uiState = AnnotatedString("こんにちは"),
+                            ),
+                        ),
+                        ChatListUiState.Message.Agent(
+                            TextMessageComposableInterface(
+                                uiState = AnnotatedString("こんにちは、ご用件は何ですか？"),
+                            ),
+                        ),
+                    ),
+                    title = "New Chat",
+                    modelInfo = null,
+                    selectedImage = emptyList(),
+                    visibleMediaLoading = false,
+                    errorDialogMessage = null,
+                    enableSend = true,
+                    imageAttachmentBlocked = false,
+                    listener = object : ChatListUiState.Listener {
+                        override fun onClickImage() = Unit
+                        override fun onClickVoice() = Unit
+                        override fun onClickSend(text: String): Boolean = false
+                    },
+                ),
+                onClickMenu = {},
             )
         }
     }
