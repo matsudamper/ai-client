@@ -174,6 +174,47 @@ public fun ChatList(
     }
 }
 
+@Composable
+internal fun ChatListPreviewContent(isDark: Boolean) {
+    MaterialTheme(
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            ChatList(
+                uiState = ChatListUiState(
+                    items = listOf(
+                        ChatListUiState.Message.User(
+                            TextMessageComposableInterface(
+                                uiState = AnnotatedString("こんにちは"),
+                            ),
+                        ),
+                        ChatListUiState.Message.Agent(
+                            TextMessageComposableInterface(
+                                uiState = AnnotatedString("こんにちは、ご用件は何ですか？"),
+                            ),
+                        ),
+                    ),
+                    title = "New Chat",
+                    modelInfo = null,
+                    selectedImage = listOf(),
+                    visibleMediaLoading = false,
+                    errorDialogMessage = null,
+                    enableSend = true,
+                    imageAttachmentBlocked = false,
+                    listener = object : ChatListUiState.Listener {
+                        override fun onClickImage() = Unit
+                        override fun onClickVoice() = Unit
+                        override fun onClickSend(text: String): Boolean = false
+                    },
+                ),
+                onClickMenu = {},
+            )
+        }
+    }
+}
+
 private val AgentUserHorizontalPadding = 24.dp
 private val ChatHorizontalPadding = 12.dp
 
@@ -233,47 +274,6 @@ private fun ModelInfoHeader(
                 text = modelInfo.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-internal fun ChatListPreviewContent(isDark: Boolean) {
-    MaterialTheme(
-        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            ChatList(
-                uiState = ChatListUiState(
-                    items = listOf(
-                        ChatListUiState.Message.User(
-                            TextMessageComposableInterface(
-                                uiState = AnnotatedString("こんにちは"),
-                            ),
-                        ),
-                        ChatListUiState.Message.Agent(
-                            TextMessageComposableInterface(
-                                uiState = AnnotatedString("こんにちは、ご用件は何ですか？"),
-                            ),
-                        ),
-                    ),
-                    title = "New Chat",
-                    modelInfo = null,
-                    selectedImage = emptyList(),
-                    visibleMediaLoading = false,
-                    errorDialogMessage = null,
-                    enableSend = true,
-                    imageAttachmentBlocked = false,
-                    listener = object : ChatListUiState.Listener {
-                        override fun onClickImage() = Unit
-                        override fun onClickVoice() = Unit
-                        override fun onClickSend(text: String): Boolean = false
-                    },
-                ),
-                onClickMenu = {},
             )
         }
     }
