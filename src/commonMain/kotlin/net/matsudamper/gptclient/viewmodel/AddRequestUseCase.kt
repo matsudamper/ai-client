@@ -144,6 +144,13 @@ class AddRequestUseCase(
 
     suspend fun cancelRequest(chatRoomId: ChatRoomId) {
         withContext(Dispatchers.IO) {
+            // キャンセル自体はエラーとして記録されないため、ここで明示的にメッセージを残し、
+            // チャット側のリトライ導線（ChatErrorMessageRetryComposableInterface）を成立させる
+            appDatabase.chatRoomDao().updateLatestErrorMessage(
+                chatRoomId = chatRoomId.value,
+                errorMessage = "キャンセルしました",
+            )
+
             if (cancelReservation.reserveCancelIfStarting(chatRoomId = chatRoomId)) return@withContext
 
             cancelScheduledWork(chatRoomId = chatRoomId)
