@@ -133,6 +133,7 @@ sealed interface SettingsScreenUiState {
         @Immutable
         interface Listener {
             fun onClickDownload()
+            fun onClickCancelDownload()
             fun onToggleActive(active: Boolean)
             fun onClickDelete()
         }
@@ -543,6 +544,12 @@ private fun LocalModelCard(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedButton(
+                    onClick = { model.listener.onClickCancelDownload() },
+                ) {
+                    Text("キャンセル")
+                }
             }
 
             SettingsScreenUiState.LocalModelItem.ModelStatus.DOWNLOADED -> {
@@ -834,6 +841,8 @@ private fun createPreviewLoadedListener(): SettingsScreenUiState.Loaded.Listener
 private fun createPreviewLocalModelListener(): SettingsScreenUiState.LocalModelItem.Listener =
     object : SettingsScreenUiState.LocalModelItem.Listener {
         override fun onClickDownload() = Unit
+
+        override fun onClickCancelDownload() = Unit
 
         override fun onToggleActive(active: Boolean) = Unit
 

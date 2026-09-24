@@ -169,6 +169,9 @@ class SettingViewModel(
         override fun onClickDownload() {
             viewModelScope.launch { localModelRepository.enqueueDownload(modelId) }
         }
+        override fun onClickCancelDownload() {
+            viewModelScope.launch { localModelRepository.cancelDownload(modelId) }
+        }
         override fun onToggleActive(active: Boolean) {
             viewModelScope.launch { if (active) settingDataStore.addActiveLocalModelKey(modelId) else groupedModelIds.forEach { settingDataStore.removeActiveLocalModelKey(it) } }
         }

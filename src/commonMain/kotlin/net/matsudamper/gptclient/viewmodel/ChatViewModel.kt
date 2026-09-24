@@ -3,6 +3,7 @@ package net.matsudamper.gptclient.viewmodel
 import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -172,10 +173,6 @@ class ChatViewModel(
             }
             return true
         }
-
-        override fun onClickRetry() {
-            retryRequest()
-        }
     }
     val uiStateFlow: StateFlow<ChatListUiState> = MutableStateFlow(
         ChatListUiState(
@@ -262,6 +259,7 @@ class ChatViewModel(
                             chats = viewModelState.chats,
                             isChatLoading = viewModelState.isRequestStarting || viewModelState.isWorkInProgress,
                             loadingStatusText = createLoadingStatusText(viewModelState),
+                            processingStartedAt = viewModelState.processingStartedAt,
                             onClickCancel = { cancelRequest() },
                             agentTransformer = {
                                 when (val info = viewModelState.roomInfo) {
@@ -318,6 +316,15 @@ class ChatViewModel(
                 insertDataAndAddRequestUseCase.observeWorkInProgress(roomId).collect { isWorkInProgress ->
                     viewModelStateFlow.update {
                         it.copy(isWorkInProgress = isWorkInProgress)
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            chatRoomIdFlow().collectLatest { roomId ->
+                insertDataAndAddRequestUseCase.observeProcessStartedAt(roomId).collect { processingStartedAt ->
+                    viewModelStateFlow.update {
+                        it.copy(processingStartedAt = processingStartedAt)
                     }
                 }
             }
@@ -611,6 +618,7 @@ class ChatViewModel(
         /** Work の登録が完了して監視できるようになるまでの、実行中と同じ扱いにする期間 */
         val isRequestStarting: Boolean = false,
         val isWorkInProgress: Boolean = false,
+        val processingStartedAt: Instant? = null,
         val errorDialogMessage: String? = null,
         val latestChatErrorMessage: String? = null,
         val localModelDefs: List<LocalModelDefinition> = listOf(),

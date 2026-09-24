@@ -11,6 +11,7 @@ interface LocalModelRepository {
     fun observeExecutionPhases(): Flow<Map<LocalModelId, LocalModelExecutionPhase>> = LocalModelExecutionPhaseStore.phases
     suspend fun refreshStatuses()
     suspend fun enqueueDownload(modelId: LocalModelId)
+    suspend fun cancelDownload(modelId: LocalModelId)
     suspend fun delete(modelId: LocalModelId)
 }
 

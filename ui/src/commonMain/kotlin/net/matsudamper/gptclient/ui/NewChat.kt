@@ -314,7 +314,6 @@ public fun NewChat(
                         },
                         selectedMedia = uiState.selectedMedia,
                         visibleMediaLoading = uiState.visibleMediaLoading,
-                        onClickRetry = null,
                         enableSend = uiState.enableSend && state.text.isNotBlank(),
                         imageAttachmentBlocked = uiState.imageAttachmentBlocked,
                         modifier = Modifier.fillMaxWidth(),

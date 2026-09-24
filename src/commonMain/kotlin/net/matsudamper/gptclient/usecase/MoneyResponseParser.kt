@@ -17,7 +17,7 @@ class MoneyResponseParser {
     fun toUiNode(original: String): UiNode = try {
         val response = Json.decodeFromString<MoneyGptResponse>(original)
         if (response.results.isEmpty()) {
-            UiNode.Text(value = response.errorMessage ?: original)
+            UiNode.Text(value = response.errorMessage?.takeIf { it.isNotBlank() } ?: original)
         } else {
             UiNode.Column(
                 children = buildList {

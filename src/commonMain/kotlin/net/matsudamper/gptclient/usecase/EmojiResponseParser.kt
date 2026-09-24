@@ -14,7 +14,7 @@ class EmojiResponseParser {
             .decodeFromString<EmojiGptResponse>(original)
         Log.d("RESPONSE", response.toString())
         if (response.results.isEmpty()) {
-            UiNode.Text(value = response.errorMessage ?: original)
+            UiNode.Text(value = response.errorMessage?.takeIf { it.isNotBlank() } ?: original)
         } else {
             UiNode.Chips(values = response.results)
         }

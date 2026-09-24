@@ -1,5 +1,6 @@
 package net.matsudamper.gptclient.viewmodel
 
+import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
@@ -143,6 +144,13 @@ class AddRequestUseCase(
 
     suspend fun cancelRequest(chatRoomId: ChatRoomId) {
         withContext(Dispatchers.IO) {
+            // キャンセル自体はエラーとして記録されないため、ここで明示的にメッセージを残し、
+            // チャット側のリトライ導線（ChatErrorMessageRetryComposableInterface）を成立させる
+            appDatabase.chatRoomDao().updateLatestErrorMessage(
+                chatRoomId = chatRoomId.value,
+                errorMessage = "キャンセルしました",
+            )
+
             if (cancelReservation.reserveCancelIfStarting(chatRoomId = chatRoomId)) return@withContext
 
             cancelScheduledWork(chatRoomId = chatRoomId)
@@ -179,6 +187,24 @@ class AddRequestUseCase(
                 }
             }
             .distinctUntilChanged()
+    }
+
+    /**
+     * 実際の処理開始時刻を返す。強制終了後に別の Work として再開された場合も、
+     * その回の実処理開始時刻のみを返すため、前回分と累積されない。
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeProcessStartedAt(chatRoomId: ChatRoomId): Flow<Instant?> {
+        return appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value)
+            .map { it.workerId }
+            .distinctUntilChanged()
+            .flatMapLatest { workerId ->
+                if (workerId == null) {
+                    flowOf(null)
+                } else {
+                    workManagerScheduler.observeProcessStartedAt(workerId)
+                }
+            }
     }
 
     private suspend fun clearWorkerStateIfMatches(chatRoomId: ChatRoomId, workerId: String) {
@@ -228,6 +254,8 @@ class AddRequestUseCase(
         fun hasWork(workId: String): Boolean
 
         fun observeWorkInProgress(workId: String): Flow<Boolean>
+
+        fun observeProcessStartedAt(workId: String): Flow<Instant?>
     }
 
     sealed interface Result {
