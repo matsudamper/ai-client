@@ -21,6 +21,7 @@ internal class AndroidLocalModelAiClientFactory(
         return when (modelDefinition.providerId) {
             LocalModelProviderId.MlKitPrompt ->
                 MlKitAiClient(
+                    modelId = modelId,
                     generationConfig = modelDefinition.createMlKitGenerationConfig(),
                 )
 

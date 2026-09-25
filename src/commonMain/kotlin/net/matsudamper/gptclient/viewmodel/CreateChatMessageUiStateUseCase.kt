@@ -14,6 +14,7 @@ class CreateChatMessageUiStateUseCase {
         chats: List<Chat>,
         agentTransformer: (String) -> ChatMessageComposableInterface = { TextMessageComposableInterface(AnnotatedString(it)) },
         isChatLoading: Boolean,
+        loadingStatusText: String?,
         processingStartedAt: Instant?,
         onClickCancel: () -> Unit,
     ): List<ChatListUiState.Message> {
@@ -76,6 +77,7 @@ class CreateChatMessageUiStateUseCase {
         }.plus(
             ChatListUiState.Message.Agent(
                 uiSet = LoadingMessageComposableInterface(
+                    statusText = loadingStatusText,
                     processingStartedAt = processingStartedAt,
                     onClickCancel = onClickCancel,
                 ),

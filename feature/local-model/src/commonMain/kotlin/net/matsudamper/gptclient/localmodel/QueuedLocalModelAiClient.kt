@@ -1,5 +1,7 @@
 package net.matsudamper.gptclient.localmodel
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import net.matsudamper.gptclient.client.AiClient
 
 /**
@@ -14,8 +16,14 @@ internal class QueuedLocalModelAiClient(
         messages: List<AiClient.GptMessage>,
         format: AiClient.Format,
     ): AiClient.GptResult {
-        return executionQueue.withExclusiveModel(modelId) {
-            delegate.request(messages = messages, format = format)
+        LocalModelExecutionPhaseStore.update(modelId, LocalModelExecutionPhase.WaitingForOtherModel)
+        return try {
+            executionQueue.withExclusiveModel(modelId) {
+                LocalModelExecutionPhaseStore.update(modelId, LocalModelExecutionPhase.LoadingModel)
+                delegate.request(messages = messages, format = format)
+            }
+        } finally {
+            withContext(NonCancellable) { LocalModelExecutionPhaseStore.clear(modelId) }
         }
     }
 }

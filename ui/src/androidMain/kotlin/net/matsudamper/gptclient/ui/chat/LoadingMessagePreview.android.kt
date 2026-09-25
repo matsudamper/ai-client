@@ -16,6 +16,7 @@ private fun ChatProcessingPreview() {
     ) {
         Surface {
             LoadingMessageComposableInterface(
+                statusText = "モデルを読み込み中",
                 processingStartedAt = null,
                 onClickCancel = { },
             ).Content(
@@ -34,6 +35,7 @@ private fun ChatProcessingDarkPreview() {
     ) {
         Surface {
             LoadingMessageComposableInterface(
+                statusText = "モデルを読み込み中",
                 processingStartedAt = null,
                 onClickCancel = { },
             ).Content(
