@@ -29,12 +29,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.Cpu
+import compose.icons.feathericons.CreditCard
 import net.matsudamper.gptclient.ui.DISABLED_CONTENT_ALPHA
 
 data class ModelSelectorUiState(
@@ -154,7 +154,7 @@ fun ModelSelectorBar(
                 ModelSelectorUiState.OverflowMenu.None -> Unit
                 is ModelSelectorUiState.OverflowMenu.Gemini -> {
                     ToggleIconButton(
-                        imageVector = BillingIcon,
+                        imageVector = FeatherIcons.CreditCard,
                         label = "Billing",
                         checked = overflow.billingKeyEnabled,
                         enabled = overflow.billingKeyToggleEnabled,
@@ -163,7 +163,7 @@ fun ModelSelectorBar(
                 }
             }
             ToggleIconButton(
-                imageVector = ThinkingIcon,
+                imageVector = FeatherIcons.Cpu,
                 label = "Thinking",
                 checked = uiState.thinkingEnabled,
                 enabled = uiState.thinkingToggleEnabled,
@@ -225,31 +225,3 @@ private fun ToggleIconButton(
     }
 }
 
-private val ThinkingIcon: ImageVector = ImageVector.Builder(
-    name = "Thinking",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-).addPath(
-    pathData = addPathNodes(
-        "M9,21c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-1H9v1z" +
-            "M12,2C8.14,2 5,5.14 5,9c0,2.38 1.19,4.47 3,5.74V17c0,0.55 0.45,1 1,1h6c0.55,0 1,-0.45 1,-1v-2.26" +
-            "c1.81,-1.27 3,-3.36 3,-5.74 0,-3.86 -3.14,-7 -7,-7z",
-    ),
-    fill = SolidColor(Color.Black),
-).build()
-
-private val BillingIcon: ImageVector = ImageVector.Builder(
-    name = "Billing",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-).addPath(
-    pathData = addPathNodes(
-        "M20,4H4c-1.11,0 -1.99,0.89 -1.99,2L2,18c0,1.11 0.89,2 2,2h16c1.11,0 2,-0.89 2,-2V6" +
-            "c0,-1.11 -0.89,-2 -2,-2zM20,18H4v-6h16v6zM20,8H4V6h16v2z",
-    ),
-    fill = SolidColor(Color.Black),
-).build()
