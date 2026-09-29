@@ -17,6 +17,7 @@ import net.matsudamper.gptclient.MediaRequest
 import net.matsudamper.gptclient.PlatformRequest
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.datastore.GeminiBillingKeyOverrideStore
+import net.matsudamper.gptclient.datastore.ProjectModelPreference
 import net.matsudamper.gptclient.datastore.SettingDataStore
 import net.matsudamper.gptclient.entity.ChatGptModel
 import net.matsudamper.gptclient.entity.ImageAttachmentValidation
@@ -60,6 +61,10 @@ class ProjectViewModel(
     }
 
     private val viewModelStateFlow = MutableStateFlow(ViewModelState())
+    private val usageKey = when (val type = navigator.type) {
+        is Navigator.Project.ProjectType.Builtin -> projectUsageKey(type.builtinProjectId)
+        is Navigator.Project.ProjectType.Project -> projectUsageKey(type.projectId)
+    }
     private val systemMessageListener = object : ProjectUiState.SystemMessage.Listener {
         override fun onChange(text: String) {
             when (val info = viewModelStateFlow.value.systemInfo ?: return) {
@@ -246,14 +251,18 @@ class ProjectViewModel(
         ),
     ).also { uiStateFlow ->
         viewModelScope.launch {
-            val usageKey = when (val type = navigator.type) {
-                is Navigator.Project.ProjectType.Builtin -> projectUsageKey(type.builtinProjectId)
-                is Navigator.Project.ProjectType.Project -> projectUsageKey(type.projectId)
-            }
             settingDataStore.recordProjectUsage(
                 key = usageKey,
                 usedAt = System.currentTimeMillis(),
             )
+        }
+        viewModelScope.launch {
+            val preference = settingDataStore.getProjectModelPreference(usageKey) ?: return@launch
+            val model = ChatGptModel.findByModelKey(preference.modelKey)
+            if (model is ChatGptModel.Remote.Gemini) {
+                GeminiBillingKeyOverrideStore.setEnabled(model.selectionKey, preference.geminiBillingKeyEnabled)
+            }
+            viewModelStateFlow.update { it.copy(savedModelKey = preference.modelKey) }
         }
         viewModelScope.launch {
             settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
@@ -468,8 +477,13 @@ class ProjectViewModel(
             geminiBillingKeyOverrideSelectionKeys = viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys,
             onChangeGeminiBillingKey = { selectionKey, enabled ->
                 GeminiBillingKeyOverrideStore.setEnabled(selectionKey, enabled)
+                val model = resolveSelectedModel(viewModelStateFlow.value)
+                if (model != null && model.selectionKey == selectionKey) {
+                    saveModelPreference(model)
+                }
             },
             onSelectModel = { model ->
+                saveModelPreference(model)
                 when (val info = viewModelStateFlow.value.systemInfo) {
                     is ViewModelState.SystemInfoType.BuiltinInfo,
                     null,
@@ -501,10 +515,28 @@ class ProjectViewModel(
         )
     }
 
+    private fun saveModelPreference(model: ChatGptModel) {
+        val preference = ProjectModelPreference(
+            modelKey = model.modelKey,
+            geminiBillingKeyEnabled = model.selectionKey in GeminiBillingKeyOverrideStore.enabledSelectionKeys.value,
+        )
+        viewModelScope.launch {
+            settingDataStore.setProjectModelPreference(usageKey, preference)
+        }
+    }
+
+    private fun findSavedModel(viewModelState: ViewModelState): ChatGptModel? {
+        val savedModelKey = viewModelState.savedModelKey ?: return null
+        val localModel = viewModelState.localModelDefs
+            .firstOrNull { it.matchesModelKey(savedModelKey) }
+            ?.toChatGptModel(modelKey = savedModelKey)
+        return localModel ?: ChatGptModel.findByModelKey(savedModelKey)
+    }
+
     private fun resolveSelectedModel(viewModelState: ViewModelState): ChatGptModel? {
         return viewModelState.overwriteModel
             ?: when (val systemInfo = viewModelState.systemInfo) {
-                is ViewModelState.SystemInfoType.BuiltinInfo -> systemInfo.info.model
+                is ViewModelState.SystemInfoType.BuiltinInfo -> findSavedModel(viewModelState) ?: systemInfo.info.model
                 is ViewModelState.SystemInfoType.Project -> {
                     viewModelState.localModelDefs
                         .firstOrNull { it.matchesModelKey(systemInfo.project.modelName) }
@@ -522,6 +554,7 @@ class ProjectViewModel(
         val chatRooms: List<ChatRoomWithSummary>? = null,
         val systemInfo: SystemInfoType? = null,
         val overwriteModel: ChatGptModel? = null,
+        val savedModelKey: String? = null,
         val activeLocalModelKeys: Set<LocalModelId> = setOf(),
         val localModelDefs: List<LocalModelDefinition> = listOf(),
         val geminiBillingKeyOverrideSelectionKeys: Set<String> = setOf(),
