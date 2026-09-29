@@ -36,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
@@ -191,6 +193,9 @@ private fun ToggleIconButton(
     var menuExpanded by remember { mutableStateOf(false) }
     Box {
         IconButton(
+            modifier = Modifier.semantics {
+                stateDescription = if (checked) "ON" else "OFF"
+            },
             onClick = { menuExpanded = true },
             enabled = enabled,
         ) {
