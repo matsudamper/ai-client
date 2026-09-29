@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -39,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Cpu
 import compose.icons.feathericons.CreditCard
+import compose.icons.feathericons.Lock
 import net.matsudamper.gptclient.ui.DISABLED_CONTENT_ALPHA
 
 data class ModelSelectorUiState(
@@ -191,15 +194,33 @@ private fun ToggleIconButton(
             onClick = { menuExpanded = true },
             enabled = enabled,
         ) {
-            Icon(
-                imageVector = imageVector,
-                contentDescription = label,
-                tint = when {
-                    !enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
-                    checked -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
+            val stateColor = if (checked) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+            Box {
+                Icon(
+                    imageVector = imageVector,
+                    contentDescription = label,
+                    tint = if (enabled) {
+                        stateColor
+                    } else {
+                        stateColor.copy(alpha = DISABLED_CONTENT_ALPHA)
+                    },
+                )
+                if (!enabled) {
+                    Icon(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 6.dp, y = (-6).dp)
+                            .size(14.dp),
+                        imageVector = FeatherIcons.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
         DropdownMenu(
             expanded = menuExpanded,
