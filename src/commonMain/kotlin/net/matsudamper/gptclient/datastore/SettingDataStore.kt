@@ -64,4 +64,10 @@ class SettingDataStore(
     }
 
     fun getProjectLastUsedAtFlow(): Flow<Map<String, Long>> = store.data.map { it.projectLastUsedAt }
+
+    suspend fun setProjectModelPreference(key: String, preference: ProjectModelPreference) {
+        store.updateData { it.copy(projectModelPreferences = it.projectModelPreferences + (key to preference)) }
+    }
+
+    suspend fun getProjectModelPreference(key: String): ProjectModelPreference? = store.data.first().projectModelPreferences[key]
 }
