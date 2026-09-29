@@ -539,7 +539,7 @@ class ProjectViewModel(
     private fun findSavedModel(viewModelState: ViewModelState): ChatGptModel? {
         val savedModelKey = viewModelState.savedModelKey ?: return null
         val localModel = viewModelState.localModelDefs
-            .firstOrNull { it.matchesModelKey(savedModelKey) }
+            .firstOrNull { it.matchesModelKey(savedModelKey) && it.modelId in viewModelState.activeLocalModelKeys }
             ?.toChatGptModel(modelKey = savedModelKey)
         return localModel ?: ChatGptModel.findByModelKey(savedModelKey)
     }
