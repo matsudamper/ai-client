@@ -44,7 +44,6 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.Cpu
 import compose.icons.feathericons.CreditCard
 import compose.icons.feathericons.Lock
-import net.matsudamper.gptclient.ui.DISABLED_CONTENT_ALPHA
 
 data class ModelSelectorUiState(
     val selectedModelName: String,
@@ -199,18 +198,13 @@ private fun ToggleIconButton(
             onClick = { menuExpanded = true },
             enabled = enabled,
         ) {
-            val stateColor = if (checked) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
             Icon(
                 imageVector = imageVector,
                 contentDescription = label,
-                tint = if (enabled) {
-                    stateColor
+                tint = if (checked) {
+                    MaterialTheme.colorScheme.primary
                 } else {
-                    stateColor.copy(alpha = DISABLED_CONTENT_ALPHA)
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 },
             )
         }
