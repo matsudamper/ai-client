@@ -195,6 +195,10 @@ class ProjectViewModel(
                     isLoading = true,
                 )
             }
+            GeminiBillingKeyOverrideStore.setEnabled(
+                selectionKey = selectedModel.selectionKey,
+                enabled = selectedModel.selectionKey in currentState.geminiBillingKeyOverrideSelectionKeys,
+            )
             viewModelScope.launch {
                 val imageFormat = selectedModel.preferredImageFormat ?: ImageFormat.Jpeg
                 appNavigator.navigate(
@@ -259,10 +263,17 @@ class ProjectViewModel(
         viewModelScope.launch {
             val preference = settingDataStore.getProjectModelPreference(usageKey) ?: return@launch
             val model = ChatGptModel.findByModelKey(preference.modelKey)
-            if (model is ChatGptModel.Remote.Gemini) {
-                GeminiBillingKeyOverrideStore.setEnabled(model.selectionKey, preference.geminiBillingKeyEnabled)
+            viewModelStateFlow.update { state ->
+                val billingKeys = if (model is ChatGptModel.Remote.Gemini && preference.geminiBillingKeyEnabled) {
+                    state.geminiBillingKeyOverrideSelectionKeys + model.selectionKey
+                } else {
+                    state.geminiBillingKeyOverrideSelectionKeys
+                }
+                state.copy(
+                    savedModelKey = preference.modelKey,
+                    geminiBillingKeyOverrideSelectionKeys = billingKeys,
+                )
             }
-            viewModelStateFlow.update { it.copy(savedModelKey = preference.modelKey) }
         }
         viewModelScope.launch {
             settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys ->
@@ -272,11 +283,6 @@ class ProjectViewModel(
         viewModelScope.launch {
             val defs = localModelRepository.getResolvedModels()
             viewModelStateFlow.update { it.copy(localModelDefs = defs) }
-        }
-        viewModelScope.launch {
-            GeminiBillingKeyOverrideStore.enabledSelectionKeys.collectLatest { keys ->
-                viewModelStateFlow.update { it.copy(geminiBillingKeyOverrideSelectionKeys = keys) }
-            }
         }
         viewModelScope.launch {
             when (navigator.type) {
@@ -476,7 +482,12 @@ class ProjectViewModel(
             localModelDefs = viewModelStateFlow.value.localModelDefs,
             geminiBillingKeyOverrideSelectionKeys = viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys,
             onChangeGeminiBillingKey = { selectionKey, enabled ->
-                GeminiBillingKeyOverrideStore.setEnabled(selectionKey, enabled)
+                viewModelStateFlow.update { state ->
+                    val keys = state.geminiBillingKeyOverrideSelectionKeys
+                    state.copy(
+                        geminiBillingKeyOverrideSelectionKeys = if (enabled) keys + selectionKey else keys - selectionKey,
+                    )
+                }
                 val model = resolveSelectedModel(viewModelStateFlow.value)
                 if (model != null && model.selectionKey == selectionKey) {
                     saveModelPreference(model)
@@ -518,7 +529,7 @@ class ProjectViewModel(
     private fun saveModelPreference(model: ChatGptModel) {
         val preference = ProjectModelPreference(
             modelKey = model.modelKey,
-            geminiBillingKeyEnabled = model.selectionKey in GeminiBillingKeyOverrideStore.enabledSelectionKeys.value,
+            geminiBillingKeyEnabled = model.selectionKey in viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys,
         )
         viewModelScope.launch {
             settingDataStore.setProjectModelPreference(usageKey, preference)
