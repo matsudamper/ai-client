@@ -2,6 +2,7 @@ package net.matsudamper.gptclient.ui.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,8 +20,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -225,3 +229,58 @@ private fun ToggleIconButton(
     }
 }
 
+@Composable
+internal fun ModelSelectorBarPreviewContent(isDark: Boolean) {
+    MaterialTheme(
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column {
+                ModelSelectorBar(
+                    uiState = createPreviewUiState(
+                        thinkingEnabled = true,
+                        thinkingToggleEnabled = true,
+                        billingKeyEnabled = true,
+                    ),
+                )
+                ModelSelectorBar(
+                    uiState = createPreviewUiState(
+                        thinkingEnabled = false,
+                        thinkingToggleEnabled = true,
+                        billingKeyEnabled = false,
+                    ),
+                )
+                ModelSelectorBar(
+                    uiState = createPreviewUiState(
+                        thinkingEnabled = false,
+                        thinkingToggleEnabled = false,
+                        billingKeyEnabled = false,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+private fun createPreviewUiState(
+    thinkingEnabled: Boolean,
+    thinkingToggleEnabled: Boolean,
+    billingKeyEnabled: Boolean,
+): ModelSelectorUiState {
+    return ModelSelectorUiState(
+        selectedModelName = "Gemini 3 Flash",
+        items = listOf(),
+        thinkingEnabled = thinkingEnabled,
+        thinkingToggleEnabled = thinkingToggleEnabled,
+        overflowMenu = ModelSelectorUiState.OverflowMenu.Gemini(
+            billingKeyEnabled = billingKeyEnabled,
+            billingKeyToggleEnabled = true,
+            onChangeBillingKey = {},
+        ),
+        listener = object : ModelSelectorUiState.Listener {
+            override fun onChangeThinking(enabled: Boolean) = Unit
+        },
+    )
+}
