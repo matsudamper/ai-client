@@ -243,6 +243,7 @@ internal fun ModelSelectorBarPreviewContent(isDark: Boolean) {
                         thinkingEnabled = true,
                         thinkingToggleEnabled = true,
                         billingKeyEnabled = true,
+                        billingKeyToggleEnabled = true,
                     ),
                 )
                 ModelSelectorBar(
@@ -250,13 +251,15 @@ internal fun ModelSelectorBarPreviewContent(isDark: Boolean) {
                         thinkingEnabled = false,
                         thinkingToggleEnabled = true,
                         billingKeyEnabled = false,
+                        billingKeyToggleEnabled = true,
                     ),
                 )
                 ModelSelectorBar(
                     uiState = createPreviewUiState(
                         thinkingEnabled = false,
                         thinkingToggleEnabled = false,
-                        billingKeyEnabled = false,
+                        billingKeyEnabled = true,
+                        billingKeyToggleEnabled = false,
                     ),
                 )
             }
@@ -268,6 +271,7 @@ private fun createPreviewUiState(
     thinkingEnabled: Boolean,
     thinkingToggleEnabled: Boolean,
     billingKeyEnabled: Boolean,
+    billingKeyToggleEnabled: Boolean,
 ): ModelSelectorUiState {
     return ModelSelectorUiState(
         selectedModelName = "Gemini 3 Flash",
@@ -276,7 +280,7 @@ private fun createPreviewUiState(
         thinkingToggleEnabled = thinkingToggleEnabled,
         overflowMenu = ModelSelectorUiState.OverflowMenu.Gemini(
             billingKeyEnabled = billingKeyEnabled,
-            billingKeyToggleEnabled = true,
+            billingKeyToggleEnabled = billingKeyToggleEnabled,
             onChangeBillingKey = {},
         ),
         listener = object : ModelSelectorUiState.Listener {
