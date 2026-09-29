@@ -204,28 +204,27 @@ private fun ToggleIconButton(
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             }
-            Box {
-                Icon(
-                    imageVector = imageVector,
-                    contentDescription = label,
-                    tint = if (enabled) {
-                        stateColor
-                    } else {
-                        stateColor.copy(alpha = DISABLED_CONTENT_ALPHA)
-                    },
-                )
-                if (!enabled) {
-                    Icon(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 6.dp, y = (-6).dp)
-                            .size(14.dp),
-                        imageVector = FeatherIcons.Lock,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            Icon(
+                imageVector = imageVector,
+                contentDescription = label,
+                tint = if (enabled) {
+                    stateColor
+                } else {
+                    stateColor.copy(alpha = DISABLED_CONTENT_ALPHA)
+                },
+            )
+        }
+        if (!enabled) {
+            // IconButton は円形にクリップされるため、鍵は外側に重ねる
+            Icon(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-4).dp, y = 4.dp)
+                    .size(14.dp),
+                imageVector = FeatherIcons.Lock,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         DropdownMenu(
             expanded = menuExpanded,
