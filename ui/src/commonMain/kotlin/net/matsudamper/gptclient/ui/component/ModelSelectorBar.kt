@@ -1,15 +1,18 @@
 package net.matsudamper.gptclient.ui.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,8 +22,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -29,9 +35,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import net.matsudamper.gptclient.ui.DISABLED_CONTENT_ALPHA
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.Cpu
+import compose.icons.feathericons.CreditCard
+import compose.icons.feathericons.Lock
 
 data class ModelSelectorUiState(
     val selectedModelName: String,
@@ -146,63 +158,152 @@ fun ModelSelectorBar(
         Row(
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "Thinking",
-                color = if (uiState.thinkingToggleEnabled) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
-                },
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Switch(
+            when (val overflow = uiState.overflowMenu) {
+                ModelSelectorUiState.OverflowMenu.None -> Unit
+                is ModelSelectorUiState.OverflowMenu.Gemini -> {
+                    ToggleIconButton(
+                        imageVector = FeatherIcons.CreditCard,
+                        label = "Billing",
+                        checked = overflow.billingKeyEnabled,
+                        enabled = overflow.billingKeyToggleEnabled,
+                        onCheckedChange = overflow.onChangeBillingKey,
+                    )
+                }
+            }
+            ToggleIconButton(
+                imageVector = FeatherIcons.Cpu,
+                label = "Thinking",
                 checked = uiState.thinkingEnabled,
                 enabled = uiState.thinkingToggleEnabled,
                 onCheckedChange = uiState.listener::onChangeThinking,
             )
-            when (val overflow = uiState.overflowMenu) {
-                ModelSelectorUiState.OverflowMenu.None -> Unit
-                is ModelSelectorUiState.OverflowMenu.Gemini -> {
-                    GeminiOverflowMenu(state = overflow)
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun GeminiOverflowMenu(
-    state: ModelSelectorUiState.OverflowMenu.Gemini,
+private fun ToggleIconButton(
+    imageVector: ImageVector,
+    label: String,
+    checked: Boolean,
+    enabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    IconButton(onClick = { menuExpanded = true }) {
-        Icon(
-            imageVector = Icons.Default.Menu,
-            contentDescription = null,
-        )
-    }
-    DropdownMenu(
-        expanded = menuExpanded,
-        onDismissRequest = { menuExpanded = false },
-    ) {
-        DropdownMenuItem(
-            text = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        text = "Billing",
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Switch(
-                        checked = state.billingKeyEnabled,
-                        enabled = state.billingKeyToggleEnabled,
-                        onCheckedChange = state.onChangeBillingKey,
-                    )
-                }
+    Box {
+        IconButton(
+            modifier = Modifier.semantics {
+                stateDescription = if (checked) "ON" else "OFF"
             },
-            onClick = {},
-        )
+            onClick = { menuExpanded = true },
+            enabled = enabled,
+        ) {
+            Icon(
+                imageVector = imageVector,
+                contentDescription = label,
+                tint = if (checked) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+        if (!enabled) {
+            // IconButton は円形にクリップされるため、鍵は外側に重ねる
+            Icon(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-4).dp, y = 4.dp)
+                    .size(14.dp),
+                imageVector = FeatherIcons.Lock,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = label,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = checked,
+                            enabled = enabled,
+                            onCheckedChange = onCheckedChange,
+                        )
+                    }
+                },
+                onClick = { onCheckedChange(!checked) },
+                enabled = enabled,
+            )
+        }
     }
+}
+
+@Composable
+internal fun ModelSelectorBarPreviewContent(isDark: Boolean) {
+    MaterialTheme(
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column {
+                ModelSelectorBar(
+                    uiState = createPreviewUiState(
+                        thinkingEnabled = true,
+                        thinkingToggleEnabled = true,
+                        billingKeyEnabled = true,
+                        billingKeyToggleEnabled = true,
+                    ),
+                )
+                ModelSelectorBar(
+                    uiState = createPreviewUiState(
+                        thinkingEnabled = false,
+                        thinkingToggleEnabled = true,
+                        billingKeyEnabled = false,
+                        billingKeyToggleEnabled = true,
+                    ),
+                )
+                ModelSelectorBar(
+                    uiState = createPreviewUiState(
+                        thinkingEnabled = false,
+                        thinkingToggleEnabled = false,
+                        billingKeyEnabled = true,
+                        billingKeyToggleEnabled = false,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+private fun createPreviewUiState(
+    thinkingEnabled: Boolean,
+    thinkingToggleEnabled: Boolean,
+    billingKeyEnabled: Boolean,
+    billingKeyToggleEnabled: Boolean,
+): ModelSelectorUiState {
+    return ModelSelectorUiState(
+        selectedModelName = "Gemini 3 Flash",
+        items = listOf(),
+        thinkingEnabled = thinkingEnabled,
+        thinkingToggleEnabled = thinkingToggleEnabled,
+        overflowMenu = ModelSelectorUiState.OverflowMenu.Gemini(
+            billingKeyEnabled = billingKeyEnabled,
+            billingKeyToggleEnabled = billingKeyToggleEnabled,
+            onChangeBillingKey = {},
+        ),
+        listener = object : ModelSelectorUiState.Listener {
+            override fun onChangeThinking(enabled: Boolean) = Unit
+        },
+    )
 }

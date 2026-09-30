@@ -13,11 +13,17 @@
       "groupName": "ktor"
     },
     {
+      "matchManagers": ["gradle"],
       "matchPackageNames": [
         "org.jetbrains.kotlin.**",
         "com.google.devtools.ksp",
-        "actions/**"
+        "net.engawapg.lib:zoomable"
       ],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["actions/**"],
       "automerge": true
     }
   ],
