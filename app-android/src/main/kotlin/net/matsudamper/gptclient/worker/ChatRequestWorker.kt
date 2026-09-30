@@ -12,11 +12,11 @@ import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ForegroundInfo
-import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 import kotlin.random.Random
 import kotlinx.coroutines.flow.first
 import net.matsudamper.gptclient.EXTRA_CHATROOM_ID
@@ -43,12 +43,20 @@ class ChatRequestWorker(
 
     override suspend fun doWork(): Result {
         val chatRoomId = ChatRoomId(inputData.getLong(KEY_CHAT_ROOM_ID, 0))
-        if (runAttemptCount > 0) return Result.failure()
+        val notificationId = getProgressNotificationId(id)
+        // 前回の実行中にプロセスが落ちた場合の再実行。重い処理のため再実行はせず、残った進捗通知を消して失敗を記録する
+        if (runAttemptCount > 0) {
+            NotificationManagerCompat.from(applicationContext).cancel(notificationId)
+            appDatabase.chatRoomDao().updateLatestErrorMessage(
+                chatRoomId = chatRoomId.value,
+                errorMessage = "処理中にアプリが終了したため失敗しました",
+            )
+            return Result.failure()
+        }
 
         val room = appDatabase.chatRoomDao().get(chatRoomId = chatRoomId.value).first()
         val roomTitle = room.summary ?: "チャット"
         val pendingIntent = createPendingIntent(chatRoomId = chatRoomId.value.toString())
-        val notificationId = Random.nextInt()
         // foreground への昇格は setForeground/setProgress 自体に時間がかかるため、実処理開始前の暫定表示として先に出す
         setForeground(
             createProgressForegroundInfo(
@@ -114,7 +122,11 @@ class ChatRequestWorker(
         pendingIntent: PendingIntent,
         processStartedAt: Instant?,
     ): ForegroundInfo {
-        val cancelPendingIntent = WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)
+        val cancelPendingIntent = ChatRequestCancelReceiver.createPendingIntent(
+            context = applicationContext,
+            workId = id,
+            notificationId = notificationId,
+        )
         val notification = createNotificationBuilder(
             title = title,
             message = "処理中...",
@@ -202,6 +214,13 @@ class ChatRequestWorker(
     companion object {
         const val KEY_CHAT_ROOM_ID = "chat_room_id"
         const val KEY_PROCESS_STARTED_AT = "process_started_at"
+
+        /**
+         * プロセスが落ちた後の再実行やキャンセル時に同じ通知を消せるよう、再実行でも変わらない Work の id から決める。
+         */
+        fun getProgressNotificationId(workId: UUID): Int {
+            return workId.hashCode()
+        }
 
         fun createInputData(
             chatRoomId: ChatRoomId,
