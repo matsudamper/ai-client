@@ -43,6 +43,7 @@ internal class LiteRtAiClient(
             val lastMessage = lastUserMessage.toLiteRtMessage(includeImages = modelDefinition.enableImage)
                 ?: error("最後のメッセージが空です")
 
+            LocalModelExecutionPhaseStore.update(modelDefinition.modelId, LocalModelExecutionPhase.Generating)
             engine.createConversation(
                 ConversationConfig(
                     initialMessages = historyMessages,

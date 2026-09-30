@@ -15,6 +15,7 @@ import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.util.toDetailMessage
 
 internal class MlKitAiClient(
+    private val modelId: LocalModelId,
     private val generationConfig: GenerationConfig,
 ) : AiClient {
     @OptIn(ExperimentalEncodingApi::class)
@@ -23,6 +24,7 @@ internal class MlKitAiClient(
         format: AiClient.Format,
     ): AiClient.GptResult {
         val client = Generation.getClient(generationConfig)
+        LocalModelExecutionPhaseStore.update(modelId, LocalModelExecutionPhase.Generating)
 
         return try {
             val textParts = mutableListOf<String>()

@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import net.matsudamper.gptclient.ui.util.formatElapsedDuration
 
 class LoadingMessageComposableInterface(
+    private val statusText: String?,
     private val processingStartedAt: Instant?,
     private val onClickCancel: () -> Unit,
 ) : ChatMessageComposableInterface {
@@ -40,6 +41,15 @@ class LoadingMessageComposableInterface(
                     LinearProgressIndicator(
                         modifier = Modifier.width(72.dp),
                     )
+                    if (statusText != null) {
+                        Text(
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .padding(start = 12.dp),
+                            text = statusText,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                     TextButton(onClick = onClickCancel) {
                         Text("キャンセル")
                     }
