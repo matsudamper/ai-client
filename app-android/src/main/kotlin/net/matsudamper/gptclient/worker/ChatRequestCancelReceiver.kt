@@ -15,8 +15,11 @@ import java.util.UUID
 class ChatRequestCancelReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val workId = intent.getStringExtra(EXTRA_WORK_ID)?.let(UUID::fromString) ?: return
-        WorkManager.getInstance(context).cancelWorkById(workId)
         NotificationManagerCompat.from(context).cancel(ChatRequestWorker.getProgressNotificationId(workId))
+        // onReceive を抜けるとプロセスが止められ、キャンセルが永続化されない可能性があるため完了まで待つ
+        val pendingResult = goAsync()
+        WorkManager.getInstance(context).cancelWorkById(workId).result
+            .addListener({ pendingResult.finish() }, Runnable::run)
     }
 
     companion object {
