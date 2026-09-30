@@ -16,7 +16,8 @@
       "matchPackageNames": [
         "org.jetbrains.kotlin.**",
         "com.google.devtools.ksp",
-        "actions/**"
+        "actions/**",
+        "net.engawapg.lib:zoomable"
       ],
       "automerge": true
     }
