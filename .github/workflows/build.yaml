@@ -63,9 +63,12 @@ jobs:
           file_path: ${{ steps.rename_apk.outputs.apk_path }}
       - name: Generate GitHub QR code
         if: github.event_name == 'pull_request'
+        env:
+          APK_URL: ${{ steps.upload_apk.outputs.artifact-url }}
         run: |
-          pip install "qrcode[pil]" --quiet
-          python3 -c "import qrcode, sys; qrcode.make(sys.argv[1]).save('qrcode-github.png')" "${{ steps.upload_apk.outputs.artifact-url }}"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends qrencode
+          qrencode -o qrcode-github.png "$APK_URL"
       - id: github_qr_artifact
         name: Upload GitHub QR artifact
         if: github.event_name == 'pull_request'
@@ -75,8 +78,10 @@ jobs:
           archive: false
       - name: Generate S3 QR code
         if: github.event_name == 'pull_request' && steps.upload_s3.outputs.url != ''
+        env:
+          APK_URL: ${{ steps.upload_s3.outputs.url }}
         run: |
-          python3 -c "import qrcode, sys; qrcode.make(sys.argv[1]).save('qrcode-s3.png')" "${{ steps.upload_s3.outputs.url }}"
+          qrencode -o qrcode-s3.png "$APK_URL"
       - id: s3_qr_artifact
         name: Upload S3 QR artifact
         if: github.event_name == 'pull_request' && steps.upload_s3.outputs.url != ''
