@@ -61,34 +61,22 @@ jobs:
         continue-on-error: true
         with:
           file_path: ${{ steps.rename_apk.outputs.apk_path }}
-      - name: Generate GitHub QR code
-        if: github.event_name == 'pull_request'
-        env:
-          APK_URL: ${{ steps.upload_apk.outputs.artifact-url }}
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends qrencode
-          qrencode -o qrcode-github.png "$APK_URL"
       - id: github_qr_artifact
         name: Upload GitHub QR artifact
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: matsudamper/actions/upload-qr-code@7577a0a7bddd81843525c1f8539b119bdaa7825c # v1.1.0
         with:
-          path: qrcode-github.png
-          archive: false
-      - name: Generate S3 QR code
-        if: github.event_name == 'pull_request' && steps.upload_s3.outputs.url != ''
-        env:
-          APK_URL: ${{ steps.upload_s3.outputs.url }}
-        run: |
-          qrencode -o qrcode-s3.png "$APK_URL"
+          url: ${{ steps.upload_apk.outputs.artifact-url }}
+          output_path: qrcode-github.png
+          artifact_name: apk-qr-code-github
       - id: s3_qr_artifact
         name: Upload S3 QR artifact
         if: github.event_name == 'pull_request' && steps.upload_s3.outputs.url != ''
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: matsudamper/actions/upload-qr-code@7577a0a7bddd81843525c1f8539b119bdaa7825c # v1.1.0
         with:
-          path: qrcode-s3.png
-          archive: false
+          url: ${{ steps.upload_s3.outputs.url }}
+          output_path: qrcode-s3.png
+          artifact_name: apk-qr-code-s3
       - name: Comment APK download URL
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
