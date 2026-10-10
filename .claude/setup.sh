@@ -69,8 +69,6 @@ if [ ! -f "${android_user_home}/debug.keystore" ]; then
     -storepass android -alias androiddebugkey -keypass android \
     -keyalg RSA -keysize 2048 -validity 10000 \
     -dname "CN=Android Debug,O=Android,C=US" > /dev/null
-  # 既定の umask だと 0644 になり、秘密鍵を同一ホストの別ユーザーにコピーされる
-  chmod 600 "${android_user_home}/debug.keystore"
 fi
 
 echo "[setup] 完了"
