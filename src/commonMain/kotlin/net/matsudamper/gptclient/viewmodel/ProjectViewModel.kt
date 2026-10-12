@@ -562,7 +562,7 @@ class ProjectViewModel(
     }
 
     private fun resolveSelectedModel(viewModelState: ViewModelState): ChatGptModel? {
-        return viewModelState.overwriteModel
+        val selectedModel = viewModelState.overwriteModel
             ?: when (val systemInfo = viewModelState.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo -> findSavedModel(viewModelState) ?: systemInfo.info.model
                 is ViewModelState.SystemInfoType.Project -> {
@@ -574,6 +574,18 @@ class ProjectViewModel(
 
                 null -> null
             }
+        if (selectedModel == null || !viewModelState.requiresImage() || selectedModel.enableImage) {
+            return selectedModel
+        }
+        return imageCapableFallback(viewModelState)
+    }
+
+    private fun imageCapableFallback(viewModelState: ViewModelState): ChatGptModel? {
+        return when (val systemInfo = viewModelState.systemInfo) {
+            is ViewModelState.SystemInfoType.BuiltinInfo -> systemInfo.info.model
+            is ViewModelState.SystemInfoType.Project -> systemInfo.getInfo().model
+            null -> null
+        }
     }
 
     private data class ViewModelState(
