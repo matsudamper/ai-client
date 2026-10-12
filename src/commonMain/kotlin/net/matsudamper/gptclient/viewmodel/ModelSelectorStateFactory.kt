@@ -15,6 +15,7 @@ internal object ModelSelectorStateFactory {
         geminiBillingKeyOverrideSelectionKeys: Set<String>,
         onSelectModel: (ChatGptModel) -> Unit,
         onChangeGeminiBillingKey: (selectionKey: String, enabled: Boolean) -> Unit,
+        requiresImage: Boolean,
     ): ModelSelectorUiState {
         val selectableModels = createSelectableModels(
             activeLocalModelKeys = activeLocalModelKeys,
@@ -24,11 +25,16 @@ internal object ModelSelectorStateFactory {
         return ModelSelectorUiState(
             selectedModelName = selectedModel?.getDisplayNameForChat() ?: "モデルを選択",
             items = selectableModels.map { model ->
+                val enabled = !requiresImage || model.enableImage
                 ModelSelectorUiState.Item(
                     modelName = model.displayName,
                     selected = model.selectionKey == selectedModel?.selectionKey,
+                    enabled = enabled,
                     listener = object : ModelSelectorUiState.ItemListener {
                         override fun onClick() {
+                            if (!enabled) {
+                                return
+                            }
                             onSelectModel(model.withThinking(selectedModel?.thinkingEnabled == true))
                         }
                     },

@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
@@ -41,15 +42,31 @@ internal class LocalModelRepositoryImpl(
         }
     }
 
+    override fun cachedModelDefinitions(): List<LocalModelDefinition> =
+        AndroidLocalModels.entries.map { model ->
+            when (model.providerId) {
+                LocalModelProviderId.MlKitPrompt -> model.toDefinition()
+                LocalModelProviderId.LiteRtLm -> cachedLiteRtModel(model)
+            }
+        }
+
     override suspend fun getModels(): List<LocalModelDefinition> =
-        AndroidLocalModels.entries.map { it.toDefinition() }
+        withContext(Dispatchers.IO) {
+            AndroidLocalModels.entries.map { model ->
+                when (model.providerId) {
+                    LocalModelProviderId.MlKitPrompt -> model.toDefinition()
+                    LocalModelProviderId.LiteRtLm -> resolveLiteRtModel(model)
+                }
+            }
+        }
 
     override suspend fun getResolvedModels(): List<LocalModelDefinition> =
-        AndroidLocalModels.entries.map { model ->
-            if (model.providerId == LocalModelProviderId.MlKitPrompt) {
-                resolveMlKitModel(model)
-            } else {
-                model.toDefinition()
+        withContext(Dispatchers.IO) {
+            AndroidLocalModels.entries.map { model ->
+                when (model.providerId) {
+                    LocalModelProviderId.MlKitPrompt -> resolveMlKitModel(model)
+                    LocalModelProviderId.LiteRtLm -> resolveLiteRtModel(model)
+                }
             }
         }
 
@@ -123,11 +140,71 @@ internal class LocalModelRepositoryImpl(
             LocalModelProviderId.LiteRtLm -> {
                 workManager.cancelUniqueWork(LocalModelDownloadWorker.getUniqueWorkName(modelId))
                 LiteRtLmEngineStore.remove(modelId)
-                getModelFile(context, modelId).delete()
+                val modelFile = getModelFile(context, modelId)
+                LiteRtModelOptionsStore.delete(modelFile)
+                modelFile.delete()
                 getTempModelFile(context, modelId).delete()
                 refreshTrigger.update { it + 1 }
             }
         }
+    }
+
+    private fun cachedLiteRtModel(model: AndroidLocalModel): LocalModelDefinition =
+        toResolvedDefinition(
+            model = model,
+            options = savedLiteRtOptions(model),
+        )
+
+    private fun resolveLiteRtModel(model: AndroidLocalModel): LocalModelDefinition =
+        toResolvedDefinition(
+            model = model,
+            options = savedOrReadLiteRtOptions(model),
+        )
+
+    private fun savedLiteRtOptions(model: AndroidLocalModel): LiteRtModelOptions {
+        val modelFile = modelFile(model)
+        val saved = if (modelFile != null && modelFile.exists()) {
+            LiteRtModelOptionsStore.read(modelFile)
+        } else {
+            null
+        }
+        return saved ?: unavailableLiteRtOptions()
+    }
+
+    private fun savedOrReadLiteRtOptions(model: AndroidLocalModel): LiteRtModelOptions {
+        val modelFile = modelFile(model)
+        if (modelFile == null || !modelFile.exists()) {
+            return unavailableLiteRtOptions()
+        }
+        return LiteRtModelOptionsStore.readOrLoad(modelFile)
+    }
+
+    private fun modelFile(model: AndroidLocalModel): File? {
+        val fileName = model.fileName ?: return null
+        return File(getModelsDirectory(context), fileName)
+    }
+
+    private fun unavailableLiteRtOptions(): LiteRtModelOptions =
+        LiteRtModelOptions(
+            supportsThinking = false,
+            supportsVision = false,
+        )
+
+    private fun toResolvedDefinition(
+        model: AndroidLocalModel,
+        options: LiteRtModelOptions,
+    ): LocalModelDefinition {
+        val definition = model.toDefinition()
+        return definition.copy(
+            enableImage = options.supportsVision,
+            supportedImageMimeTypes = if (options.supportsVision) {
+                model.supportedImageMimeTypes
+            } else {
+                listOf()
+            },
+            maxImageCount = if (options.supportsVision) 1 else 0,
+            supportsThinking = options.supportsThinking,
+        )
     }
 
     private suspend fun resolveMlKitModel(model: AndroidLocalModel): LocalModelDefinition {

@@ -385,6 +385,7 @@ internal fun NewChatPreviewContent(isDark: Boolean) {
                             ModelSelectorUiState.Item(
                                 modelName = "GPT-5.4 Nano",
                                 selected = true,
+                                enabled = true,
                                 listener = object : ModelSelectorUiState.ItemListener {
                                     override fun onClick() = Unit
                                 },

@@ -71,6 +71,7 @@ class GetBuiltinProjectInfoUseCase {
                         parsed?.results?.lastOrNull()?.title ?: parsed?.errorMessage
                     },
                     model = ChatGptModel.Remote.Gemini.GeminiFlashLiteLatestThinking,
+                    requiresImage = true,
                 )
             }
 
@@ -119,6 +120,7 @@ class GetBuiltinProjectInfoUseCase {
                         val parsed = MoneyResponseParser().parse(response)
                         parsed?.results?.firstOrNull()?.title ?: parsed?.errorMessage
                     },
+                    requiresImage = true,
                 )
             }
 
@@ -155,6 +157,7 @@ class GetBuiltinProjectInfoUseCase {
                             else -> "$instruction $emoji"
                         }
                     },
+                    requiresImage = false,
                 )
             }
 
@@ -168,6 +171,7 @@ class GetBuiltinProjectInfoUseCase {
         val responseTransformer: (String) -> ChatMessageComposableInterface,
         val summaryProvider: SummaryProvider,
         val model: ChatGptModel,
+        val requiresImage: Boolean,
     ) {
         fun interface SummaryProvider {
             fun provide(firstInstruction: String?, lastInstruction: String?, response: String): String?

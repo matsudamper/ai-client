@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.matsudamper.gptclient.ImageFormat
@@ -49,7 +51,9 @@ class NewChatViewModel(
         fun providePlatformRequest(): PlatformRequest
         fun provideMediaRequest(): MediaRequest
     }
-    private val viewModelStateFlow = MutableStateFlow(ViewModelState())
+    private val viewModelStateFlow = MutableStateFlow(
+        ViewModelState(localModelDefs = localModelRepository.cachedModelDefinitions()),
+    )
     private val builtinProjects = listOf(
         NewChatUiState.Project(
             name = BuiltinProjectId.Calendar.getProjectTitle(),
@@ -163,8 +167,19 @@ class NewChatViewModel(
         viewModelScope.launch { appDatabase.projectDao().getAll().collectLatest { projects -> viewModelStateFlow.update { it.copy(projects = projects) } } }
         viewModelScope.launch { settingDataStore.getActiveLocalModelKeysFlow().collectLatest { activeKeys -> viewModelStateFlow.update { it.copy(activeLocalModelKeys = activeKeys) } } }
         viewModelScope.launch {
-            val defs = localModelRepository.getResolvedModels()
-            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+            localModelRepository.observeStatuses()
+                .map { statuses -> statuses.mapValues { (_, state) -> state.status } }
+                .distinctUntilChanged()
+                .collectLatest {
+                    val defs = localModelRepository.getResolvedModels()
+                    viewModelStateFlow.update { state ->
+                        if (state.localModelDefs == defs) {
+                            state
+                        } else {
+                            state.copy(localModelDefs = defs)
+                        }
+                    }
+                }
         }
         viewModelScope.launch { GeminiBillingKeyOverrideStore.enabledSelectionKeys.collectLatest { keys -> viewModelStateFlow.update { it.copy(geminiBillingKeyOverrideSelectionKeys = keys) } } }
         viewModelScope.launch {
@@ -207,6 +222,7 @@ class NewChatViewModel(
                 viewModelStateFlow.update { it.copy(selectedModel = model) }
             },
             { selectionKey, enabled -> GeminiBillingKeyOverrideStore.setEnabled(selectionKey, enabled) },
+            requiresImage = false,
         )
     }
 

@@ -7,7 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,7 +62,9 @@ class ProjectViewModel(
         fun provideMediaRequest(): MediaRequest
     }
 
-    private val viewModelStateFlow = MutableStateFlow(ViewModelState())
+    private val viewModelStateFlow = MutableStateFlow(
+        ViewModelState(localModelDefs = localModelRepository.cachedModelDefinitions()),
+    )
     private val usageKey = when (val type = navigator.type) {
         is Navigator.Project.ProjectType.Builtin -> projectUsageKey(type.builtinProjectId)
         is Navigator.Project.ProjectType.Project -> projectUsageKey(type.projectId)
@@ -248,7 +252,10 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            modelState = createModelState(null),
+            modelState = createModelState(
+                selectedModel = null,
+                requiresImage = false,
+            ),
             enableSend = false,
             imageAttachmentBlocked = false,
             listener = listener,
@@ -281,8 +288,19 @@ class ProjectViewModel(
             }
         }
         viewModelScope.launch {
-            val defs = localModelRepository.getResolvedModels()
-            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+            localModelRepository.observeStatuses()
+                .map { statuses -> statuses.mapValues { (_, state) -> state.status } }
+                .distinctUntilChanged()
+                .collectLatest {
+                    val defs = localModelRepository.getResolvedModels()
+                    viewModelStateFlow.update { state ->
+                        if (state.localModelDefs == defs) {
+                            state
+                        } else {
+                            state.copy(localModelDefs = defs)
+                        }
+                    }
+                }
         }
         viewModelScope.launch {
             when (navigator.type) {
@@ -364,7 +382,8 @@ class ProjectViewModel(
                             )
                         },
                         modelState = createModelState(
-                            selectedModel,
+                            selectedModel = selectedModel,
+                            requiresImage = viewModelState.requiresImage(),
                         ),
                     )
                 }
@@ -475,12 +494,16 @@ class ProjectViewModel(
         }
     }
 
-    private fun createModelState(selectedModel: ChatGptModel?): ModelSelectorUiState {
+    private fun createModelState(
+        selectedModel: ChatGptModel?,
+        requiresImage: Boolean,
+    ): ModelSelectorUiState {
         return ModelSelectorStateFactory.create(
             selectedModel = selectedModel,
             activeLocalModelKeys = viewModelStateFlow.value.activeLocalModelKeys,
             localModelDefs = viewModelStateFlow.value.localModelDefs,
             geminiBillingKeyOverrideSelectionKeys = viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys,
+            requiresImage = requiresImage,
             onChangeGeminiBillingKey = { selectionKey, enabled ->
                 viewModelStateFlow.update { state ->
                     val keys = state.geminiBillingKeyOverrideSelectionKeys
@@ -536,6 +559,15 @@ class ProjectViewModel(
         }
     }
 
+    private fun ViewModelState.requiresImage(): Boolean {
+        return when (val systemInfo = systemInfo) {
+            is ViewModelState.SystemInfoType.BuiltinInfo -> systemInfo.info.requiresImage
+            is ViewModelState.SystemInfoType.Project,
+            null,
+            -> false
+        }
+    }
+
     private fun findSavedModel(viewModelState: ViewModelState): ChatGptModel? {
         val savedModelKey = viewModelState.savedModelKey ?: return null
         val localModel = viewModelState.localModelDefs
@@ -545,7 +577,7 @@ class ProjectViewModel(
     }
 
     private fun resolveSelectedModel(viewModelState: ViewModelState): ChatGptModel? {
-        return viewModelState.overwriteModel
+        val selectedModel = viewModelState.overwriteModel
             ?: when (val systemInfo = viewModelState.systemInfo) {
                 is ViewModelState.SystemInfoType.BuiltinInfo -> findSavedModel(viewModelState) ?: systemInfo.info.model
                 is ViewModelState.SystemInfoType.Project -> {
@@ -557,6 +589,18 @@ class ProjectViewModel(
 
                 null -> null
             }
+        if (selectedModel == null || !viewModelState.requiresImage() || selectedModel.enableImage) {
+            return selectedModel
+        }
+        return imageCapableFallback(viewModelState)
+    }
+
+    private fun imageCapableFallback(viewModelState: ViewModelState): ChatGptModel? {
+        return when (val systemInfo = viewModelState.systemInfo) {
+            is ViewModelState.SystemInfoType.BuiltinInfo -> systemInfo.info.model
+            is ViewModelState.SystemInfoType.Project -> systemInfo.getInfo().model
+            null -> null
+        }
     }
 
     private data class ViewModelState(
