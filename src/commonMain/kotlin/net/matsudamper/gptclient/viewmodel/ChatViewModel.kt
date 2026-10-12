@@ -188,8 +188,13 @@ class ChatViewModel(
         ),
     ).also { uiState ->
         viewModelScope.launch {
-            val defs = localModelRepository.getResolvedModels()
-            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+            localModelRepository.observeStatuses()
+                .map { statuses -> statuses.mapValues { (_, state) -> state.status } }
+                .distinctUntilChanged()
+                .collectLatest {
+                    val defs = localModelRepository.getResolvedModels()
+                    viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+                }
         }
         viewModelScope.launch {
             localModelRepository.observeEngineLabels().collect { labels ->

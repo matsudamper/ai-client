@@ -7,7 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -284,8 +286,13 @@ class ProjectViewModel(
             }
         }
         viewModelScope.launch {
-            val defs = localModelRepository.getResolvedModels()
-            viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+            localModelRepository.observeStatuses()
+                .map { statuses -> statuses.mapValues { (_, state) -> state.status } }
+                .distinctUntilChanged()
+                .collectLatest {
+                    val defs = localModelRepository.getResolvedModels()
+                    viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+                }
         }
         viewModelScope.launch {
             when (navigator.type) {
