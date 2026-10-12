@@ -24,10 +24,7 @@ internal object LiteRtModelOptionsStore {
         if (saved != null) {
             return saved
         }
-        val options = LiteRtModelOptionsReader.readOrNull(modelFile) ?: return LiteRtModelOptions(
-            supportsThinking = false,
-            supportsVision = false,
-        )
+        val options = LiteRtModelOptionsReader.readOrNull(modelFile) ?: return unavailableLiteRtModelOptions()
         write(modelFile, options)
         return options
     }
@@ -36,7 +33,17 @@ internal object LiteRtModelOptionsStore {
         File(modelFile.parentFile, "${modelFile.name}.options")
 
     private fun format(options: LiteRtModelOptions): String =
-        "supportsThinking=${options.supportsThinking}\nsupportsVision=${options.supportsVision}\n"
+        buildString {
+            appendLine("supportsThinking=${options.supportsThinking}")
+            appendLine("supportsVision=${options.supportsVision}")
+            appendLine("textBackends=${formatBackends(options.textBackends)}")
+            appendLine("visionBackends=${formatBackends(options.visionBackends)}")
+            appendLine("textSocName=${options.textSocName}")
+            appendLine("visionSocName=${options.visionSocName}")
+        }
+
+    private fun formatBackends(backends: Set<LiteRtBackendKind>): String =
+        LiteRtBackendKind.entries.filter { it in backends }.joinToString(",") { it.name }
 
     private fun parse(text: String): LiteRtModelOptions? {
         val values = text.lineSequence()
@@ -47,9 +54,29 @@ internal object LiteRtModelOptionsStore {
             .toMap()
         val supportsThinking = values["supportsThinking"]?.toBooleanStrictOrNull() ?: return null
         val supportsVision = values["supportsVision"]?.toBooleanStrictOrNull() ?: return null
+        val textBackends = parseBackends(values["textBackends"]) ?: return null
+        val visionBackends = parseBackends(values["visionBackends"]) ?: return null
+        val textSocName = values["textSocName"] ?: return null
+        val visionSocName = values["visionSocName"] ?: return null
         return LiteRtModelOptions(
             supportsThinking = supportsThinking,
             supportsVision = supportsVision,
+            textBackends = textBackends,
+            visionBackends = visionBackends,
+            textSocName = textSocName,
+            visionSocName = visionSocName,
         )
+    }
+
+    private fun parseBackends(value: String?): Set<LiteRtBackendKind>? {
+        if (value == null) {
+            return null
+        }
+        if (value.isEmpty()) {
+            return setOf()
+        }
+        return value.split(",").map { token ->
+            LiteRtBackendKind.entries.firstOrNull { it.name == token } ?: return null
+        }.toSet()
     }
 }

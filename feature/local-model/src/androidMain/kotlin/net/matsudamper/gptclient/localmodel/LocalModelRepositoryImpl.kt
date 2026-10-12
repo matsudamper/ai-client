@@ -184,11 +184,7 @@ internal class LocalModelRepositoryImpl(
         return File(getModelsDirectory(context), fileName)
     }
 
-    private fun unavailableLiteRtOptions(): LiteRtModelOptions =
-        LiteRtModelOptions(
-            supportsThinking = false,
-            supportsVision = false,
-        )
+    private fun unavailableLiteRtOptions(): LiteRtModelOptions = unavailableLiteRtModelOptions()
 
     private fun toResolvedDefinition(
         model: AndroidLocalModel,
