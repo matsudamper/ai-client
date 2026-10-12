@@ -56,6 +56,7 @@ data class ModelSelectorUiState(
     data class Item(
         val modelName: String,
         val selected: Boolean,
+        val enabled: Boolean,
         val listener: ItemListener,
     )
 
@@ -82,103 +83,141 @@ data class ModelSelectorUiState(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModelSelectorBar(
     uiState: ModelSelectorUiState,
     modifier: Modifier = Modifier,
 ) {
+    ModelSelectorBar(
+        uiState = uiState,
+        modifier = modifier,
+        showMenuItems = false,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ModelSelectorBar(
+    uiState: ModelSelectorUiState,
+    modifier: Modifier,
+    showMenuItems: Boolean,
+) {
     var expanded by remember { mutableStateOf(false) }
 
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        ExposedDropdownMenuBox(
-            modifier = Modifier.weight(1f),
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-        ) {
-            OutlinedButton(
-                modifier = Modifier
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth(),
-                onClick = {},
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = uiState.selectedModelName,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                )
-            }
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                matchAnchorWidth = false,
-            ) {
-                for (model in uiState.items) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = model.modelName,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        },
-                        leadingIcon = {
-                            if (model.selected) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                )
-                            } else {
-                                Spacer(modifier = Modifier.width(24.dp))
-                            }
-                        },
-                        onClick = {
-                            expanded = false
-                            model.listener.onClick()
-                        },
-                    )
-                }
-            }
-        }
-
         Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            when (val overflow = uiState.overflowMenu) {
-                ModelSelectorUiState.OverflowMenu.None -> Unit
-                is ModelSelectorUiState.OverflowMenu.Gemini -> {
-                    ToggleIconButton(
-                        imageVector = FeatherIcons.CreditCard,
-                        label = "Billing",
-                        checked = overflow.billingKeyEnabled,
-                        enabled = overflow.billingKeyToggleEnabled,
-                        onCheckedChange = overflow.onChangeBillingKey,
+            ExposedDropdownMenuBox(
+                modifier = Modifier.weight(1f),
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+            ) {
+                OutlinedButton(
+                    modifier = Modifier
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                        .fillMaxWidth(),
+                    onClick = {},
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = uiState.selectedModelName,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
                     )
                 }
+
+                ExposedDropdownMenu(
+                    expanded = expanded && !showMenuItems,
+                    onDismissRequest = { expanded = false },
+                    matchAnchorWidth = false,
+                ) {
+                    for (model in uiState.items) {
+                        ModelSelectorMenuItem(
+                            model = model,
+                            onClick = {
+                                expanded = false
+                                model.listener.onClick()
+                            },
+                        )
+                    }
+                }
             }
-            ToggleIconButton(
-                imageVector = FeatherIcons.Cpu,
-                label = "Thinking",
-                checked = uiState.thinkingEnabled,
-                enabled = uiState.thinkingToggleEnabled,
-                onCheckedChange = uiState.listener::onChangeThinking,
-            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                when (val overflow = uiState.overflowMenu) {
+                    ModelSelectorUiState.OverflowMenu.None -> Unit
+                    is ModelSelectorUiState.OverflowMenu.Gemini -> {
+                        ToggleIconButton(
+                            imageVector = FeatherIcons.CreditCard,
+                            label = "Billing",
+                            checked = overflow.billingKeyEnabled,
+                            enabled = overflow.billingKeyToggleEnabled,
+                            onCheckedChange = overflow.onChangeBillingKey,
+                        )
+                    }
+                }
+                ToggleIconButton(
+                    imageVector = FeatherIcons.Cpu,
+                    label = "Thinking",
+                    checked = uiState.thinkingEnabled,
+                    enabled = uiState.thinkingToggleEnabled,
+                    onCheckedChange = uiState.listener::onChangeThinking,
+                )
+            }
+        }
+        if (showMenuItems) {
+            for (model in uiState.items) {
+                ModelSelectorMenuItem(
+                    model = model,
+                    onClick = {
+                        model.listener.onClick()
+                    },
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun ModelSelectorMenuItem(
+    model: ModelSelectorUiState.Item,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = model.modelName,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        leadingIcon = {
+            if (model.selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                )
+            } else {
+                Spacer(modifier = Modifier.width(24.dp))
+            }
+        },
+        enabled = model.enabled,
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -284,6 +323,49 @@ internal fun ModelSelectorBarPreviewContent(isDark: Boolean) {
             }
         }
     }
+}
+
+@Composable
+internal fun ModelSelectorDisabledItemPreviewContent(isDark: Boolean) {
+    MaterialTheme(
+        colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            ModelSelectorBar(
+                uiState = createPreviewUiState(
+                    thinkingEnabled = false,
+                    thinkingToggleEnabled = false,
+                    billingKeyEnabled = false,
+                    billingKeyToggleEnabled = false,
+                ).copy(
+                    selectedModelName = "Gemini Flash",
+                    overflowMenu = ModelSelectorUiState.OverflowMenu.None,
+                    items = listOf(
+                        ModelSelectorUiState.Item(
+                            modelName = "Gemini Flash",
+                            selected = true,
+                            enabled = true,
+                            listener = previewItemListener,
+                        ),
+                        ModelSelectorUiState.Item(
+                            modelName = "Qwen3.5 2B VL",
+                            selected = false,
+                            enabled = false,
+                            listener = previewItemListener,
+                        ),
+                    ),
+                ),
+                modifier = Modifier,
+                showMenuItems = true,
+            )
+        }
+    }
+}
+
+private val previewItemListener = object : ModelSelectorUiState.ItemListener {
+    override fun onClick() = Unit
 }
 
 private fun createPreviewUiState(

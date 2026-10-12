@@ -207,6 +207,7 @@ class NewChatViewModel(
                 viewModelStateFlow.update { it.copy(selectedModel = model) }
             },
             { selectionKey, enabled -> GeminiBillingKeyOverrideStore.setEnabled(selectionKey, enabled) },
+            requiresImage = false,
         )
     }
 

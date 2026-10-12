@@ -183,7 +183,7 @@ class ChatRequestRunner(
     private fun createLocalAiClient(model: ChatGptModel.Local): AiClient? {
         return localModelAiClientFactory.create(
             modelId = LocalModelId(model.baseModelKey),
-            enableThinking = model.thinkingEnabled,
+            enableThinking = model.modelKey != model.baseModelKey,
         )
     }
 

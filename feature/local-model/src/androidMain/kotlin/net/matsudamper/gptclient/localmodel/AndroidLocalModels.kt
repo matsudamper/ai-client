@@ -143,10 +143,10 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "gemma-4-E4B-it.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true",
-            enableImage = true,
+            enableImage = false,
             supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 2000,
-            supportsThinking = true,
+            supportsThinking = false,
         )
 
     private val gemma4E2B =
@@ -158,10 +158,10 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "gemma-4-E2B-it.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm?download=true",
-            enableImage = true,
+            enableImage = false,
             supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 2000,
-            supportsThinking = true,
+            supportsThinking = false,
         )
 
     private val qwen352bVl =
@@ -173,7 +173,7 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "Qwen3.5-2B-VL_int8.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/Qwen3.5-2B/resolve/main/Qwen3.5-2B-VL_int8.litertlm?download=true",
-            enableImage = true,
+            enableImage = false,
             supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
             defaultToken = 2000,
             supportsThinking = false,

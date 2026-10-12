@@ -14,6 +14,7 @@ import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SamplerConfig
+import com.google.ai.edge.litertlm.ThinkingConfig
 import net.matsudamper.gptclient.client.AiClient
 import net.matsudamper.gptclient.util.toDetailMessage
 
@@ -21,6 +22,7 @@ internal class LiteRtAiClient(
     private val context: Context,
     private val modelDefinition: AndroidLocalModel,
     private val modelFile: File,
+    private val modelOptions: LiteRtModelOptions,
     private val enableThinking: Boolean,
 ) : AiClient {
     override suspend fun request(
@@ -40,10 +42,20 @@ internal class LiteRtAiClient(
             val historyMessages = historySourceMessages.mapNotNull {
                 it.toLiteRtMessage(includeImages = false)
             }
-            val lastMessage = lastUserMessage.toLiteRtMessage(includeImages = modelDefinition.enableImage)
+            val lastMessage = lastUserMessage.toLiteRtMessage(includeImages = modelOptions.supportsVision)
                 ?: error("最後のメッセージが空です")
 
             LocalModelExecutionPhaseStore.update(modelDefinition.modelId, LocalModelExecutionPhase.Generating)
+            val thinkingConfig = if (modelOptions.supportsThinking) {
+                ThinkingConfig(enableThinking = enableThinking)
+            } else {
+                null
+            }
+            val extraContext = if (modelOptions.supportsThinking) {
+                mapOf("enable_thinking" to enableThinking)
+            } else {
+                mapOf()
+            }
             engine.createConversation(
                 ConversationConfig(
                     initialMessages = historyMessages,
@@ -52,15 +64,14 @@ internal class LiteRtAiClient(
                         topP = 0.95,
                         temperature = 0.0,
                     ),
+                    thinkingConfig = thinkingConfig,
                 ),
             ).use { conversation ->
                 val responseText = StringBuilder()
                 try {
                     conversation.sendMessageAsync(
                         message = lastMessage,
-                        extraContext = mapOf(
-                            "enable_thinking" to enableThinking,
-                        ),
+                        extraContext = extraContext,
                     ).collect { responseMessage ->
                         responseText.append(responseMessage.extractText())
                     }
@@ -121,7 +132,7 @@ internal class LiteRtAiClient(
 
         val historySourceMessages = dropLast(trailingUserMessageCount)
         val trailingUserMessages = takeLast(trailingUserMessageCount)
-        val maxImages = if (modelDefinition.enableImage) MAX_IMAGES_PER_TURN else 0
+        val maxImages = if (modelOptions.supportsVision) MAX_IMAGES_PER_TURN else 0
         val mergedLastUserMessage = mergeUserMessages(trailingUserMessages)
             .limitImages(maxImages = maxImages)
 

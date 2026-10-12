@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
@@ -45,11 +46,12 @@ internal class LocalModelRepositoryImpl(
         AndroidLocalModels.entries.map { it.toDefinition() }
 
     override suspend fun getResolvedModels(): List<LocalModelDefinition> =
-        AndroidLocalModels.entries.map { model ->
-            if (model.providerId == LocalModelProviderId.MlKitPrompt) {
-                resolveMlKitModel(model)
-            } else {
-                model.toDefinition()
+        withContext(Dispatchers.IO) {
+            AndroidLocalModels.entries.map { model ->
+                when (model.providerId) {
+                    LocalModelProviderId.MlKitPrompt -> resolveMlKitModel(model)
+                    LocalModelProviderId.LiteRtLm -> resolveLiteRtModel(model)
+                }
             }
         }
 
@@ -128,6 +130,31 @@ internal class LocalModelRepositoryImpl(
                 refreshTrigger.update { it + 1 }
             }
         }
+    }
+
+    private fun resolveLiteRtModel(model: AndroidLocalModel): LocalModelDefinition {
+        val definition = model.toDefinition()
+        val modelFile = model.fileName?.let { fileName ->
+            File(getModelsDirectory(context), fileName)
+        }
+        val options = if (modelFile != null && modelFile.exists()) {
+            LiteRtModelOptionsReader.read(modelFile)
+        } else {
+            LiteRtModelOptions(
+                supportsThinking = false,
+                supportsVision = false,
+            )
+        }
+        return definition.copy(
+            enableImage = options.supportsVision,
+            supportedImageMimeTypes = if (options.supportsVision) {
+                model.supportedImageMimeTypes
+            } else {
+                listOf()
+            },
+            maxImageCount = if (options.supportsVision) 1 else 0,
+            supportsThinking = options.supportsThinking,
+        )
     }
 
     private suspend fun resolveMlKitModel(model: AndroidLocalModel): LocalModelDefinition {

@@ -248,7 +248,10 @@ class ProjectViewModel(
                 editable = false,
                 listener = systemMessageListener,
             ),
-            modelState = createModelState(null),
+            modelState = createModelState(
+                selectedModel = null,
+                requiresImage = false,
+            ),
             enableSend = false,
             imageAttachmentBlocked = false,
             listener = listener,
@@ -364,7 +367,8 @@ class ProjectViewModel(
                             )
                         },
                         modelState = createModelState(
-                            selectedModel,
+                            selectedModel = selectedModel,
+                            requiresImage = viewModelState.requiresImage(),
                         ),
                     )
                 }
@@ -475,12 +479,16 @@ class ProjectViewModel(
         }
     }
 
-    private fun createModelState(selectedModel: ChatGptModel?): ModelSelectorUiState {
+    private fun createModelState(
+        selectedModel: ChatGptModel?,
+        requiresImage: Boolean,
+    ): ModelSelectorUiState {
         return ModelSelectorStateFactory.create(
             selectedModel = selectedModel,
             activeLocalModelKeys = viewModelStateFlow.value.activeLocalModelKeys,
             localModelDefs = viewModelStateFlow.value.localModelDefs,
             geminiBillingKeyOverrideSelectionKeys = viewModelStateFlow.value.geminiBillingKeyOverrideSelectionKeys,
+            requiresImage = requiresImage,
             onChangeGeminiBillingKey = { selectionKey, enabled ->
                 viewModelStateFlow.update { state ->
                     val keys = state.geminiBillingKeyOverrideSelectionKeys
@@ -533,6 +541,15 @@ class ProjectViewModel(
         )
         viewModelScope.launch {
             settingDataStore.setProjectModelPreference(usageKey, preference)
+        }
+    }
+
+    private fun ViewModelState.requiresImage(): Boolean {
+        return when (val systemInfo = systemInfo) {
+            is ViewModelState.SystemInfoType.BuiltinInfo -> systemInfo.info.requiresImage
+            is ViewModelState.SystemInfoType.Project,
+            null,
+            -> false
         }
     }
 

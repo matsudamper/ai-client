@@ -14,3 +14,9 @@ private fun ModelSelectorBarPreview() {
 private fun ModelSelectorBarDarkPreview() {
     ModelSelectorBarPreviewContent(isDark = true)
 }
+
+@Preview(name = "Model selector disabled item")
+@Composable
+private fun ModelSelectorDisabledItemPreview() {
+    ModelSelectorDisabledItemPreviewContent(isDark = false)
+}

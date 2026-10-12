@@ -60,7 +60,7 @@ internal object LiteRtLmEngineStore {
             .absolutePath
 
         val nativeLibDir = context.applicationInfo.nativeLibraryDir
-        val enableImage = modelDefinition.enableImage
+        val enableImage = LiteRtModelOptionsReader.read(modelFile).supportsVision
 
         val backends = listOf(
 //            "NPU" to {
