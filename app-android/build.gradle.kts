@@ -51,6 +51,18 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // PR の配布 APK は CI_ABI_FILTER で ABI を絞り、容量を減らす
+        val ciAbiFilters = System.getenv("CI_ABI_FILTER")
+            .orEmpty()
+            .split(",")
+            .map { abi -> abi.trim() }
+            .filter { abi -> abi.isNotEmpty() }
+        if (ciAbiFilters.isNotEmpty()) {
+            ndk {
+                abiFilters += ciAbiFilters
+            }
+        }
     }
 
     compileOptions {
