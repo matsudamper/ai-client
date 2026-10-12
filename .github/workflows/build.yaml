@@ -32,6 +32,8 @@ jobs:
         run: |
           echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > debug.keystore
       - name: Build debug APK
+        env:
+          CI_ABI_FILTER: ${{ github.event_name == 'pull_request' && 'arm64-v8a' || '' }}
         run: ./gradlew :app-android:assembleDebug
       - id: rename_apk
         name: Rename APK
@@ -55,12 +57,24 @@ jobs:
         with:
           name: ${{ steps.rename_apk.outputs.apk_name }}
           path: ${{ steps.rename_apk.outputs.apk_path }}
+      - id: s3_apk
+        name: Compress APK for S3 upload
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          APK_PATH: ${{ steps.rename_apk.outputs.apk_path }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            zstd -18 --long=27 -T0 -q -c "$APK_PATH" > "${APK_PATH}.zst"
+            echo "path=${APK_PATH}.zst" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=${APK_PATH}" >> "$GITHUB_OUTPUT"
+          fi
       - id: upload_s3
         name: Upload APK to S3
         uses: matsudamper/actions/upload-matsudamper-s3@a1ecf81b1a0ce320824a49711e456f396e4e8fea
         continue-on-error: true
         with:
-          file_path: ${{ steps.rename_apk.outputs.apk_path }}
+          file_path: ${{ steps.s3_apk.outputs.path }}
       - id: github_qr_artifact
         name: Upload GitHub QR artifact
         if: github.event_name == 'pull_request'
@@ -86,13 +100,14 @@ jobs:
           message: |
             ✅ **Debug APK is ready!**
 
-            | Storage | Download Link | QR Code |
-            | :--- | :--- | :--- |
-            | 🐙 GitHub Artifacts | [Download](${{ steps.upload_apk.outputs.artifact-url }}) | [View](${{ steps.github_qr_artifact.outputs.artifact-url }}) |
-            ${{ steps.upload_s3.outputs.url && format('| ☁️ S3 | [Download]({0}) | [View]({1}) |', steps.upload_s3.outputs.url, steps.s3_qr_artifact.outputs.artifact-url) || '' }}
+            | Storage | 圧縮方式 | Download Link | QR Code |
+            | :--- | :--- | :--- | :--- |
+            | 🐙 GitHub Artifacts | zip | [Download](${{ steps.upload_apk.outputs.artifact-url }}) | [View](${{ steps.github_qr_artifact.outputs.artifact-url }}) |
+            ${{ steps.upload_s3.outputs.url && format('| ☁️ S3 | zstd | [Download]({0}) | [View]({1}) |', steps.upload_s3.outputs.url, steps.s3_qr_artifact.outputs.artifact-url) || '' }}
 
             ---
             *Artifact Name: `${{ steps.rename_apk.outputs.apk_name }}`*
+            *ABI: `arm64-v8a`*
       - name: Build release APK (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./gradlew :app-android:assembleRelease
