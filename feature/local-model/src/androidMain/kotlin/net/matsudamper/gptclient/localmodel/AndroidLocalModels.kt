@@ -26,16 +26,16 @@ internal data class AndroidLocalModel(
     val fileName: String? = null,
     val downloadUrl: String? = null,
     val mlKitModelVariant: MlKitModelVariant? = null,
-    val enableImage: Boolean,
+    val enableImage: Boolean?,
     val supportedImageMimeTypes: List<String>,
     val defaultToken: Int,
-    val supportsThinking: Boolean,
+    val supportsThinking: Boolean?,
 ) {
     val canDelete: Boolean
         get() = providerId == LocalModelProviderId.LiteRtLm && fileName != null
 
     val maxImageCount: Int
-        get() = if (enableImage) 1 else 0
+        get() = if (enableImage == true) 1 else 0
 
     fun toDefinition(): LocalModelDefinition =
         toDefinition(
@@ -59,11 +59,11 @@ internal data class AndroidLocalModel(
             displayName = resolvedDisplayName,
             displayGroupKey = displayGroupKey,
             description = description,
-            enableImage = enableImage,
+            enableImage = enableImage == true,
             supportedImageMimeTypes = supportedImageMimeTypes,
             maxImageCount = maxImageCount,
             defaultToken = defaultToken,
-            supportsThinking = supportsThinking,
+            supportsThinking = supportsThinking == true,
             canDelete = canDelete,
         )
 
@@ -143,10 +143,10 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "gemma-4-E4B-it.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true",
-            enableImage = false,
+            enableImage = null,
             supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 2000,
-            supportsThinking = false,
+            supportsThinking = null,
         )
 
     private val gemma4E2B =
@@ -158,10 +158,10 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "gemma-4-E2B-it.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm?download=true",
-            enableImage = false,
+            enableImage = null,
             supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 2000,
-            supportsThinking = false,
+            supportsThinking = null,
         )
 
     private val qwen352bVl =
@@ -173,10 +173,10 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "Qwen3.5-2B-VL_int8.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/Qwen3.5-2B/resolve/main/Qwen3.5-2B-VL_int8.litertlm?download=true",
-            enableImage = false,
+            enableImage = null,
             supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
             defaultToken = 2000,
-            supportsThinking = false,
+            supportsThinking = null,
         )
 
     val entries: List<AndroidLocalModel> =

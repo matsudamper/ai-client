@@ -43,7 +43,14 @@ internal class LocalModelRepositoryImpl(
     }
 
     override suspend fun getModels(): List<LocalModelDefinition> =
-        AndroidLocalModels.entries.map { it.toDefinition() }
+        withContext(Dispatchers.IO) {
+            AndroidLocalModels.entries.map { model ->
+                when (model.providerId) {
+                    LocalModelProviderId.MlKitPrompt -> model.toDefinition()
+                    LocalModelProviderId.LiteRtLm -> resolveLiteRtModel(model)
+                }
+            }
+        }
 
     override suspend fun getResolvedModels(): List<LocalModelDefinition> =
         withContext(Dispatchers.IO) {
