@@ -29,7 +29,7 @@ internal class AndroidLocalModelAiClientFactory(
                 val modelFile = LocalModelRepositoryImpl.getModelFile(context, modelId)
                 if (!modelFile.exists()) return null
 
-                val modelOptions = LiteRtModelOptionsReader.read(modelFile)
+                val modelOptions = LiteRtModelOptionsStore.readOrLoad(modelFile)
                 LiteRtAiClient(
                     context = context,
                     modelDefinition = modelDefinition,

@@ -51,7 +51,9 @@ class NewChatViewModel(
         fun providePlatformRequest(): PlatformRequest
         fun provideMediaRequest(): MediaRequest
     }
-    private val viewModelStateFlow = MutableStateFlow(ViewModelState())
+    private val viewModelStateFlow = MutableStateFlow(
+        ViewModelState(localModelDefs = localModelRepository.cachedModelDefinitions()),
+    )
     private val builtinProjects = listOf(
         NewChatUiState.Project(
             name = BuiltinProjectId.Calendar.getProjectTitle(),
@@ -170,7 +172,13 @@ class NewChatViewModel(
                 .distinctUntilChanged()
                 .collectLatest {
                     val defs = localModelRepository.getResolvedModels()
-                    viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+                    viewModelStateFlow.update { state ->
+                        if (state.localModelDefs == defs) {
+                            state
+                        } else {
+                            state.copy(localModelDefs = defs)
+                        }
+                    }
                 }
         }
         viewModelScope.launch { GeminiBillingKeyOverrideStore.enabledSelectionKeys.collectLatest { keys -> viewModelStateFlow.update { it.copy(geminiBillingKeyOverrideSelectionKeys = keys) } } }

@@ -11,7 +11,13 @@ internal data class LiteRtModelOptions(
 internal object LiteRtModelOptionsReader {
     private val cache = mutableMapOf<CacheKey, LiteRtModelOptions>()
 
-    fun read(modelFile: File): LiteRtModelOptions {
+    fun read(modelFile: File): LiteRtModelOptions =
+        readOrNull(modelFile) ?: LiteRtModelOptions(
+            supportsThinking = false,
+            supportsVision = false,
+        )
+
+    fun readOrNull(modelFile: File): LiteRtModelOptions? {
         val cacheKey = CacheKey(
             path = modelFile.absolutePath,
             length = modelFile.length(),
@@ -20,14 +26,14 @@ internal object LiteRtModelOptionsReader {
         synchronized(cache) {
             cache[cacheKey]?.let { return it }
         }
-        val options = readFromFile(modelFile)
+        val options = readFromFile(modelFile) ?: return null
         synchronized(cache) {
             cache[cacheKey] = options
         }
         return options
     }
 
-    private fun readFromFile(modelFile: File): LiteRtModelOptions {
+    private fun readFromFile(modelFile: File): LiteRtModelOptions? {
         return try {
             ModelInfo.from(modelFile.absolutePath).use { modelInfo ->
                 val supportsThinking = when (modelInfo) {
@@ -42,10 +48,7 @@ internal object LiteRtModelOptionsReader {
                 )
             }
         } catch (_: Exception) {
-            LiteRtModelOptions(
-                supportsThinking = false,
-                supportsVision = false,
-            )
+            null
         }
     }
 

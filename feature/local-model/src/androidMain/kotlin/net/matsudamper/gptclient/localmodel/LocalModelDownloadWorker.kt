@@ -38,6 +38,7 @@ internal class LocalModelDownloadWorker(
             tempFile.delete()
 
             if (destinationFile.exists()) {
+                storeOptionsIfMissing(destinationFile)
                 Result.success()
             } else {
                 downloadToFile(
@@ -121,13 +122,35 @@ internal class LocalModelDownloadWorker(
                 throw IOException("ダウンロードが中断されました")
             }
 
-            if (!tempFile.renameTo(destinationFile)) {
-                tempFile.copyTo(destinationFile, overwrite = true)
-                tempFile.delete()
-            }
+            publishModelFile(
+                tempFile = tempFile,
+                destinationFile = destinationFile,
+            )
         } finally {
             connection.disconnect()
         }
+    }
+
+    private fun publishModelFile(
+        tempFile: File,
+        destinationFile: File,
+    ) {
+        val options = LiteRtModelOptionsReader.readOrNull(tempFile)
+        if (options != null) {
+            LiteRtModelOptionsStore.write(destinationFile, options)
+        }
+        if (!tempFile.renameTo(destinationFile)) {
+            tempFile.copyTo(destinationFile, overwrite = true)
+            tempFile.delete()
+        }
+    }
+
+    private fun storeOptionsIfMissing(modelFile: File) {
+        if (LiteRtModelOptionsStore.read(modelFile) != null) {
+            return
+        }
+        val options = LiteRtModelOptionsReader.readOrNull(modelFile) ?: return
+        LiteRtModelOptionsStore.write(modelFile, options)
     }
 
     private suspend fun createForegroundInfo(

@@ -19,6 +19,8 @@ actual fun localModelFeatureModule(): Module =
 internal class JvmLocalModelRepository : LocalModelRepository {
     override suspend fun getModels(): List<LocalModelDefinition> = emptyList()
 
+    override fun cachedModelDefinitions(): List<LocalModelDefinition> = listOf()
+
     override fun observeStatuses(): Flow<Map<LocalModelId, LocalModelState>> = flowOf(emptyMap())
 
     override suspend fun refreshStatuses() {}

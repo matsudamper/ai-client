@@ -76,7 +76,9 @@ class ChatViewModel(
         fun provideMediaRequest(): MediaRequest
     }
 
-    private val viewModelStateFlow = MutableStateFlow(ViewModelState())
+    private val viewModelStateFlow = MutableStateFlow(
+        ViewModelState(localModelDefs = localModelRepository.cachedModelDefinitions()),
+    )
     private val listener = object : ChatListUiState.Listener {
         override fun onClickImage() {
             viewModelScope.launch {
@@ -193,7 +195,13 @@ class ChatViewModel(
                 .distinctUntilChanged()
                 .collectLatest {
                     val defs = localModelRepository.getResolvedModels()
-                    viewModelStateFlow.update { it.copy(localModelDefs = defs) }
+                    viewModelStateFlow.update { state ->
+                        if (state.localModelDefs == defs) {
+                            state
+                        } else {
+                            state.copy(localModelDefs = defs)
+                        }
+                    }
                 }
         }
         viewModelScope.launch {

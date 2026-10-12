@@ -42,6 +42,14 @@ internal class LocalModelRepositoryImpl(
         }
     }
 
+    override fun cachedModelDefinitions(): List<LocalModelDefinition> =
+        AndroidLocalModels.entries.map { model ->
+            when (model.providerId) {
+                LocalModelProviderId.MlKitPrompt -> model.toDefinition()
+                LocalModelProviderId.LiteRtLm -> cachedLiteRtModel(model)
+            }
+        }
+
     override suspend fun getModels(): List<LocalModelDefinition> =
         withContext(Dispatchers.IO) {
             AndroidLocalModels.entries.map { model ->
@@ -132,26 +140,61 @@ internal class LocalModelRepositoryImpl(
             LocalModelProviderId.LiteRtLm -> {
                 workManager.cancelUniqueWork(LocalModelDownloadWorker.getUniqueWorkName(modelId))
                 LiteRtLmEngineStore.remove(modelId)
-                getModelFile(context, modelId).delete()
+                val modelFile = getModelFile(context, modelId)
+                LiteRtModelOptionsStore.delete(modelFile)
+                modelFile.delete()
                 getTempModelFile(context, modelId).delete()
                 refreshTrigger.update { it + 1 }
             }
         }
     }
 
-    private fun resolveLiteRtModel(model: AndroidLocalModel): LocalModelDefinition {
-        val definition = model.toDefinition()
-        val modelFile = model.fileName?.let { fileName ->
-            File(getModelsDirectory(context), fileName)
-        }
-        val options = if (modelFile != null && modelFile.exists()) {
-            LiteRtModelOptionsReader.read(modelFile)
+    private fun cachedLiteRtModel(model: AndroidLocalModel): LocalModelDefinition =
+        toResolvedDefinition(
+            model = model,
+            options = savedLiteRtOptions(model),
+        )
+
+    private fun resolveLiteRtModel(model: AndroidLocalModel): LocalModelDefinition =
+        toResolvedDefinition(
+            model = model,
+            options = savedOrReadLiteRtOptions(model),
+        )
+
+    private fun savedLiteRtOptions(model: AndroidLocalModel): LiteRtModelOptions {
+        val modelFile = modelFile(model)
+        val saved = if (modelFile != null && modelFile.exists()) {
+            LiteRtModelOptionsStore.read(modelFile)
         } else {
-            LiteRtModelOptions(
-                supportsThinking = false,
-                supportsVision = false,
-            )
+            null
         }
+        return saved ?: unavailableLiteRtOptions()
+    }
+
+    private fun savedOrReadLiteRtOptions(model: AndroidLocalModel): LiteRtModelOptions {
+        val modelFile = modelFile(model)
+        if (modelFile == null || !modelFile.exists()) {
+            return unavailableLiteRtOptions()
+        }
+        return LiteRtModelOptionsStore.readOrLoad(modelFile)
+    }
+
+    private fun modelFile(model: AndroidLocalModel): File? {
+        val fileName = model.fileName ?: return null
+        return File(getModelsDirectory(context), fileName)
+    }
+
+    private fun unavailableLiteRtOptions(): LiteRtModelOptions =
+        LiteRtModelOptions(
+            supportsThinking = false,
+            supportsVision = false,
+        )
+
+    private fun toResolvedDefinition(
+        model: AndroidLocalModel,
+        options: LiteRtModelOptions,
+    ): LocalModelDefinition {
+        val definition = model.toDefinition()
         return definition.copy(
             enableImage = options.supportsVision,
             supportedImageMimeTypes = if (options.supportsVision) {
