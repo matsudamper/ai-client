@@ -17,6 +17,12 @@ internal data class MlKitModelVariant(
     val preferenceDisplayName: String,
 )
 
+internal sealed interface ModelCapability {
+    data class Fixed(val enabled: Boolean) : ModelCapability
+
+    data object ResolveFromModelInfo : ModelCapability
+}
+
 internal data class AndroidLocalModel(
     val modelId: LocalModelId,
     val providerId: LocalModelProviderId,
@@ -26,16 +32,19 @@ internal data class AndroidLocalModel(
     val fileName: String? = null,
     val downloadUrl: String? = null,
     val mlKitModelVariant: MlKitModelVariant? = null,
-    val enableImage: Boolean?,
+    val enableImage: ModelCapability,
     val supportedImageMimeTypes: List<String>,
     val defaultToken: Int,
-    val supportsThinking: Boolean?,
+    val supportsThinking: ModelCapability,
 ) {
     val canDelete: Boolean
         get() = providerId == LocalModelProviderId.LiteRtLm && fileName != null
 
     val maxImageCount: Int
-        get() = if (enableImage == true) 1 else 0
+        get() = when (val capability = enableImage) {
+            is ModelCapability.Fixed -> if (capability.enabled) 1 else 0
+            ModelCapability.ResolveFromModelInfo -> 0
+        }
 
     fun toDefinition(): LocalModelDefinition =
         toDefinition(
@@ -59,11 +68,11 @@ internal data class AndroidLocalModel(
             displayName = resolvedDisplayName,
             displayGroupKey = displayGroupKey,
             description = description,
-            enableImage = enableImage == true,
+            enableImage = enableImage.toBoolean(),
             supportedImageMimeTypes = supportedImageMimeTypes,
             maxImageCount = maxImageCount,
             defaultToken = defaultToken,
-            supportsThinking = supportsThinking == true,
+            supportsThinking = supportsThinking.toBoolean(),
             canDelete = canDelete,
         )
 
@@ -143,10 +152,10 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "gemma-4-E4B-it.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm?download=true",
-            enableImage = null,
+            enableImage = ModelCapability.ResolveFromModelInfo,
             supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 2000,
-            supportsThinking = null,
+            supportsThinking = ModelCapability.ResolveFromModelInfo,
         )
 
     private val gemma4E2B =
@@ -158,10 +167,10 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "gemma-4-E2B-it.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm?download=true",
-            enableImage = null,
+            enableImage = ModelCapability.ResolveFromModelInfo,
             supportedImageMimeTypes = listOf("image/png"),
             defaultToken = 2000,
-            supportsThinking = null,
+            supportsThinking = ModelCapability.ResolveFromModelInfo,
         )
 
     private val qwen352bVl =
@@ -173,10 +182,10 @@ internal object AndroidLocalModels {
             description = "LiteRT-LM",
             fileName = "Qwen3.5-2B-VL_int8.litertlm",
             downloadUrl = "https://huggingface.co/litert-community/Qwen3.5-2B/resolve/main/Qwen3.5-2B-VL_int8.litertlm?download=true",
-            enableImage = null,
+            enableImage = ModelCapability.ResolveFromModelInfo,
             supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
             defaultToken = 2000,
-            supportsThinking = null,
+            supportsThinking = ModelCapability.ResolveFromModelInfo,
         )
 
     val entries: List<AndroidLocalModel> =
@@ -209,9 +218,15 @@ internal object AndroidLocalModels {
                 preference = preference,
                 preferenceDisplayName = preferenceDisplayName,
             ),
-            enableImage = true,
+            enableImage = ModelCapability.Fixed(enabled = true),
             supportedImageMimeTypes = listOf("image/jpeg", "image/png", "image/webp"),
             defaultToken = 1024,
-            supportsThinking = false,
+            supportsThinking = ModelCapability.Fixed(enabled = false),
         )
 }
+
+private fun ModelCapability.toBoolean(): Boolean =
+    when (this) {
+        is ModelCapability.Fixed -> enabled
+        ModelCapability.ResolveFromModelInfo -> false
+    }
