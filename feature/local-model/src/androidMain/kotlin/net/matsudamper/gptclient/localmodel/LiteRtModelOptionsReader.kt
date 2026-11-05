@@ -1,21 +1,40 @@
 package net.matsudamper.gptclient.localmodel
 
 import java.io.File
+import com.google.ai.edge.litertlm.BackendType
+import com.google.ai.edge.litertlm.Modality
 import com.google.ai.edge.litertlm.ModelInfo
+
+internal enum class LiteRtBackendKind {
+    CPU,
+    GPU,
+    NPU,
+}
 
 internal data class LiteRtModelOptions(
     val supportsThinking: Boolean,
     val supportsVision: Boolean,
+    val textBackends: Set<LiteRtBackendKind>,
+    val visionBackends: Set<LiteRtBackendKind>,
+    val textSocName: String,
+    val visionSocName: String,
 )
+
+internal fun unavailableLiteRtModelOptions(): LiteRtModelOptions =
+    LiteRtModelOptions(
+        supportsThinking = false,
+        supportsVision = false,
+        textBackends = setOf(),
+        visionBackends = setOf(),
+        textSocName = "",
+        visionSocName = "",
+    )
 
 internal object LiteRtModelOptionsReader {
     private val cache = mutableMapOf<CacheKey, LiteRtModelOptions>()
 
     fun read(modelFile: File): LiteRtModelOptions =
-        readOrNull(modelFile) ?: LiteRtModelOptions(
-            supportsThinking = false,
-            supportsVision = false,
-        )
+        readOrNull(modelFile) ?: unavailableLiteRtModelOptions()
 
     fun readOrNull(modelFile: File): LiteRtModelOptions? {
         val cacheKey = CacheKey(
@@ -45,12 +64,25 @@ internal object LiteRtModelOptionsReader {
                 LiteRtModelOptions(
                     supportsThinking = supportsThinking,
                     supportsVision = modelInfo.inputModalities().vision,
+                    textBackends = modelInfo.backendKinds(Modality.TEXT),
+                    visionBackends = modelInfo.backendKinds(Modality.VISION),
+                    textSocName = modelInfo.socName(Modality.TEXT).orEmpty(),
+                    visionSocName = modelInfo.socName(Modality.VISION).orEmpty(),
                 )
             }
         } catch (_: Exception) {
             null
         }
     }
+
+    private fun ModelInfo.backendKinds(modality: Modality): Set<LiteRtBackendKind> =
+        supportedBackends(modality).map { backendType ->
+            when (backendType) {
+                BackendType.CPU -> LiteRtBackendKind.CPU
+                BackendType.GPU -> LiteRtBackendKind.GPU
+                BackendType.NPU -> LiteRtBackendKind.NPU
+            }
+        }.toSet()
 
     private data class CacheKey(
         val path: String,

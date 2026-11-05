@@ -1,6 +1,7 @@
 package net.matsudamper.gptclient.localmodel
 
 import android.content.Context
+import android.os.Build
 import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,16 +61,28 @@ internal object LiteRtLmEngineStore {
             .absolutePath
 
         val nativeLibDir = context.applicationInfo.nativeLibraryDir
-        val enableImage = LiteRtModelOptionsStore.readOrLoad(modelFile).supportsVision
-
-        val backends = listOf(
-//            "NPU" to {
-//                Backend.NPU(nativeLibraryDir = nativeLibDir) to
-//                    if (enableImage) Backend.NPU(nativeLibraryDir = nativeLibDir) else null
-//            },
-            "GPU" to { Backend.GPU() to if (enableImage) Backend.GPU() else null },
-            "CPU" to { Backend.CPU() to if (enableImage) Backend.CPU() else null },
+        val options = LiteRtModelOptionsStore.readOrLoad(modelFile)
+        val enableImage = options.supportsVision
+        val npuVisionBackend = visionBackendForNpu(
+            options = options,
+            nativeLibraryDir = nativeLibDir,
+            enableImage = enableImage,
         )
+        val tryNpu = LiteRtBackendKind.NPU in options.textBackends &&
+            socMatches(options.textSocName, Build.SOC_MODEL) &&
+            (!enableImage || npuVisionBackend != null)
+
+        val backends = buildList {
+            if (tryNpu) {
+                add(
+                    "NPU" to {
+                        Backend.NPU(nativeLibraryDir = nativeLibDir) to npuVisionBackend
+                    },
+                )
+            }
+            add("GPU" to { Backend.GPU() to if (enableImage) Backend.GPU() else null })
+            add("CPU" to { Backend.CPU() to if (enableImage) Backend.CPU() else null })
+        }
 
         for ((label, backendProvider) in backends) {
             val (mainBackend, visionBackend) = backendProvider()
@@ -91,5 +104,32 @@ internal object LiteRtLmEngineStore {
         }
 
         error("エンジンの初期化に失敗しました")
+    }
+
+    private fun visionBackendForNpu(
+        options: LiteRtModelOptions,
+        nativeLibraryDir: String,
+        enableImage: Boolean,
+    ): Backend? {
+        if (!enableImage) {
+            return null
+        }
+        if (
+            LiteRtBackendKind.NPU in options.visionBackends &&
+            socMatches(options.visionSocName, Build.SOC_MODEL)
+        ) {
+            return Backend.NPU(nativeLibraryDir = nativeLibraryDir)
+        }
+        if (LiteRtBackendKind.GPU in options.visionBackends) {
+            return Backend.GPU()
+        }
+        return null
+    }
+
+    private fun socMatches(modelSocName: String, deviceSocModel: String): Boolean {
+        if (modelSocName.isEmpty()) {
+            return true
+        }
+        return modelSocName.equals(deviceSocModel, ignoreCase = true)
     }
 }
