@@ -5,6 +5,11 @@
   "extends": [":dependencyDashboard"],
   "packageRules": [
     {
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["/^androidx\\.test(?:[.:]|$)/"],
+      "automerge": true
+    },
+    {
       "matchPackagePatterns": ["^org\\.jetbrains\\.compose", "^androidx\\.compose"],
       "allowedVersions": "!/ok-check-kotlin/"
     },
