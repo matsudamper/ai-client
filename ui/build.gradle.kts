@@ -30,12 +30,13 @@ kotlin {
                 implementation(libs.coil3Compose)
                 implementation(libs.coil3NetworkOkHttp)
                 implementation(libs.zoomable)
-            }
-        }
-        val androidMain by getting {
-            dependencies {
                 implementation(libs.jetbrainsComposeUiToolingPreview)
             }
         }
     }
+}
+
+// Preview の描画用クラスは Android IDE 実行時にのみ必要
+dependencies {
+    add("androidRuntimeClasspath", libs.jetbrainsComposeUiTooling)
 }
